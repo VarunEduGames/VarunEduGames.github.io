@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,12 +110,12 @@
             font-size: 1.1em;
             font-weight: bold;
             background: linear-gradient(to right, 
-                #ff0000,
-                #ff7f00,
-                #ffff00,
-                #00ff00,
-                #0000ff,
-                #4b0082,
+                #ff0000, 
+                #ff7f00, 
+                #ffff00, 
+                #00ff00, 
+                #0000ff, 
+                #4b0082, 
                 #9400d3
             );
             -webkit-background-clip: text;
@@ -126,7 +125,6 @@
             display: inline-block;
             margin-top: 8px;
         }
-
         @keyframes rainbow-animation {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
@@ -159,7 +157,7 @@
         </div>
         
         <p id="sentence-count" class="text-sm text-gray-500 mb-8 hidden"></p>
-
+        
         <div id="sentence-display" class="sentence-box">
             Click "Start Writing" to begin.
         </div>
@@ -170,30 +168,27 @@
         <button id="start-game-button" class="start-button">Start Writing</button>
         <button id="stop-button" class="stop-button hidden">Stop Game</button>
     </div>
-
+    
     <footer class="mt-8 text-center text-sm">
         <span class="rainbow-footer">Designed by Surendar Nath (G7A)</span>
     </footer>
-
+    
     <script>
         const noviceSentences = [
             "The quick brown fox jumps over the lazy dog.",
             "Never underestimate the power of a good book.",
-            "A journey of a thousand miles begins with a single step."
-        ];
-        
+            "A journey of a thousand miles begins with a single step.","A journey of a thousand miles begins with a single step.","The early bird catches the worm.","All that glitters is not gold.","An apple a day keeps the doctor away.","Actions speak louder than words.","Look before you leap.","Don't count your chickens before they hatch.","Better late than never.","Two heads are better than one.","Where there's a will, there's a way.","Practice makes perfect.","Haste makes waste.","A picture is worth a thousand words.","Every cloud has a silver lining.","When in Rome, do as the Romans do.","Honesty is the best policy.","The pen is mightier than the sword.","Absence makes the heart grow fonder.","A stitch in time saves nine.","Rome wasn't built in a day.","Don't put all your eggs in one basket.","There's no place like home.","You can't judge a book by its cover.","Necessity is the mother of invention.","All's well that ends well.","Knowledge is power.","Good things come to those who wait.","Don't cry over spilled milk.","Laughter is the best medicine.","The grass is always greener on the other side.","Birds of a feather flock together.","What goes around comes around.","Curiosity killed the cat.","A friend in need is a friend indeed.","Nothing ventured, nothing gained.","Too many cooks spoil the broth.","A bad workman blames his tools.","Beauty is in the eye of the beholder.","You can't teach an old dog new tricks.","The proof of the pudding is in the eating.","Many hands make light work.","A penny saved is a penny earned.","Cleanliness is next to godliness.","Give a man a fish, and you feed him for a day.","A fool and his money are soon parted.","The best things in life are free.","Every dog has its day.","New York is a city that never sleeps.","A man is known by the company he keeps.","There's no time like the present.","Don't bite the hand that feeds you.","People who live in glass houses shouldn't throw stones.","You can't have your cake and eat it too.","The show must go on.","It's no use crying over spilled milk.","An ounce of prevention is worth a pound of cure.","Barking dogs seldom bite.","Don't cross the bridge until you come to it.","Let sleeping dogs lie.","A fool's paradise is a short one.","What doesn't kill you makes you stronger.","You reap what you sow.","It's a small world.","Don't rock the boat.","There's no smoke without fire.","Every rose has its thorn.","To each his own.","When the going gets tough, the tough get going.","You can lead a horse to water, but you can't make it drink.","First things first.","Don't bite off more than you can chew.","All roads lead to Rome.","Let bygones be bygones.","It takes two to tango.","Where there's smoke, there's fire.","The cat is out of the bag.","Easy come, easy go.","Better safe than sorry.","The bigger they are, the harder they fall.","Seeing is believing.","The squeaky wheel gets the grease.","You can't have everything.","Keep your friends close and your enemies closer.","The early bird gets the worm.","It's always darkest before the dawn.","A penny for your thoughts.","There's a method to his madness.","The devil is in the details.","Kill two birds with one stone.","The grass is greener on the other side.","Money doesn't grow on trees.","Don't put the cart before the horse.","A drop in the ocean.","Live and learn.","As you sow, so shall you reap.","Time is money.","All's fair in love and war.","You win some, you lose some.","The best defense is a good offense.","It's better to be safe than sorry."                    ];
         const wordsmithSentences = [
             "The sun always shines brightest after the rain; a new day is always on the horizon.",
             "Creativity is intelligence having fun, and every artist starts with a blank canvas.",
             "Learning a new language is an adventure; it opens doors to different cultures and ideas."
         ];
-
         const titanSentences = [
             "The best way to predict the future is to create it, so we must innovate continually, accepting that failure is an integral part of progress.",
             "Every day is a new opportunity to be great, a chance to forge ahead with determination, knowing that obstacles are merely stepping stones to success.",
             "The early bird catches the worm in the morning, a simple maxim that underscores the importance of diligence, perseverance, and seizing the moment before others."
         ];
-
+        
         const sentenceDisplay = document.getElementById('sentence-display');
         const feedback = document.getElementById('feedback');
         const startGameButton = document.getElementById('start-game-button');
@@ -203,29 +198,30 @@
         const difficultySelect = document.getElementById('difficulty');
         const timerOptionSelect = document.getElementById('timer-option');
 
-        let currentSentence = '';
-        let timerSeconds = 30;
+        let timerSeconds;
         let timerInterval;
         let sentencesDisplayed = 0;
+        let startTime = 0;
+        let totalTimeElapsed = 0;
 
         startGameButton.addEventListener('click', startGame);
         stopButton.addEventListener('click', stopGame);
 
         function startGame() {
             timerSeconds = parseInt(timerOptionSelect.value);
-
+            
             startGameButton.classList.add('hidden');
             stopButton.classList.remove('hidden');
             sentenceCountDisplay.classList.remove('hidden');
             difficultySelect.disabled = true;
             timerOptionSelect.disabled = true;
+            feedback.textContent = '';
             
+            startTime = Date.now();
             showSentenceAndStartTimer();
         }
 
         function showSentenceAndStartTimer() {
-            feedback.textContent = '';
-            
             let sentencesForLevel;
             switch (difficultySelect.value) {
                 case 'novice':
@@ -240,7 +236,7 @@
             }
             
             const randomIndex = Math.floor(Math.random() * sentencesForLevel.length);
-            currentSentence = sentencesForLevel[randomIndex];
+            const currentSentence = sentencesForLevel[randomIndex];
             sentenceDisplay.textContent = currentSentence;
             
             sentencesDisplayed++;
@@ -248,31 +244,39 @@
 
             timerDisplay.classList.remove('hidden');
             timerDisplay.textContent = `${timerSeconds}s`;
+            
+            clearInterval(timerInterval); // Clear any existing timer
             timerInterval = setInterval(() => {
                 timerSeconds--;
                 timerDisplay.textContent = `${timerSeconds}s`;
                 if (timerSeconds <= 0) {
-                    endGame("Time's up!");
+                    nextSentence();
                 }
             }, 1000);
         }
 
-        function stopGame() {
-            const initialTime = parseInt(timerOptionSelect.value);
-            const timeTaken = initialTime - timerSeconds;
-            endGame(`Great job! Your time was ${timeTaken} seconds.`);
+        function nextSentence() {
+            clearInterval(timerInterval);
+            timerSeconds = parseInt(timerOptionSelect.value);
+            showSentenceAndStartTimer();
         }
 
-        function endGame(message) {
+        function stopGame() {
             clearInterval(timerInterval);
-            feedback.textContent = message;
+            totalTimeElapsed = Math.floor((Date.now() - startTime) / 1000);
+            
+            feedback.textContent = `Game stopped! You wrote ${sentencesDisplayed} sentences in ${totalTimeElapsed} seconds.`;
 
-            startGameButton.textContent = "Start Next Round";
+            startGameButton.textContent = "Start New Round";
             startGameButton.classList.remove('hidden');
             stopButton.classList.add('hidden');
+            
             difficultySelect.disabled = false;
             timerOptionSelect.disabled = false;
+            
+            sentencesDisplayed = 0;
         }
     </script>
 </body>
 </html>
+
