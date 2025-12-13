@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single-Player Matching Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+            border-radius: 12px;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-front {
+            background-color: #3b82f6;
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .card-back {
+            background-color: #fca5a5;
+        }
+
+        .card.matched .card-back {
+            background-color: #d1d5db;
+        }
+
+        .matched-text {
+            animation: bounce 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .message-box {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            background-color: #fff;
+            color: #333;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+        }
+
+        .message-box.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Global message box for notifications -->
+    <div id="message-box" class="message-box"></div>
+
+    <!-- Start Page -->
+    <div id="start-page" class="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center justify-center text-center w-full max-w-sm mx-auto space-y-6">
+        <h1 class="text-4xl font-bold text-gray-800">Memory Mania</h1>
+        <p class="text-gray-600 text-lg">Test your memory and find all the matching pairs!</p>
+        <button id="start-game-btn" class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105">
+            Start Game
+        </button>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="game-container" class="hidden bg-white p-8 rounded-xl shadow-2xl w-full max-w-4xl mx-auto space-y-8 flex flex-col justify-center items-center">
+        <h1 class="text-3xl font-bold text-center text-gray-800">Memory Mania</h1>
+        
+        <!-- Score display -->
+        <div class="flex items-center justify-between bg-blue-50 p-4 rounded-xl shadow-inner w-full">
+            <p id="score-display" class="text-xl font-bold text-blue-700">Score: 0</p>
+            <p id="moves-display" class="text-xl font-bold text-blue-700">Moves: 0</p>
+        </div>
+
+        <!-- Game Board -->
+        <div id="game-board" class="grid grid-cols-4 gap-4 justify-items-center w-full max-w-lg">
+            <!-- Game cards will be dynamically inserted here -->
+        </div>
+
+        <div class="text-center space-x-4 flex flex-col sm:flex-row items-center justify-center">
+            <button id="new-game-btn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 mt-4">
+                New Game
+            </button>
+            
+            <div class="flex items-center mt-4 sm:mt-0 space-x-2">
+                <label for="countdown-select" class="text-gray-700 font-medium">Reveal for:</label>
+                <select id="countdown-select" class="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="1">1 second</option>
+                    <option value="2">2 seconds</option>
+                    <option value="3">3 seconds</option>
+                </select>
+            </div>
+
+            <button id="reveal-btn" class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg shadow-lg transform transition-transform duration-200 hover:scale-105 mt-4">
+                Reveal
+            </button>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="mt-8 text-sm text-gray-500">
+            Designed by Sukesh (G7A)
+        </footer>
+    </div>
+
+    <script>
+        // Global variables for game state
+        let gameBoard = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let score = 0;
+        let moves = 0;
+        let canFlip = true;
+        
+        // UI Elements
+        const startPage = document.getElementById('start-page');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const gameContainer = document.getElementById('game-container');
+        const gameBoardElement = document.getElementById('game-board');
+        const scoreDisplay = document.getElementById('score-display');
+        const movesDisplay = document.getElementById('moves-display');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const revealBtn = document.getElementById('reveal-btn');
+        const countdownSelect = document.getElementById('countdown-select');
+        const messageBox = document.getElementById('message-box');
+
+        // Card items (8 unique emojis for a 4x4 grid)
+        const cardEmojis = [
+            '🍎', '🍊', '🍋', '🍉', '🍇', '🍓',
+            '🍒', '🍑'
+        ];
+
+        // --- Utility Functions ---
+
+        // Show a temporary message
+        function showMessage(text) {
+            messageBox.textContent = text;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000);
+        }
+
+        // Shuffle an array
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Initialize the game
+        function initGame() {
+            // Reset game state
+            flippedCards = [];
+            matchedPairs = 0;
+            score = 0;
+            moves = 0;
+            canFlip = true;
+            revealBtn.disabled = false;
+            revealBtn.classList.remove('bg-gray-400', 'hover:bg-gray-500');
+            revealBtn.classList.add('bg-purple-500', 'hover:bg-purple-600');
+            
+            // Prepare the board
+            const shuffledEmojis = shuffle([...cardEmojis, ...cardEmojis]);
+            gameBoard = shuffledEmojis.map((emoji, index) => ({
+                id: crypto.randomUUID(),
+                emoji: emoji,
+                isFlipped: false,
+                isMatched: false,
+                position: index
+            }));
+
+            renderBoard();
+            updateScoreDisplay();
+        }
+
+        // Render the game board
+        function renderBoard() {
+            gameBoardElement.innerHTML = '';
+            gameBoard.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-container';
+                cardElement.innerHTML = `
+                    <div class="card ${card.isFlipped ? 'flipped' : ''} ${card.isMatched ? 'matched' : ''}" data-index="${index}">
+                        <div class="card-face card-back bg-red-400"></div>
+                        <div class="card-face card-front bg-blue-500 text-white text-5xl flex items-center justify-center">
+                            <span class="p-2 select-none">${card.emoji}</span>
+                        </div>
+                    </div>
+                `;
+                cardElement.querySelector('.card').addEventListener('click', () => handleCardClick(index));
+                gameBoardElement.appendChild(cardElement);
+            });
+        }
+
+        // Update score and moves display
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Score: ${score}`;
+            movesDisplay.textContent = `Moves: ${moves}`;
+        }
+
+        // Handle card click
+        function handleCardClick(index) {
+            if (!canFlip) return;
+
+            const clickedCard = gameBoard[index];
+            if (clickedCard.isFlipped || clickedCard.isMatched) {
+                return;
+            }
+
+            clickedCard.isFlipped = true;
+            flippedCards.push(index);
+
+            // Update the board visually immediately
+            renderBoard();
+
+            // Check if it's the second card flipped
+            if (flippedCards.length === 2) {
+                canFlip = false; // Disable flips until check is complete
+                moves++;
+
+                const card1 = gameBoard[flippedCards[0]];
+                const card2 = gameBoard[flippedCards[1]];
+
+                if (card1.emoji === card2.emoji) {
+                    // It's a match!
+                    showMessage("It's a match!");
+                    card1.isMatched = true;
+                    card2.isMatched = true;
+                    score++;
+                    matchedPairs++;
+                    
+                    flippedCards = [];
+                    canFlip = true;
+
+                    // Check for end of game
+                    if (matchedPairs === cardEmojis.length) {
+                        setTimeout(() => {
+                            showMessage("You won! Congratulations!");
+                        }, 500);
+                    }
+                } else {
+                    // Not a match, flip them back after a delay
+                    setTimeout(() => {
+                        card1.isFlipped = false;
+                        card2.isFlipped = false;
+                        renderBoard();
+                        flippedCards = [];
+                        canFlip = true;
+                    }, 1000);
+                }
+                updateScoreDisplay();
+            }
+        }
+
+        // Handle reveal button click
+        function handleRevealClick() {
+            canFlip = false; // Disable card flips
+            revealBtn.disabled = true; // Disable the button to prevent multiple clicks
+            revealBtn.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+            revealBtn.classList.add('bg-gray-400', 'hover:bg-gray-500');
+            
+            // Get the selected countdown duration
+            const countdownTime = parseInt(countdownSelect.value, 10) * 1000;
+            
+            // Store the state of cards that were not matched
+            const originalFlippedState = gameBoard.map(card => card.isFlipped);
+            
+            // Flip all unmatched cards
+            gameBoard.forEach(card => {
+                if (!card.isMatched) {
+                    card.isFlipped = true;
+                }
+            });
+
+            renderBoard(); // Show all the cards
+
+            // Wait for the selected duration then flip them back
+            setTimeout(() => {
+                gameBoard.forEach((card, index) => {
+                    if (!card.isMatched) {
+                        card.isFlipped = originalFlippedState[index]; // Restore the original flipped state
+                    }
+                });
+                renderBoard(); // Hide the cards again
+                canFlip = true; // Re-enable card flips
+            }, countdownTime);
+        }
+        
+        // --- Event Listeners ---
+        startGameBtn.addEventListener('click', () => {
+            startPage.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            initGame();
+        });
+
+        newGameBtn.addEventListener('click', initGame);
+        revealBtn.addEventListener('click', handleRevealClick);
+    </script>
+</body>
+</html>
