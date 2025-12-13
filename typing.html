@@ -1,0 +1,1049 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Type City Tycoon - Balsam Developers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        // --- Tailwind Configuration ---
+        tailwind.config = {
+            // Tailwind will read the 'dark' class on the HTML tag
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#4F46E5', // Indigo 600
+                        'secondary-cyan': '#06B6D4', // Cyan 500
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    keyframes: {
+                        'shake': {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '20%, 60%': { transform: 'translateX(-5px)' },
+                            '40%, 80%': { transform: 'translateX(5px)' },
+                        },
+                        'grow': {
+                            '0%': { transform: 'scale(0.8)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 },
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        'confetti-drop': {
+                            '0%': { transform: 'translateY(-100vh) rotate(0deg)', opacity: 1 },
+                            '100%': { transform: 'translateY(100vh) rotate(720deg)', opacity: 0.5 },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { 'box-shadow': '0 0 10px rgba(79, 70, 229, 0.4)' },
+                            '50%': { 'box-shadow': '0 0 20px rgba(6, 182, 212, 0.8)' },
+                        },
+                        'flash-border': {
+                            '0%': { 'border-color': 'rgba(79, 70, 229, 0.8)', 'box-shadow': '0 0 15px rgba(79, 70, 229, 0.6)' },
+                            '33%': { 'border-color': 'rgba(6, 182, 212, 0.8)', 'box-shadow': '0 0 15px rgba(6, 182, 212, 0.6)' },
+                            '66%': { 'border-color': 'rgba(251, 191, 36, 0.8)', 'box-shadow': '0 0 15px rgba(251, 191, 36, 0.6)' },
+                            '100%': { 'border-color': 'rgba(79, 70, 229, 0.8)', 'box-shadow': '0 0 15px rgba(79, 70, 229, 0.6)' },
+                        },
+                        'reveal-pop': {
+                            '0%': { transform: 'scale(0.5)', opacity: 0 },
+                            '80%': { transform: 'scale(1.1)', opacity: 1 },
+                            '100%': { transform: 'scale(1)', opacity: 1 },
+                        }
+                    },
+                    animation: {
+                        'shake': 'shake 0.3s ease-in-out',
+                        'grow': 'grow 0.5s ease-out',
+                        'float-slow': 'float 4s ease-in-out infinite',
+                        'confetti': 'confetti-drop 4s ease-in infinite',
+                        'pulse-glow-slow': 'pulse-glow 3s infinite ease-in-out',
+                        'flash-border': 'flash-border 1.5s infinite linear',
+                        'reveal-pop': 'reveal-pop 0.5s ease-out',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base font size classes controlled by JS on the body */
+        .text-size-sm { font-size: 0.9rem; }
+        .text-size-md { font-size: 1rem; }
+        .text-size-lg { font-size: 1.15rem; }
+
+        /* Hide scrollbars for cleaner look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Typing text color codes */
+        .correct-char {
+            color: #06B6D4;
+            /* Secondary Cyan */
+        }
+
+        .incorrect-char {
+            background-color: #EF4444;
+            /* Red 500 */
+            color: #fff;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        .current-char {
+            background-color: #8B5CF6;
+            /* Violet 500 - visually distinctive */
+            color: white;
+            padding: 0 1px;
+            border-radius: 2px;
+        }
+
+        /* Dynamic City View Styling */
+        #cityView {
+            background-color: #A7F3D0;
+            /* Default Light Green */
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Dynamic Backgrounds controlled by JS */
+        .city-bg-0 {
+            background-color: #A7F3D0;
+        }
+
+        .city-bg-1 {
+            background-color: #93C5FD;
+        }
+
+        .city-bg-2 {
+            background-color: #D8B4FE;
+        }
+
+        .city-bg-3 {
+            background-color: #FDBA74;
+        }
+
+        /* Confetti Styling */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            animation-duration: 4s;
+            animation-timing-function: ease-in;
+            animation-iteration-count: infinite;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen font-sans p-4 sm:p-8 transition-colors duration-500 relative">
+    
+    <div id="homepage" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-95 bg-gradient-to-br from-gray-900/90 to-primary-blue/30 transition-opacity duration-500">
+        <div class="text-center p-10 max-w-sm sm:max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative z-10 transform transition-all duration-700 scale-100 border-4 border-primary-blue animate-pulse-glow-slow animate-flash-border">
+            <div class="relative z-10">
+                <h1 class="text-7xl font-extrabold text-gray-800 dark:text-white mb-2 tracking-tight">
+                    <span class="text-primary-blue dark:text-secondary-cyan">Type</span> City
+                </h1>
+                <p class="text-xl text-gray-500 dark:text-gray-400 mb-8 font-light">
+                    Build your destiny, one character at a time.
+                </p>
+                <div class="space-y-4">
+                    <button id="continueButton" onclick="startGame(true)"
+                        class="w-full h-14 p-4 bg-yellow-500 text-white font-bold rounded-xl text-xl shadow-lg hover:bg-yellow-600 hover:shadow-xl transition duration-300 disabled:opacity-50 flex items-center justify-center hidden">
+                        <span id="continueText">Continue Previous Game</span>
+                    </button>
+                    <button id="newGameButton" onclick="startGame(false)"
+                        class="w-full h-14 p-4 bg-green-600 text-white font-bold rounded-xl text-xl shadow-lg hover:bg-green-700 hover:shadow-xl transition duration-300 flex items-center justify-center">
+                        Start New Game
+                    </button>
+                    <p id="saveStatus" class="text-sm text-gray-500 dark:text-gray-400 pt-2">Checking for saved progress...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="victoryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div id="confettiContainer" class="fixed inset-0 pointer-events-none overflow-hidden"></div>
+        <div class="bg-white dark:bg-gray-800 p-10 rounded-xl shadow-2xl w-full max-w-2xl text-center transform scale-95 transition-transform duration-500 relative z-50">
+            <h2 class="text-5xl font-extrabold text-yellow-500 mb-4 animate-grow">
+                CONGRATULATIONS!
+            </h2>
+            <h3 class="text-3xl font-bold mb-6 text-primary-blue dark:text-secondary-cyan">
+                The City is Complete!
+            </h3>
+            <div id="presidencyAnimation" class="text-6xl mb-6 transform transition-transform duration-1000 scale-100">
+                🏛️
+            </div>
+            <p class="text-xl mb-6">
+                Through your unmatched speed and dedication, **Type City** is now a glorious metropolis. You are hereby granted the lifetime honor of **President of Type City!**
+            </p>
+            <div id="nameForm">
+                <p class="mb-3 font-semibold">Enter your name for the official certificate:</p>
+                <div class="flex space-x-2 justify-center">
+                    <input type="text" id="presidentNameInput" placeholder="Your Name" maxlength="30"
+                        class="p-2 text-xl rounded-lg bg-gray-100 dark:bg-gray-700 border-2 border-yellow-500 focus:outline-none w-2/3">
+                    <button onclick="issueCertificate()"
+                        class="p-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition duration-300">
+                        Receive Certificate
+                    </button>
+                </div>
+            </div>
+            <div id="certificateDisplay" class="hidden mt-8 p-6 border-4 border-double border-yellow-700 bg-yellow-50 dark:bg-gray-900 rounded-xl">
+                <h4 class="text-4xl font-serif text-yellow-700 mb-4">Official Document</h4>
+                <p class="text-xl mb-2 text-gray-700 dark:text-gray-300">This is to certify that</p>
+                <p id="certificateName" class="text-5xl font-extrabold text-red-600 dark:text-red-400 mb-4 italic">
+                    [Player Name]
+                </p>
+                <p class="text-2xl font-semibold">is officially recognized as the **Founding President of Type City**</p>
+                <p class="text-sm mt-4 text-gray-500 dark:text-gray-400">Awarded on: <span id="awardDate"></span></p>
+            </div>
+            
+            <div class="mt-8 flex justify-center space-x-4">
+                 <button id="downloadCertificateButton" onclick="downloadCertificate()" 
+                     class="p-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition duration-300 hidden">
+                    ⬇️ Download Certificate
+                </button>
+                <button onclick="reloadGame()" class="p-3 bg-primary-blue text-white font-bold rounded-lg hover:bg-indigo-600 transition duration-300">
+                    Start a New Game
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <button id="settingsButton" onclick="toggleSettingsModal()"
+        class="fixed top-4 right-4 z-40 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-2xl text-gray-700 dark:text-gray-300 hover:scale-110 transition duration-300 opacity-0 hidden">
+        ⚙️
+    </button>
+    <div id="settingsModal" onclick="if (event.target.id === 'settingsModal') toggleSettingsModal()" 
+        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-75 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300">
+            <h2 class="text-3xl font-bold mb-6 border-b pb-2 text-primary-blue dark:text-secondary-cyan">Settings</h2>
+            <div class="mb-6">
+                <label class="block text-xl font-semibold mb-3">Color Theme</label>
+                <div class="flex space-x-4">
+                    <button id="themeLight" onclick="setTheme('light')" class="w-1/2 p-3 rounded-lg text-gray-800 bg-gray-200 border-2 border-transparent transition duration-200 hover:border-primary-blue">
+                        ☀️ Light
+                    </button>
+                    <button id="themeDark" onclick="setTheme('dark')" class="w-1/2 p-3 rounded-lg text-white bg-gray-700 border-2 border-transparent transition duration-200 hover:border-secondary-cyan">
+                        🌙 Dark
+                    </button>
+                </div>
+            </div>
+            <div class="mb-6">
+                <label class="block text-xl font-semibold mb-3">Font Size</label>
+                <div class="flex space-x-2">
+                    <button id="fontSm" onclick="setFontSize('sm')" class="flex-1 p-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
+                        Small (A)
+                    </button>
+                    <button id="fontMd" onclick="setFontSize('md')" class="flex-1 p-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-base">
+                        Medium (A)
+                    </button>
+                    <button id="fontLg" onclick="setFontSize('lg')" class="flex-1 p-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-lg">
+                        Large (A)
+                    </button>
+                </div>
+            </div>
+            <button onclick="toggleSettingsModal()" 
+                class="w-full mt-4 p-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition duration-300">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <div id="gameContent" class="w-full min-h-screen p-4 sm:p-8 opacity-0 transition-opacity duration-500">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">
+                Type City Tycoon 🏙️
+            </h1>
+            <p class="text-lg text-primary-blue dark:text-secondary-cyan font-light">
+                Type pages to earn credits, build your town!
+            </p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-6 h-auto">
+            
+            <div class="lg:w-1/3 space-y-6">
+                
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl transition-colors duration-500">
+                    <h3 class="text-xl font-bold mb-3 text-red-600 dark:text-red-400 border-b pb-2">City View (Progress: <span id="townProgress">0%</span>)</h3>
+                    <div id="cityView" class="w-full h-32 rounded-lg relative flex items-end justify-center overflow-hidden transition-all duration-700 city-bg-0">
+                        <div id="cityIcons" class="flex space-x-4 p-2">
+                            <span id="starterIcon" class="text-3xl opacity-100 transition-opacity duration-500">🏡</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl transition-colors duration-500">
+                    <h3 class="text-2xl font-bold mb-4 text-primary-blue dark:text-secondary-cyan border-b pb-2">Your Empire</h3>
+                    <div class="space-y-3">
+                        <div class="text-xl flex justify-between">
+                            <span>💰 Credits:</span> <span id="creditsValue" class="font-mono text-emerald-500 font-bold">0</span> Cr
+                        </div>
+                        <div class="text-xl flex justify-between">
+                            <span>✅ Total Pages Typed:</span> <span id="pagesValue" class="font-mono font-bold">0</span>
+                        </div>
+                        <div class="text-xl flex justify-between">
+                            <span>📊 Total WPM:</span> <span id="wpmValue" class="font-mono text-secondary-cyan font-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tipBoxContainer" class="p-6 bg-indigo-50 dark:bg-indigo-900/50 rounded-xl shadow-2xl transition-colors duration-500">
+                    <h3 class="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b pb-2">Milestone Tips 💡</h3>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mb-3">Earn credits to unlock secret redeem codes!</p>
+                    <div id="revealedCodesList" class="space-y-2">
+                        <p class="text-lg text-gray-500 dark:text-gray-400">Next code at 25 Cr...</p>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-yellow-50 dark:bg-yellow-900/50 rounded-xl shadow-2xl transition-colors duration-500">
+                    <h3 class="text-2xl font-bold mb-4 text-yellow-600 dark:text-yellow-400 border-b pb-2">Redeem Codes 🎁</h3>
+                    <div class="flex space-x-2">
+                        <input type="text" id="codeRedeemInput" placeholder="Enter Code"
+                            class="flex-grow p-2 text-lg rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-yellow-300 dark:border-yellow-700 focus:outline-none"
+                            maxlength="20">
+                        <button onclick="redeemCode()"
+                            class="p-2 bg-yellow-500 text-white rounded-lg font-bold hover:bg-yellow-600 transition duration-300">
+                            Redeem
+                        </button>
+                    </div>
+                    <p id="codeStatus" class="mt-2 text-sm text-gray-700 dark:text-gray-300">Try your favorite codes!</p>
+                </div>
+            </div>
+
+            <div class="lg:w-2/3 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl transition-colors duration-500">
+                <h3 class="text-2xl font-bold mb-4 text-primary-blue dark:text-secondary-cyan border-b pb-2">Typing Lab (Page <span id="currentPage">1</span>)</h3>
+
+                <div id="textDisplay" class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg h-40 overflow-hidden text-lg mb-4 cursor-text"
+                    tabindex="0" onclick="document.getElementById('textInput').focus()">
+                </div>
+
+                <input type="text" id="textInput" placeholder="Click here to start typing..."
+                    class="w-full p-3 text-xl rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-2 border-primary-blue focus:border-secondary-cyan focus:outline-none shadow-md"
+                    autofocus oninput="checkInput(this.value)">
+
+                <div class="mt-4 flex justify-between text-lg font-semibold">
+                    <p>Errors: <span id="errorsCount" class="text-red-500">0</span></p>
+                    <p>Time: <span id="timerValue" class="text-green-500">0s</span></p>
+                    <p>Goal: <span id="goalCount" class="text-yellow-500">0 / 25 Chars</span></p>
+                </div>
+
+                <div id="gameStatus" class="mt-4 text-center font-bold text-xl text-primary-blue dark:text-secondary-cyan">
+                    Start typing to begin!
+                </div>
+
+                <button id="startButton" class="w-full mt-4 p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300 hidden">
+                    Start New Page
+                </button>
+
+                <div class="mt-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl shadow-inner transition-colors duration-500">
+                    <h3 class="text-2xl font-bold mb-4 text-red-600 dark:text-red-400 border-b pb-2">Build City Upgrades</h3>
+                    <div id="buildingsContainer" class="space-y-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400 border-t border-gray-300 dark:border-gray-700">
+        Developed by **JERUSH KEVIN (G7A)**
+    </footer>
+
+    <script>
+        // --- Game Data ---
+        const BUILDINGS = [
+            { id: 0, name: 'Small Housing Unit', cost: 10, effect: 'Max Credits +10', icon: '🏠', creditBonus: 10, wpmBonus: 0 },
+            { id: 1, name: 'Power Generator', cost: 25, effect: 'WPM Bonus +5', icon: '⚡', creditBonus: 0, wpmBonus: 5 },
+            { id: 2, name: 'Community Center', cost: 50, effect: 'Max Credits +25', icon: '🏛️', creditBonus: 25, wpmBonus: 0 },
+            { id: 3, name: 'Tech Research Lab', cost: 100, effect: 'WPM Bonus +10', icon: '🔬', creditBonus: 0, wpmBonus: 10 },
+            { id: 4, name: 'Grand Library', cost: 250, effect: 'Typing Text Length +50%', icon: '📚', creditBonus: 0, wpmBonus: 0 }, // Length increase handled separately
+        ];
+
+        const REDEEM_CODES = {
+            "CREATORKEVIN": 250,
+            "TEACHERVARUN": 150,
+            "TYPECITY": 100,
+            "FIRSTSTEP": 25,
+            "BUILDER": 50,
+            "TECHIE": 75,
+            "MASTERTYPIST": 125,
+            "PRESIDENT": 200,
+        };
+
+        // Codes revealed by the milestone box, in order
+        const SECRET_CODES_QUEUE = [
+            "FIRSTSTEP",
+            "BUILDER",
+            "TECHIE",
+            "MASTERTYPIST",
+            "PRESIDENT"
+        ];
+        // Milestone value
+        const MILESTONE_VALUE = 25;
+
+        const TYPING_PAGES = [
+            "The quick brown fox jumps over the lazy dog as the bright afternoon sun shines upon the green meadow. A journey of a thousand miles begins with a single step, demanding patience and persistent effort from the determined traveler. To be or not to be, that is the central philosophical question which has plagued human thought for centuries, inspiring great literature. Programming is fundamentally the art of telling another human being what one wants the computer to do, emphasizing clarity and efficient communication above all that. The best way to predict the future is not to wait idly, but to actively invent and create it through disciplined innovation.",
+            "The core concept of Type City Tycoon revolves around the fundamental idea that digital output can translate directly into tangible, virtual progress within the game world. Each accurately typed word represents a measurable contribution to the virtual economy, converting mental focus into valuable currency. The more fluent and accurate the player becomes on the keyboard, the faster their city will visibly grow and flourish. This powerful feedback loop motivates continuous practice, effectively transforming a mundane typing exercise into a rewarding strategic game where achieving high WPM is the critical key to unlocking the grandest structures.",
+            "In the deep, digital quiet of the preparation space, the cursor blinks steadily on the screen, patiently awaiting the very first input from the player. This profound silence is not emptiness, but the sound of pure possibility, of potential revenue and future infrastructure locked within the keyboard's keys. Every precise keystroke laid down by the player acts as a necessary brick in the foundation; every complete phrase typed correctly is instantly transformed into a completed wall or functional component of the new district. The player is not merely engaging in a typing test; they are actively funding virtual infrastructure, strategically investing in digital real estate, and transforming a barren plot into a vibrant, text-powered metropolis where efficiency is the primary form of capital, and speed is the very essence of survival.",
+            "A well-structured and engaging game always needs clear, achievable goals to maintain player motivation throughout the duration of the experience. The available city buildings provide both immediate visual rewards and significant mechanical benefits, strongly encouraging players to save their hard-earned credits for the next big, powerful upgrade. The Power Generator, for example, directly increases the reward multiplier applied to subsequent typing sessions, making future effort substantially more profitable for the player. This clear progression system ensures that the intensive effort put into the typing simulation is continuously reflected and rewarded in the rapid growth and improved functionality of the town management interface, leading toward the ultimate goal of city completion."
+        ];
+        
+        // --- Game State ---
+        const INITIAL_STATE = {
+            credits: 0,
+            pagesTyped: 0,
+            totalWPM: 0,
+            typedChars: 0,
+            errors: 0,
+            buildingStatus: BUILDINGS.map(b => ({ id: b.id, count: 0, built: false })),
+            rawText: '',
+            currentIndex: 0,
+            startTime: null,
+            maxTextLength: 25, // Initial text goal
+            typingActive: false,
+            redeemedCodes: {},
+            gameCompleted: false,
+            codesRevealedCount: 0,
+            lastCheckedCredit: 0,
+            currentTextGoal: 25, // dynamic value
+        };
+
+        let state = { ...INITIAL_STATE };
+        let settings = {
+            theme: localStorage.getItem('theme') || 'dark',
+            fontSize: localStorage.getItem('fontSize') || 'md'
+        };
+
+        let timerInterval; // To manage the game timer
+        let wpmBonus = 0; // Accumulated WPM bonus from buildings
+        let maxCreditsBonus = 0; // Accumulated Max Credits bonus from buildings
+
+        // --- DOM Elements ---
+        const D = id => document.getElementById(id);
+
+        const homepageEl = D('homepage');
+        const gameContentEl = D('gameContent');
+        const continueButtonEl = D('continueButton');
+        const saveStatusEl = D('saveStatus');
+
+        const settingsButtonEl = D('settingsButton');
+        const settingsModalEl = D('settingsModal');
+
+        const codeRedeemInputEl = D('codeRedeemInput');
+        const codeStatusEl = D('codeStatus');
+        const revealedCodesListEl = D('revealedCodesList');
+
+        const textDisplayEl = D('textDisplay');
+        const textInputEl = D('textInput');
+        const creditsValueEl = D('creditsValue');
+        const pagesValueEl = D('pagesValue');
+        const wpmValueEl = D('wpmValue');
+        const errorsCountEl = D('errorsCount');
+        const timerValueEl = D('timerValue');
+        const goalCountEl = D('goalCount');
+        const gameStatusEl = D('gameStatus');
+        const buildingsContainerEl = D('buildingsContainer');
+        const townProgressEl = D('townProgress');
+        const startButtonEl = D('startButton');
+        const currentPageEl = D('currentPage');
+        const cityViewEl = D('cityView');
+        const cityIconsEl = D('cityIcons');
+        const starterIconEl = D('starterIcon');
+
+        // Victory Elements
+        const victoryModalEl = D('victoryModal');
+        const presidencyAnimationEl = D('presidencyAnimation');
+        const nameFormEl = D('nameForm');
+        const presidentNameInputEl = D('presidentNameInput');
+        const certificateDisplayEl = D('certificateDisplay');
+        const certificateNameEl = D('certificateName');
+        const awardDateEl = D('awardDate');
+        const confettiContainerEl = D('confettiContainer');
+        const downloadCertificateButtonEl = D('downloadCertificateButton');
+
+        // --- Utility and Persistence ---
+        const saveState = () => {
+            localStorage.setItem('typeCityState', JSON.stringify(state));
+            localStorage.setItem('typeCitySettings', JSON.stringify(settings));
+        };
+
+        const loadState = () => {
+            const savedState = localStorage.getItem('typeCityState');
+            const savedSettings = localStorage.getItem('typeCitySettings');
+            
+            if (savedState) {
+                Object.assign(state, JSON.parse(savedState));
+                // Recalculate bonuses on load
+                applyBuildingEffects();
+                return true;
+            }
+            return false;
+        };
+
+        const applySettings = () => {
+            document.documentElement.className = settings.theme === 'dark' ? 'dark' : '';
+            document.body.className = `${settings.theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} min-h-screen font-sans p-4 sm:p-8 transition-colors duration-500 relative text-size-${settings.fontSize}`;
+
+            // Highlight active font size button
+            D('fontSm').classList.toggle('border-primary-blue', settings.fontSize === 'sm');
+            D('fontMd').classList.toggle('border-primary-blue', settings.fontSize === 'md');
+            D('fontLg').classList.toggle('border-primary-blue', settings.fontSize === 'lg');
+            
+            // Highlight active theme button
+            D('themeLight').classList.toggle('border-primary-blue', settings.theme === 'light');
+            D('themeDark').classList.toggle('border-secondary-cyan', settings.theme === 'dark');
+        };
+        
+        window.setTheme = (theme) => {
+            settings.theme = theme;
+            applySettings();
+            saveState();
+        };
+
+        window.setFontSize = (size) => {
+            settings.fontSize = size;
+            applySettings();
+            saveState();
+        };
+
+        window.toggleSettingsModal = () => {
+            const isOpen = !settingsModalEl.classList.contains('opacity-0');
+            const modalBody = settingsModalEl.querySelector('div');
+
+            if (isOpen) {
+                // Close modal
+                settingsModalEl.classList.add('opacity-0', 'pointer-events-none');
+                modalBody.classList.add('scale-95');
+                modalBody.classList.remove('scale-100');
+            } else {
+                // Open modal
+                settingsModalEl.classList.remove('opacity-0', 'pointer-events-none');
+                modalBody.classList.remove('scale-95');
+                modalBody.classList.add('scale-100');
+            }
+        };
+
+        // --- Game Setup and Reset ---
+        const initializeGame = () => {
+            applySettings();
+            const hasSave = loadState();
+
+            if (hasSave && !state.gameCompleted) {
+                D('continueButton').classList.remove('hidden');
+                D('saveStatus').textContent = `Progress found! ${state.pagesTyped} pages typed.`;
+            } else {
+                D('continueButton').classList.add('hidden');
+                D('saveStatus').textContent = `No saved game. Start fresh!`;
+            }
+            // Ensure buildings are rendered even if starting a new game
+            renderBuildings();
+            
+            // Fix: Add event listener for the Start New Page button
+            startButtonEl.addEventListener('click', startNewPage);
+        };
+
+        window.startGame = (continueGame) => {
+            if (!continueGame) {
+                state = { ...INITIAL_STATE };
+                // Re-initialize building status for new game
+                state.buildingStatus = BUILDINGS.map(b => ({ id: b.id, count: 0, built: false }));
+                applyBuildingEffects(); // Reset bonuses
+            }
+            
+            D('homepage').style.opacity = '0';
+            D('homepage').classList.add('pointer-events-none');
+            
+            setTimeout(() => {
+                D('homepage').classList.add('hidden');
+                D('gameContent').style.opacity = '1';
+                settingsButtonEl.classList.remove('hidden');
+                settingsButtonEl.style.opacity = '1';
+                
+                startNewPage();
+                renderUI();
+            }, 500);
+        };
+
+        const startNewPage = () => {
+            clearInterval(timerInterval);
+            state.pagesTyped++;
+            state.rawText = getPageText();
+            state.currentIndex = 0;
+            state.startTime = null;
+            state.errors = 0;
+            state.typingActive = false;
+            textInputEl.value = '';
+            textInputEl.disabled = false;
+            textInputEl.focus();
+            
+            gameStatusEl.textContent = 'Start typing to begin!';
+            gameStatusEl.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500', 'font-bold'); // Clear status coloring
+            startButtonEl.classList.add('hidden');
+            
+            renderUI();
+            renderTextDisplay();
+        };
+
+        const getPageText = () => {
+            // Ensure the text is at least the initial goal length
+            let pageText = TYPING_PAGES[state.pagesTyped % TYPING_PAGES.length];
+            let requiredLength = state.currentTextGoal;
+
+            // Simple loop to trim or extend the text to meet the current goal
+            if (pageText.length > requiredLength) {
+                return pageText.substring(0, requiredLength);
+            } else if (pageText.length < requiredLength) {
+                // If text is too short, repeat it or pad it (simple repetition here)
+                while (pageText.length < requiredLength) {
+                    pageText += ' ' + TYPING_PAGES[0]; 
+                }
+                return pageText.substring(0, requiredLength);
+            }
+            return pageText;
+        };
+
+        // --- Typing Logic ---
+        window.checkInput = (input) => {
+            if (state.gameCompleted) return;
+
+            // 1. Start timer on first character
+            if (!state.typingActive && input.length > 0) {
+                state.typingActive = true;
+                state.startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+                gameStatusEl.textContent = 'Typing...';
+                gameStatusEl.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500', 'font-bold'); // Clear any previous status
+            }
+            
+            // 2. Handle backspace 
+            if (input.length < state.currentIndex) {
+                // Backspace detected: Move cursor back, do not decrease errors
+                state.currentIndex = Math.max(0, state.currentIndex - 1);
+                renderTextDisplay();
+                return;
+            }
+
+            // 3. Process the last typed character
+            const lastChar = input.slice(-1);
+            const expectedChar = state.rawText[state.currentIndex];
+            
+            if (lastChar === expectedChar) {
+                // Correct character
+                state.currentIndex++;
+            } else {
+                // Incorrect character (Error Logic)
+                if (state.currentIndex < state.rawText.length) {
+                    state.errors++;
+                    // Advance cursor to keep the game moving
+                    state.currentIndex++;
+                }
+            }
+            
+            // 4. Update UI and Check for Completion
+            state.typedChars = state.currentIndex;
+            renderTextDisplay();
+            renderStats();
+
+            if (state.currentIndex >= state.rawText.length) {
+                pageComplete();
+            }
+        };
+
+        const pageComplete = () => {
+            clearInterval(timerInterval);
+            state.typingActive = false;
+            textInputEl.disabled = true;
+            
+            // Calculate WPM and Credits
+            const durationSeconds = (Date.now() - state.startTime) / 1000;
+            const words = state.rawText.length / 5;
+            let wpm = Math.round((words / durationSeconds) * 60);
+
+            // Apply WPM Bonus
+            wpm += wpmBonus;
+            state.totalWPM = wpm; // Use WPM including bonus
+            
+            // Calculate Credits based on WPM and Accuracy
+            const accuracy = 1 - (state.errors / state.rawText.length);
+            let baseCredit = Math.round(wpm * 0.5 * Math.max(0.5, accuracy)); // WPM is main factor
+            
+            let message = '';
+            gameStatusEl.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500'); // Clean up existing classes
+
+            // --- ERROR LOGIC: If errors exceed 5, the player gets 0 credits ---
+            if (state.errors > 5) {
+                baseCredit = 0;
+                message = `Page Complete! WPM: ${wpm}. 🚫 Too many errors (${state.errors})! Earned: 0 Cr`;
+                gameStatusEl.classList.add('text-red-500', 'font-bold');
+            } else {
+                message = `Page Complete! WPM: ${wpm}, Earned: ${baseCredit} Cr`;
+                gameStatusEl.classList.add('text-green-500', 'font-bold');
+            }
+            // --- END ERROR LOGIC ---
+            
+            const oldCredits = state.credits;
+            state.credits += baseCredit;
+            
+            // Clamp credits to the maximum allowed by buildings
+            const maxCredits = 100 + maxCreditsBonus;
+            state.credits = Math.min(state.credits, maxCredits);
+
+            // Display results
+            gameStatusEl.textContent = message;
+            startButtonEl.classList.remove('hidden');
+
+            checkCreditMilestone(oldCredits); // Check for code unlock
+            saveState();
+            renderStats();
+            renderBuildings(); // Update building affordances
+        };
+
+
+        // --- UI Rendering ---
+        const renderTextDisplay = () => {
+            let html = '';
+            const typedInput = textInputEl.value;
+            const rawText = state.rawText;
+            
+            for (let i = 0; i < rawText.length; i++) {
+                const char = rawText[i];
+                let className = '';
+
+                if (i < state.currentIndex) {
+                    // Typed characters
+                    if (i < typedInput.length) {
+                        className = (char === typedInput[i]) ? 'correct-char' : 'incorrect-char';
+                    } else {
+                        // This handles cases where user deletes input after typing ahead
+                        className = 'correct-char'; 
+                    }
+                } else if (i === state.currentIndex && state.typingActive) {
+                    // Current character
+                    className = 'current-char';
+                }
+
+                html += `<span class="${className}">${char}</span>`;
+            }
+            textDisplayEl.innerHTML = html;
+
+            // Scroll the text display to keep the current character visible
+            const currentCharSpan = textDisplayEl.querySelector('.current-char');
+            if (currentCharSpan) {
+                currentCharSpan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+
+        const renderStats = () => {
+            creditsValueEl.textContent = state.credits;
+            pagesValueEl.textContent = state.pagesTyped;
+            wpmValueEl.textContent = state.totalWPM;
+            errorsCountEl.textContent = state.errors;
+            timerValueEl.textContent = state.startTime ? `${Math.floor((Date.now() - state.startTime) / 1000)}s` : '0s';
+            
+            // Goal updates
+            state.currentTextGoal = INITIAL_STATE.maxTextLength;
+            if (state.buildingStatus[4].built) { // Grand Library (ID 4)
+                state.currentTextGoal = Math.round(INITIAL_STATE.maxTextLength * 1.5);
+            }
+            
+            goalCountEl.textContent = `${state.currentIndex} / ${state.rawText.length} Chars`;
+            currentPageEl.textContent = state.pagesTyped;
+        };
+        
+        const renderUI = () => {
+             renderStats();
+             renderTipBox();
+             renderBuildings();
+        }
+
+        const updateTimer = () => {
+            if (state.typingActive && state.startTime) {
+                renderStats();
+            }
+        };
+
+        // --- Building & Economy Logic ---
+        const applyBuildingEffects = () => {
+            wpmBonus = 0;
+            maxCreditsBonus = 0;
+            let cityLevel = 0;
+            let allBuilt = true;
+
+            state.buildingStatus.forEach(status => {
+                const building = BUILDINGS.find(b => b.id === status.id);
+                if (status.built) {
+                    wpmBonus += building.wpmBonus;
+                    maxCreditsBonus += building.creditBonus;
+                    cityLevel++;
+                } else {
+                    allBuilt = false;
+                }
+            });
+
+            // Update City View Visuals
+            let cityBgClass = 'city-bg-0';
+            if (cityLevel >= 4) {
+                cityBgClass = 'city-bg-3'; // All builds
+            } else if (cityLevel >= 2) {
+                cityBgClass = 'city-bg-2';
+            } else if (cityLevel >= 1) {
+                cityBgClass = 'city-bg-1';
+            }
+            cityViewEl.className = `w-full h-32 rounded-lg relative flex items-end justify-center overflow-hidden transition-all duration-700 ${cityBgClass}`;
+            
+            townProgressEl.textContent = `${Math.round((cityLevel / BUILDINGS.length) * 100)}%`;
+
+            if (allBuilt && !state.gameCompleted) {
+                showVictoryScreen();
+            }
+        };
+
+        const renderBuildings = () => {            
+            buildingsContainerEl.innerHTML = BUILDINGS.map((b, index) => {                
+                const status = state.buildingStatus[index];                
+                const canAfford = state.credits >= b.cost;
+                
+                return `                    
+                    <div class="flex justify-between items-center p-3 rounded-lg border-2 dark:border-gray-700 transition duration-300 ${status.built ? 'bg-green-100 dark:bg-green-900/50' : 'bg-gray-50 dark:bg-gray-700'}">                        
+                        <div>                            
+                            <p class="font-bold text-lg">${b.icon} ${b.name}</p>                            
+                            <p class="text-sm text-gray-600 dark:text-gray-300">${b.effect} (<span class="text-yellow-500">${b.cost} Cr</span>)</p>                        
+                        </div>                        
+                        <button onclick="buyBuilding(${b.id})" ${status.built || !canAfford ? 'disabled' : ''}                            
+                            class="p-2 bg-primary-blue text-white rounded-lg font-bold hover:bg-indigo-600 transition duration-300 disabled:opacity-50">                            
+                            ${status.built ? 'Built' : 'Build'}                        
+                        </button>                    
+                    </div>                
+                `;
+            }).join('');
+        };
+
+        window.buyBuilding = (id) => {
+            const buildingIndex = BUILDINGS.findIndex(b => b.id === id);
+            const building = BUILDINGS[buildingIndex];
+            const status = state.buildingStatus[buildingIndex];
+
+            if (status.built || state.credits < building.cost) {
+                // Not built or cannot afford
+                gameStatusEl.textContent = 'Cannot afford this upgrade!';
+                gameStatusEl.classList.add('text-red-500');
+                return;
+            }
+
+            state.credits -= building.cost;
+            status.built = true;
+            
+            gameStatusEl.textContent = `🎉 Built ${building.name}! Effect Applied!`;
+            gameStatusEl.classList.remove('text-red-500');
+            gameStatusEl.classList.add('text-green-500', 'animate-grow');
+            setTimeout(() => {
+                gameStatusEl.classList.remove('animate-grow');
+            }, 500);
+
+            applyBuildingEffects();
+            renderStats();
+            renderBuildings();
+            saveState();
+        };
+
+        window.redeemCode = () => {
+            const code = codeRedeemInputEl.value.trim().toUpperCase();
+            if (REDEEM_CODES[code] === undefined) {
+                codeStatusEl.textContent = 'Invalid Code!';
+                codeStatusEl.classList.add('text-red-500');
+                codeRedeemInputEl.classList.add('animate-shake');
+                setTimeout(() => {
+                    codeRedeemInputEl.classList.remove('animate-shake');
+                    codeStatusEl.classList.remove('text-red-500');
+                }, 500);
+                return;
+            }
+
+            if (state.redeemedCodes[code]) {
+                codeStatusEl.textContent = 'Code already redeemed!';
+                codeStatusEl.classList.add('text-red-500');
+                return;
+            }
+
+            const reward = REDEEM_CODES[code];
+            const oldCredits = state.credits;
+            state.credits += reward;
+
+            // Clamp credits to max
+            const maxCredits = 100 + maxCreditsBonus;
+            state.credits = Math.min(state.credits, maxCredits);
+
+            state.redeemedCodes[code] = true;
+            codeStatusEl.textContent = `🎉 Success! Received ${reward} Credits!`;
+            codeStatusEl.classList.add('text-green-500');
+
+            codeRedeemInputEl.value = '';
+            checkCreditMilestone(oldCredits);
+            renderStats();
+            renderBuildings();
+            saveState();
+        };
+        
+        // --- Victory Functions ---        
+        const createConfetti = () => {            
+            const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'];            
+            for (let i = 0; i < 50; i++) {                
+                const c = document.createElement('div');                
+                c.className = 'confetti animate-confetti';                
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];                
+                c.style.left = `${Math.random() * 100}vw`;                
+                c.style.animationDelay = `${Math.random() * 4}s`;                
+                confettiContainerEl.appendChild(c);            
+            }        
+        };
+        
+        const showVictoryScreen = () => {            
+            if (state.gameCompleted) return;            
+            state.gameCompleted = true;            
+            saveState();
+            
+            // 1. Pause game and hide main content            
+            state.typingActive = false;            
+            textInputEl.disabled = true;            
+            gameContentEl.style.opacity = '0.1';            
+            settingsButtonEl.style.opacity = '0';
+            
+            // 2. Show Modal and start animation            
+            victoryModalEl.classList.remove('opacity-0', 'pointer-events-none');            
+            victoryModalEl.querySelector('div').classList.remove('scale-95');            
+            victoryModalEl.querySelector('div').classList.add('scale-100');
+            
+            // Presidential Animation            
+            presidencyAnimationEl.textContent = '👑';            
+            presidencyAnimationEl.style.animation = 'none'; // Reset animation            
+            setTimeout(() => {                
+                presidencyAnimationEl.textContent = '🏛️';                
+                presidencyAnimationEl.style.transform = 'scale(1.5)';                
+                presidencyAnimationEl.classList.add('animate-grow');            
+            }, 500);
+            
+            // Start Confetti            
+            createConfetti();        
+        };
+        
+        window.issueCertificate = () => {            
+            const name = presidentNameInputEl.value.trim();            
+            if (name.length < 2) {                
+                alert("Please enter a valid name for your certificate.");                
+                return;            
+            }
+            
+            certificateNameEl.textContent = name;            
+            awardDateEl.textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            nameFormEl.classList.add('hidden');            
+            certificateDisplayEl.classList.remove('hidden');
+            
+            // Show the download button after the certificate is issued
+            downloadCertificateButtonEl.classList.remove('hidden');
+        };
+        
+        // --- NEW FUNCTION: Download Certificate ---
+        window.downloadCertificate = () => {
+            // Target the certificate element
+            const element = D('certificateDisplay');
+            const name = certificateNameEl.textContent.trim().replace(/\s/g, '_');
+
+            // Use html2canvas to render the HTML element to a canvas
+            html2canvas(element, { 
+                scale: 2, // Increase resolution for better quality
+                logging: false 
+            }).then(canvas => {
+                // Convert canvas to a data URL (PNG)
+                const image = canvas.toDataURL("image/png");
+
+                // Create a temporary link element
+                const a = document.createElement('a');
+                a.href = image;
+                a.download = `TypeCity_Certificate_${name}.png`; // Set filename
+
+                // Simulate click to trigger download
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        };
+
+        window.reloadGame = () => {            
+            // Clear save data and reload to start fresh            
+            localStorage.removeItem('typeCityState');            
+            window.location.reload();        
+        };
+        
+        // --- Tip Box Functions ---        
+        const renderTipBox = () => {            
+            let html = '';            
+            for (let i = 0; i < SECRET_CODES_QUEUE.length; i++) {                
+                const code = SECRET_CODES_QUEUE[i];                
+                const milestone = MILESTONE_VALUE * (i + 1);
+                
+                if (i < state.codesRevealedCount) {                    
+                    const reward = REDEEM_CODES[code];                    
+                    html += `                        
+                        <div class="flex justify-between items-center animate-reveal-pop p-2 bg-indigo-200 dark:bg-indigo-700 rounded-md border border-indigo-400">                            
+                            <span class="font-bold text-lg text-indigo-900 dark:text-indigo-200">🔑 ${code}</span>                            
+                            <span class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">+${reward} Cr</span>                        
+                        </div>                    
+                    `;                
+                } else {                    
+                    html += `                        
+                        <p class="text-lg text-gray-500 dark:text-gray-400">Next code at ${milestone} Cr...</p>                        
+                        <div class="h-8 bg-gray-200 dark:bg-gray-600 rounded-md animate-pulse"></div>                    
+                    `;                    
+                    break;                
+                }            
+            }            
+            revealedCodesListEl.innerHTML = html;        
+        };
+        
+        const checkCreditMilestone = (oldCredits) => {            
+            if (state.gameCompleted) return;            
+            const currentCredits = state.credits;            
+            const nextMilestoneIndex = state.codesRevealedCount;
+            
+            if (nextMilestoneIndex >= SECRET_CODES_QUEUE.length) {                
+                // All codes revealed                
+                return;            
+            }
+            
+            const nextMilestone = MILESTONE_VALUE * (nextMilestoneIndex + 1);
+            
+            // Check if we just crossed the milestone            
+            if (currentCredits >= nextMilestone && oldCredits < nextMilestone) {                
+                state.codesRevealedCount++;                
+                state.lastCheckedCredit = currentCredits;
+                
+                const revealedCode = SECRET_CODES_QUEUE[nextMilestoneIndex];                
+                gameStatusEl.textContent = `🚨 SECRET CODE UNLOCKED: ${revealedCode}! Check the Tip Box!`;                
+                gameStatusEl.classList.add('text-yellow-500', 'font-bold');                
+                setTimeout(() => {                    
+                    gameStatusEl.textContent = '';                    
+                    gameStatusEl.classList.remove('text-yellow-500', 'font-bold');                
+                }, 4000);            
+            }
+            
+            renderTipBox();            
+            saveState();        
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+</body>
+</html>
