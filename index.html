@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balsam Developers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind to enable dark mode based on the 'dark' class on the HTML tag
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#4F46E5', // Indigo 600
+                        'secondary-cyan': '#06B6D4', // Cyan 500
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    keyframes: {
+                        'pulse-sm': {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.02)' },
+                        }
+                    },
+                    animation: {
+                        'pulse-sm': 'pulse-sm 1.5s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Lucide icons (used for the sun/moon toggle) */
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen font-sans p-4 sm:p-8 no-scrollbar transition-colors duration-500">
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-10 relative">
+            <button id="themeToggle" class="absolute top-0 right-0 p-2 text-2xl rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 transition duration-300 shadow-lg">
+                </button>
+
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">
+                Balsam Developers
+            </h1>
+            <p class="text-lg text-primary-blue dark:text-secondary-cyan font-light">
+                A World of Learning Adventures, Built by Students.
+            </p>
+        </header>
+
+        <div class="mb-8 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+            <input type="text" id="linkSearch" placeholder="Filter links (e.g., 'Math' or 'History')"
+                   class="w-full sm:max-w-md p-3 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-primary-blue focus:border-secondary-cyan focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 shadow-xl transition duration-300 ease-in-out">
+            <div id="linkCount" class="text-primary-blue dark:text-secondary-cyan font-semibold text-sm bg-white dark:bg-gray-800 p-2 rounded-full px-4 shadow-inner transition-colors duration-500">
+                Displaying 1-10 of 40 Links
+            </div>
+        </div>
+
+        <div id="linksContainer" class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            </div>
+
+        <div id="paginationControls" class="flex flex-wrap justify-center items-center mt-8 space-x-2">
+            </div>
+    </div>
+
+    <script>
+        // Data for 40 learning/game links extracted from the "BalsamDevelopers" hub.
+        const linkData = [
+            // FIX: Corrected missing comma and duplicate ID 40
+            { id: 0, text: "The Typing Titan", url: "https://balsamdevelopers1.github.io/typing.html", category: "Business", icon: "💻" }, 
+            { id: 1, text: "GK Buddy", url: "https://balsamdevelopers1.github.io/gkbuddy.html", category: "GK", icon: "🌏" },
+            { id: 2, text: "Math Rush", url: "https://balsamdevelopers1.github.io/sq/mathrush.html", category: "Math", icon: "🔢" },
+            { id: 3, text: "Word Scramble I", url: "https://balsamdevelopers1.github.io/sq/wordscramble.html", category: "English", icon: "🔠" },
+            { id: 4, text: "Word Scramble II", url: "https://balsamdevelopers1.github.io/sq/wordscramble2.html", category: "English", icon: "🔠" },
+            { id: 5, text: "Kural Oviyam", url: "https://balsamdevelopers1.github.io/sq/kural.html", category: "Tamil", icon: "📜" },
+            { id: 6, text: "Flag-tastic", url: "https://balsamdevelopers1.github.io/sq/flag.html", category: "Geography", icon: "🚩" },
+            { id: 7, text: "Memory Mania", url: "https://balsamdevelopers1.github.io/sq/memory.html", category: "Logic", icon: "✨" },
+            { id: 8, text: "Capital Quest", url: "https://balsamdevelopers1.github.io/sq/capitals.html", category: "Geography", icon: "🌏" },
+            { id: 9, text: "Grammar Buddy", url: "https://grammarbuddy.github.io/index1.html", category: "English", icon: "📚" },
+            { id: 10, text: "Read Right", url: "https://grammarbuddy.github.io/readright.html", category: "English", icon: "📖" },
+            { id: 11, text: "Write Right", url: "https://balsamdevelopers1.github.io/sq/write.html", category: "English", icon: "✍️" },
+            { id: 12, text: "Tongue Tangler", url: "https://balsamdevelopers1.github.io/sq/tonguetwister.html", category: "English", icon: "👅" },
+            { id: 13, text: "Riddle trainer", url: "https://balsamdevelopers1.github.io/sq/riddles.html", category: "Logic", icon: "❓" },
+            { id: 14, text: "SkyLore", url: "https://balsamdevelopers1.github.io/sq/skylore.html", category: "Science", icon: "🌌" },
+            { id: 15, text: "Bingo Blitz", url: "https://balsamdevelopers1.github.io/sq/bingo.html", category: "Game", icon: "🎲" },
+            { id: 16, text: "FearLess Fire", url: "https://balsamdevelopers1.github.io/sq/fire.html", category: "Science", icon: "🔥" },
+            { id: 17, text: "Elemental Escape", url: "https://balsamdevelopers1.github.io/sq/escape.html", category: "Science", icon: "⚛️" },
+            { id: 18, text: "Ultimate Dino Quiz!", url: "https://balsamdevelopers1.github.io/sq/dino.html", category: "Science", icon: "🌋" },
+            { id: 19, text: "The Attic Lockup", url: "https://balsamdevelopers1.github.io/sq/attic.html", category: "Game", icon: "👻" },
+            { id: 20, text: "Mission Knowledge", url: "https://balsamdevelopers1.github.io/sq/social.html", category: "GK", icon: "📚" },
+            { id: 21, text: "Word Ascent!!!", url: "https://balsamdevelopers1.github.io/sq/ascent.html", category: "Language", icon: "⬆️" },
+            { id: 22, text: "Chronos Mission", url: "https://balsamdevelopers1.github.io/sq/chronos.html", category: "History", icon: "⏳" },
+            { id: 23, text: "Timeline Architect", url: "https://balsamdevelopers1.github.io/sq/timeline.html", category: "History", icon: "⏳" },
+            { id: 24, text: "Multi-Level Math Maze", url: "https://balsamdevelopers1.github.io/sq/maze.html", category: "Math", icon: "➕" },
+            { id: 25, text: "CalcQuest", url: "https://balsamdevelopers1.github.io/sq/mathmazev2.html", category: "Math", icon: "➗" },
+            { id: 26, text: "Word Search: IT Fundamentals", url: "https://balsamdevelopers1.github.io/sq/wordsearch.html", category: "Tech", icon: "🔍" },
+            { id: 27, text: "The Spectrum Solver", url: "https://balsamdevelopers1.github.io/sq/the.html", category: "Logic", icon: "💡" },
+            { id: 28, text: "Stickman Duels", url: "https://balsamdevelopers1.github.io/sq/stick1.html", category: "Game", icon: "⚔️" },
+            { id: 29, text: "Neon Pong Rebound", url: "https://balsamdevelopers1.github.io/sq/pong.html", category: "Game", icon: "👾" },
+            { id: 30, text: "Food Chain Survivor", url: "https://balsamdevelopers1.github.io/sq/food.html", category: "Science", icon: "🍔" },
+            { id: 31, text: "Arithmetic Blitz", url: "https://balsamdevelopers1.github.io/sq/solver.html", category: "Math", icon: "✖️" },
+            { id: 32, text: "Stickman Obby", url: "https://balsamdevelopers1.github.io/sq/obby.html", category: "Game", icon: "🏃" },
+            // --- New Dummy Links Added Below (now 33-39) ---
+            { id: 33, text: "Classroom Certificate Generator", url: "https://balsamdevelopers.github.io/certificategen.html", category: "Game", icon: "🎓" },
+            { id: 34, text: "New App: Coming soon", url: "#", category: "History", icon: "🏛️" },
+            { id: 35, text: "New App: Coming soon", url: "#", category: "Language", icon: "🗣️" },
+            { id: 36, text: "New App: Coming soon", url: "#", category: "Science", icon: "🔬" },
+            { id: 37, text: "New App: Coming soon", url: "#", category: "Math", icon: "✖️" },
+            { id: 38, text: "New App: Coming soon", url: "#", category: "Logic", icon: "🧠" },
+            { id: 39, text: "New App: Coming soon", url: "#", category: "Geography", icon: "🗺️" }
+            // The duplicate link with id: 40 has been removed.
+        ];
+
+        const container = document.getElementById('linksContainer');
+        const searchInput = document.getElementById('linkSearch');
+        const linkCountElement = document.getElementById('linkCount');
+        const paginationControls = document.getElementById('paginationControls');
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+
+        // --- Theme Toggle SVGs (Lucide) ---
+        // SVGs remain the same, but the surrounding button provides the yellow color
+        const sunIcon = `<svg class="icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m8-8h2M2 12h2m14.9-5.1l1.5-1.5M4.6 19.4l1.5-1.5m0-11.8l-1.5-1.5M19.4 4.6l-1.5 1.5"/></svg>`;
+        const moonIcon = `<svg class="icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>`;
+
+        // Function to set the theme and save preference
+        const applyTheme = (isDarkMode) => {
+            if (isDarkMode) {
+                htmlElement.classList.add('dark');
+                // Use Moon icon when in Dark Mode
+                themeToggle.innerHTML = moonIcon;
+                localStorage.setItem('theme', 'dark');
+            } else {
+                htmlElement.classList.remove('dark');
+                // Use Sun icon when in Light Mode
+                themeToggle.innerHTML = sunIcon;
+                localStorage.setItem('theme', 'light');
+            }
+        };
+
+        // Initialize theme (still defaults to dark mode if no preference is stored)
+        const initializeTheme = () => {
+            const storedTheme = localStorage.getItem('theme');
+            // Default to dark mode (true) as requested.
+            let isDarkMode = true;
+
+            if (storedTheme) {
+                // If a preference is stored, override the default and use it.
+                isDarkMode = storedTheme === 'dark';
+            }
+
+            applyTheme(isDarkMode);
+        };
+
+        // Toggle handler
+        themeToggle.addEventListener('click', () => {
+            const isDarkMode = htmlElement.classList.contains('dark');
+            applyTheme(!isDarkMode);
+        });
+
+        // --- End Theme Logic ---
+
+        // Pagination Constants and State
+        const LINKS_PER_PAGE = 10;
+        let currentPage = 1;
+        let currentFilteredLinks = linkData; // Start with all data
+
+        // Function to create the button HTML element
+        const createLinkElement = (link) => {
+            const colors = ['bg-purple-600', 'bg-emerald-600', 'bg-rose-600', 'bg-blue-600'];
+            const colorClass = colors[link.id % colors.length];
+
+            const html = `
+                <a href="${link.url}" target="_blank"
+                    class="link-button block p-5 rounded-xl shadow-2xl transition duration-300 ease-in-out
+                            transform hover:scale-[1.03] hover:shadow-primary-blue/50
+                            bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                             border border-gray-200 dark:border-gray-700 hover:dark:border-secondary-cyan hover:border-primary-blue
+                            relative overflow-hidden group"
+                    data-text="${link.text}"
+                    data-category="${link.category}"
+                    tabindex="0"
+                >
+                    <span class="absolute inset-0 bg-primary-blue opacity-0 group-hover:opacity-10 transition duration-300 pointer-events-none"></span>
+
+                    <div class="flex flex-col h-full justify-between">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-3xl">${link.icon}</span>
+                            <span class="text-xs font-medium ${colorClass} text-white px-2 py-0.5 rounded-full shadow-md">
+                                ${link.category}
+                            </span>
+                        </div>
+
+                        <p class="text-lg font-semibold leading-tight mt-auto">
+                            ${link.text}
+                        </p>
+
+                        <div class="w-0 h-0.5 bg-secondary-cyan mt-2 transition-all duration-300 group-hover:w-full"></div>
+                    </div>
+                </a>
+            `;
+            return html;
+        };
+
+        // Function to change the current page
+        const changePage = (page) => {
+            const totalPages = Math.ceil(currentFilteredLinks.length / LINKS_PER_PAGE);
+
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderLinks(currentFilteredLinks);
+                // Optional: Scroll to the top of the grid container after changing page to avoid user confusion
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+        window.changePage = changePage; // Make available globally for inline onclick
+
+        // Function to render the pagination controls
+        const renderPagination = (totalLinks, totalPages) => {
+            // Hide controls if there is only one page or no links
+            if (totalPages <= 1 || totalLinks === 0) {
+                paginationControls.innerHTML = '';
+                return;
+            }
+
+            let paginationHtml = '';
+
+            // 1. Previous Button
+            const prevDisabled = currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-blue';
+            // Adjusted classes for theme compatibility
+            paginationHtml += `
+                <button onclick="changePage(${currentPage - 1})"
+                         ${currentPage === 1 ? 'disabled' : ''}
+                        class="px-4 py-2 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 transition duration-200 ${prevDisabled} min-w-[75px] border border-gray-200 dark:border-gray-700">
+                    Previous
+                </button>
+            `;
+
+            // 2. Numbered Buttons (Show max 5 pages centered around current page for clean look)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            // Adjust start/end to ensure 5 buttons are shown if possible
+            // Note: Since totalPages is max 4 (40 links / 10 per page), this logic works fine.
+            if (currentPage <= 3) {
+                endPage = Math.min(totalPages, 5);
+            } else if (currentPage > totalPages - 2) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'bg-secondary-cyan text-gray-900 dark:text-gray-900 font-bold shadow-lg' : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700';
+                 // Adjusted classes for theme compatibility
+                paginationHtml += `
+                    <button onclick="changePage(${i})"
+                            class="px-3 py-2 rounded-lg text-gray-900 dark:text-white ${activeClass} transition duration-200 border border-gray-200 dark:border-gray-700">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            // 3. Next Button
+            const nextDisabled = currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-blue';
+             // Adjusted classes for theme compatibility
+            paginationHtml += `
+                <button onclick="changePage(${currentPage + 1})"
+                         ${currentPage === totalPages ? 'disabled' : ''}
+                        class="px-4 py-2 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800 transition duration-200 ${nextDisabled} min-w-[75px] border border-gray-200 dark:border-gray-700">
+                    Next
+                </button>
+            `;
+
+            paginationControls.innerHTML = paginationHtml;
+        };
+
+        // Function to render the links
+        const renderLinks = (data) => {
+            const totalLinks = data.length;
+            const totalPages = Math.ceil(totalLinks / LINKS_PER_PAGE);
+
+            // Calculate start and end indices for the current page
+            const startIndex = (currentPage - 1) * LINKS_PER_PAGE;
+            const endIndex = startIndex + LINKS_PER_PAGE;
+            const linksToDisplay = data.slice(startIndex, endIndex);
+
+            // Render the links
+            container.innerHTML = linksToDisplay.map(createLinkElement).join('');
+
+            // Update the counter
+            const displayStart = totalLinks === 0 ? 0 : startIndex + 1;
+            const displayEnd = Math.min(endIndex, totalLinks);
+            linkCountElement.textContent = `Displaying ${displayStart}-${displayEnd} of ${totalLinks} Links`;
+
+            // Render pagination controls
+            renderPagination(totalLinks, totalPages);
+        };
+
+        // Function to handle filtering
+        const handleSearch = (event) => {
+            const query = event.target.value.toLowerCase().trim();
+
+            currentFilteredLinks = linkData.filter(link => {
+                const textMatch = link.text.toLowerCase().includes(query);
+                const categoryMatch = link.category.toLowerCase().includes(query);
+                return textMatch || categoryMatch;
+            });
+
+            // Reset to the first page when a new filter is applied
+            currentPage = 1;
+            renderLinks(currentFilteredLinks);
+        };
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTheme();
+            // Initial render
+            renderLinks(currentFilteredLinks);
+            searchInput.addEventListener('input', handleSearch);
+        });
+    </script>
+</body>
+</html>
