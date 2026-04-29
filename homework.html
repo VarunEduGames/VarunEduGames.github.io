@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher's Homework Tool</title>
+    <style>
+        :root { --whatsapp: #25D366; --dark-green: #075E54; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: var(--dark-green); text-align: center; margin-bottom: 20px; margin-top: 0; }
+        .input-group { margin-bottom: 15px; }
+        label { font-weight: 600; display: block; margin-bottom: 5px; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        .error-border { border: 2px solid #ff4d4d !important; }
+
+        .subject-block { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--whatsapp); position: relative; }
+        .subject-block input { margin-bottom: 8px; }
+        
+        .btn-remove { position: absolute; top: 8px; right: 8px; background: #ffebee; border: none; color: #ff4d4d; cursor: pointer; font-size: 18px; border-radius: 50%; width: 24px; height: 24px; line-height: 20px; text-align: center; font-weight: bold; }
+        
+        .btn { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; width: 100%; transition: 0.2s; outline: none; }
+        .btn-add { background: #e8f5e9; color: var(--dark-green); padding: 10px; margin-bottom: 20px; border: 1px dashed var(--dark-green); }
+        .btn-add:hover { background: #c8e6c9; }
+        .btn-generate { background: var(--whatsapp); color: white; padding: 15px; font-size: 16px; margin-top: 10px; }
+        .btn-generate:hover { background: #128C7E; }
+        
+        #output-section { margin-top: 25px; display: none; }
+        #preview { background: #e3f2fd; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-size: 15px; border: 1px solid #bbdefb; color: #333; line-height: 1.5; }
+        .btn-copy { background: #007bff; color: white; padding: 12px; margin-top: 10px; }
+        .btn-copy:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🏫 Homework Generator</h2>
+    
+    <div class="input-group">
+        <label>Select Class</label>
+        <select id="className">
+            <option value="">--Select Class--</option>
+            <option value="Class 1">Class 1</option>
+            <option value="Class 2">Class 2</option>
+            <option value="Class 3">Class 3</option>
+            <option value="Class 4">Class 4</option>
+            <option value="Class 5">Class 5</option>
+            <option value="Class 6">Class 6</option>
+            <option value="Class 7">Class 7</option>
+            <option value="Class 8">Class 8</option>
+            <option value="Class 9">Class 9</option>
+            <option value="Class 10">Class 10</option>
+            <option value="Class 11 (Sci)">Class 11 (Sci)</option>
+            <option value="Class 11 (Commerce)">Class 11 (Commerce)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>Date</label>
+        <input type="date" id="hwDate">
+    </div>
+
+    <div id="subjectList">
+        <label>Subjects & Tasks</label>
+        <div class="subject-block">
+            <input type="text" class="sub-name" placeholder="Subject (e.g. Science)">
+            <input type="text" class="sub-task" placeholder="Task (e.g. Written Q1 or Revise Ch 2)">
+        </div>
+    </div>
+
+    <button class="btn btn-add" onclick="addSubjectRow()">+ Add Another Subject</button>
+    <button class="btn btn-generate" onclick="buildMessage()">Generate WhatsApp Message</button>
+
+    <div id="output-section">
+        <label>Preview & Copy:</label>
+        <div id="preview"></div>
+        <button class="btn btn-copy" onclick="copyContent()">📋 Copy to Clipboard</button>
+    </div>
+</div>
+
+<script>
+    // Set current date on initial load
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('hwDate').value = `${yyyy}-${mm}-${dd}`;
+
+    function addSubjectRow() {
+        const container = document.getElementById('subjectList');
+        const div = document.createElement('div');
+        div.className = 'subject-block';
+        div.innerHTML = `
+            <button class="btn-remove" title="Remove" onclick="this.parentElement.remove()">×</button>
+            <input type="text" class="sub-name" placeholder="Subject">
+            <input type="text" class="sub-task" placeholder="Enter homework details...">
+        `;
+        container.appendChild(div);
+    }
+
+    function formatDateDisplay(dateString) {
+        if (!dateString) return "";
+        // Split manualy to avoid timezone shifting issues
+        const parts = dateString.split('-');
+        const year = parts[0];
+        const monthIndex = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"];
+        
+        return `${day} ${monthNames[monthIndex]} ${year}`;
+    }
+
+    function formatSubject(text) {
+        const cleanText = text.trim();
+        if (cleanText.toLowerCase() === 'evs') return 'EVS';
+        return cleanText.charAt(0).toUpperCase() + cleanText.slice(1).toLowerCase();
+    }
+
+    function buildMessage() {
+        const classDropdown = document.getElementById('className');
+        const className = classDropdown.value;
+        const dateInput = document.getElementById('hwDate').value;
+        const subNames = document.getElementsByClassName('sub-name');
+        const subTasks = document.getElementsByClassName('sub-task');
+        
+        // Validation for Class selection
+        if (className === "") {
+            alert("⚠️ Please select a Class before generating the message.");
+            classDropdown.classList.add('error-border');
+            classDropdown.focus();
+            return;
+        } else {
+            classDropdown.classList.remove('error-border');
+        }
+
+        const formattedDate = formatDateDisplay(dateInput);
+
+        let msg = `*Today's Homework*\n`;
+        msg += `*--------------------------*\n`;
+        msg += `*Class:* ${className}\n`;
+        msg += `*Date:* ${formattedDate}\n`;
+        msg += `*--------------------------*\n\n`;
+
+        let taskCount = 0;
+        for (let i = 0; i < subNames.length; i++) {
+            let name = subNames[i].value.trim();
+            let task = subTasks[i].value.trim();
+            if (name !== "" && task !== "") {
+                msg += `📖 *${formatSubject(name)}*: ${task}\n\n`;
+                taskCount++;
+            }
+        }
+
+        if (taskCount === 0) {
+            msg += `✨ No specific homework today. Enjoy your evening!\n\n`;
+        }
+
+        // Closing Statement Option 8
+        msg += `_Please ensure all assigned work is completed and ready for submission._ 🙏`;
+
+        document.getElementById('preview').innerText = msg;
+        document.getElementById('output-section').style.display = 'block';
+        
+        // Smooth scroll to results
+        setTimeout(() => {
+            document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    }
+
+    function copyContent() {
+        const text = document.getElementById('preview').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Copied! Now open WhatsApp and paste it into your group.");
+        });
+    }
+</script>
+
+</body>
+</html>
