@@ -1,0 +1,409 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Knowledge: Social World</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'adventure-bg': '#1e293b', // Slate 800
+                        'adventure-primary': '#fcd34d', // Amber 300
+                        'adventure-secondary': '#10b981', // Emerald 500
+                        'adventure-text': '#f8fafc', // Slate 50
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        /* Custom style for the connecting line aesthetic */
+        .match-item {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+        }
+        .match-item.selected {
+            outline: 3px solid #fcd34d; /* adventure-primary */
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(252, 211, 77, 0.7);
+        }
+        .match-item.matched {
+            background-color: #10b981; /* adventure-secondary */
+            color: #1e293b;
+            cursor: default;
+            box-shadow: none;
+            pointer-events: none; /* Disable clicking after match */
+        }
+        .match-item:hover:not(.selected):not(.matched) {
+            background-color: #334155; /* Slate 700 on hover */
+        }
+        .match-item.error {
+            background-color: #ef4444; /* Red 500 */
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-adventure-bg min-h-screen p-4 flex flex-col items-center justify-center font-sans">
+
+    <div id="app-container" class="w-full max-w-5xl bg-slate-700/50 backdrop-blur-sm p-6 sm:p-10 rounded-xl shadow-2xl border border-adventure-primary/30">
+        <div id="start-page" class="text-center py-16 sm:py-24">
+            <h1 class="text-6xl sm:text-7xl font-extrabold text-adventure-primary mb-4">
+                Mission Knowledge
+            </h1>
+            <p class="text-xl sm:text-2xl text-adventure-secondary font-semibold italic mb-12">
+                "The biggest adventure you can take is to live the life of your dreams."
+            </p>
+
+            <button
+                onclick="startGame()"
+                class="px-10 py-4 bg-adventure-secondary text-adventure-bg text-xl font-bold rounded-xl hover:bg-emerald-600 transition duration-300 shadow-2xl transform hover:scale-105 border-b-4 border-emerald-800">
+                Start Social Mission
+            </button>
+            <p class="text-sm text-slate-400 mt-8">Social World: Timeline Challenge (4-Question Set)</p>
+        </div>
+
+        <div id="game-page" class="hidden">
+            <header class="text-center mb-8">
+                <h2 class="text-3xl sm:text-4xl font-bold text-adventure-primary">Social World Challenge</h2>
+                <p class="text-sm text-slate-400 mt-1">Connect the Historical Period on the left with its Key Event on the right.</p>
+            </header>
+
+            <div id="game-container" class="space-y-6">
+                <div id="score-board" class="flex justify-between items-center text-adventure-text text-lg font-semibold">
+                    <span id="match-count">Matches: 0 / 4</span>
+                    <div id="message-box" class="text-lg font-bold text-center h-6"></div>
+                </div>
+
+                <div id="match-grid" class="grid grid-cols-2 gap-4 md:gap-8">
+                    <div id="periods-column" class="space-y-4">
+                        <h3 class="text-xl font-semibold text-adventure-primary border-b pb-2 border-adventure-primary/50">Historical Periods</h3>
+                        </div>
+                    <div id="events-column" class="space-y-4">
+                        <h3 class="text-xl font-semibold text-adventure-secondary border-b pb-2 border-adventure-secondary/50">Key Events</h3>
+                        </div>
+                </div>
+            </div>
+
+            <div id="victory-modal" class="hidden fixed inset-0 bg-adventure-bg bg-opacity-95 flex items-center justify-center z-50 p-4">
+                <div class="bg-slate-800 p-8 rounded-xl shadow-2xl text-center border-4 border-adventure-secondary">
+                    <p class="text-4xl font-bold text-adventure-secondary mb-4">SET COMPLETE!</p>
+                    <p class="text-xl text-adventure-text mb-6">You successfully mastered this Timeline Challenge Set! Ready for the next one?</p>
+                    <button onclick="startGame()" class="px-6 py-3 bg-adventure-primary text-adventure-bg font-bold rounded-lg hover:bg-yellow-300 transition duration-200 shadow-md">
+                        Start Next Set (New 4 Questions)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-8 text-center text-slate-400 text-sm">
+        Developed By **Sukesh (G7A)**
+    </footer>
+    <script>
+        // Define the size of each challenge set
+        const SET_SIZE = 4;
+
+        // --- Game Data (Full Pool) ---
+        const GAME_DATA = [
+            // --- Original 3 Pairs ---
+            { id: 1, type: 'period', text: "Ancient Greece", matchId: 4, tooltip: "c. 800 BCE - 146 BCE" },
+            { id: 2, type: 'period', text: "The Renaissance", matchId: 5, tooltip: "c. 14th - 16th Century" },
+            { id: 3, type: 'period', text: "Industrial Revolution", matchId: 6, tooltip: "c. 18th - 19th Century" },
+
+            { id: 4, type: 'event', text: "Development of Democracy", matchId: 1 },
+            { id: 5, type: 'event', text: "Leonardo da Vinci's Works", matchId: 2 },
+            { id: 6, type: 'event', text: "Invention of the Steam Engine", matchId: 3 },
+
+            // --- 20 New Pairs Added ---
+            { id: 7, type: 'period', text: "Middle Ages", matchId: 8, tooltip: "c. 5th - 15th Century CE" },
+            { id: 8, type: 'event', text: "Construction of Gothic Cathedrals", matchId: 7 },
+
+            { id: 9, type: 'period', text: "Age of Exploration", matchId: 10, tooltip: "c. 15th - 17th Century" },
+            { id: 10, type: 'event', text: "Christopher Columbus reaches the Americas", matchId: 9 },
+
+            { id: 11, type: 'period', text: "The Enlightenment", matchId: 12, tooltip: "c. 18th Century" },
+            { id: 12, type: 'event', text: "Publication of the Encyclopédie", matchId: 11 },
+
+            { id: 13, type: 'period', text: "American Revolution", matchId: 14, tooltip: "1765 - 1783" },
+            { id: 14, type: 'event', text: "Signing of the Declaration of Independence", matchId: 13 },
+
+            { id: 15, type: 'period', text: "French Revolution", matchId: 16, tooltip: "1789 - 1799" },
+            { id: 16, type: 'event', text: "Storming of the Bastille", matchId: 15 },
+
+            { id: 17, type: 'period', text: "World War I", matchId: 18, tooltip: "1914 - 1918" },
+            { id: 18, type: 'event', text: "Assassination of Archduke Franz Ferdinand", matchId: 17 },
+
+            { id: 19, type: 'period', text: "Cold War", matchId: 20, tooltip: "1947 - 1991" },
+            { id: 20, type: 'event', text: "The Cuban Missile Crisis", matchId: 19 },
+
+            { id: 21, type: 'period', text: "Meiji Restoration", matchId: 22, tooltip: "1868 - 1912" },
+            { id: 22, type: 'event', text: "End of the Shogunate in Japan", matchId: 21 },
+
+            { id: 23, type: 'period', text: "Roman Empire", matchId: 24, tooltip: "27 BCE - 476 CE (West)" },
+            { id: 24, type: 'event', text: "Pax Romana (Roman Peace)", matchId: 23 },
+
+            { id: 25, type: 'period', text: "Scientific Revolution", matchId: 26, tooltip: "c. 16th - 18th Century" },
+            { id: 26, type: 'event', text: "Galileo confirms the heliocentric model", matchId: 25 },
+
+            { id: 27, type: 'period', text: "Bronze Age", matchId: 28, tooltip: "c. 3300 - 1200 BCE" },
+            { id: 28, type: 'event', text: "Widespread use of copper and tin alloys", matchId: 27 },
+
+            { id: 29, type: 'period', text: "Prohibition Era (US)", matchId: 30, tooltip: "1920 - 1933" },
+            { id: 30, type: 'event', text: "18th Amendment bans alcohol sales", matchId: 29 },
+
+            { id: 31, type: 'period', text: "Byzantine Empire", matchId: 32, tooltip: "330 - 1453 CE" },
+            { id: 32, type: 'event', text: "Construction of the Hagia Sophia", matchId: 31 },
+
+            { id: 33, type: 'period', text: "Cultural Revolution (China)", matchId: 34, tooltip: "1966 - 1976" },
+            { id: 34, type: 'event', text: "Mao Zedong initiates the Red Guards", matchId: 33 },
+
+            { id: 35, type: 'period', text: "Space Race", matchId: 36, tooltip: "1957 - 1975" },
+            { id: 36, type: 'event', text: "Launch of Sputnik 1", matchId: 35 },
+
+            { id: 37, type: 'period', text: "Protestant Reformation", matchId: 38, tooltip: "16th Century" },
+            { id: 38, type: 'event', text: "Martin Luther posts the 95 Theses", matchId: 37 },
+
+            { id: 39, type: 'period', text: "Post-Classical Maya", matchId: 40, tooltip: "1000 - 1697 CE" },
+            { id: 40, type: 'event', text: "Rise of the city-state of Chichen Itza", matchId: 39 },
+
+            { id: 41, type: 'period', text: "Vietnam War", matchId: 42, tooltip: "1955 - 1975" },
+            { id: 42, type: 'event', text: "The Tet Offensive", matchId: 41 },
+
+            { id: 43, type: 'period', text: "The Great Depression", matchId: 44, tooltip: "1929 - 1939" },
+            { id: 44, type: 'event', text: "Stock Market Crash of 1929", matchId: 43 },
+
+            { id: 45, type: 'period', text: "Iron Age", matchId: 46, tooltip: "c. 1200 BCE - 600 BCE" },
+            { id: 46, type: 'event', text: "Widespread adoption of iron metallurgy", matchId: 45 },
+        ];
+
+        // --- Game State ---
+        let selectedItem = null; // Stores the currently selected {id, type} object
+        let matches = 0;
+        let totalMatches = 0; // Will be set dynamically to SET_SIZE (4)
+        let currentSetData = []; // Holds the 4 random pairs for the current game set
+
+        // --- DOM Elements ---
+        const startPage = document.getElementById('start-page');
+        const gamePage = document.getElementById('game-page');
+        const periodsColumn = document.getElementById('periods-column');
+        const eventsColumn = document.getElementById('events-column');
+        const matchCountEl = document.getElementById('match-count');
+        const messageBox = document.getElementById('message-box');
+        const victoryModal = document.getElementById('victory-modal');
+
+        // Helper function to show a temporary message
+        function showMessage(text, isError = false) {
+            messageBox.textContent = text;
+            messageBox.className = 'text-lg font-bold text-center h-6 ' + (isError ? 'text-red-400' : 'text-adventure-secondary');
+
+            clearTimeout(window.messageTimeout);
+            window.messageTimeout = setTimeout(() => {
+                messageBox.textContent = '';
+                messageBox.className = 'text-lg font-bold text-center h-6';
+            }, 1500);
+        }
+
+        // --- Core Game Logic ---
+
+        /**
+         * Switches view from start page to game page and initializes the match set.
+         */
+        window.startGame = function() {
+            // 1. Switch the view
+            startPage.classList.add('hidden');
+            gamePage.classList.remove('hidden');
+
+            // 2. Initialize the game state (same as old initializeGame)
+            initializeGame();
+        }
+
+        /**
+         * Resets match state, selects a new random set, and renders the items.
+         */
+        function initializeGame() {
+            matches = 0;
+            selectedItem = null;
+            victoryModal.classList.add('hidden');
+
+            // --- SET SELECTION LOGIC: Select 4 random pairs ---
+            const allPeriods = GAME_DATA.filter(item => item.type === 'period');
+            const shuffledPeriods = shuffle([...allPeriods]); // Clone and shuffle the full pool
+
+            // Select only the first SET_SIZE (4) periods
+            const selectedPeriods = shuffledPeriods.slice(0, SET_SIZE);
+            const selectedPeriodIds = selectedPeriods.map(p => p.id);
+
+            // Find the corresponding events from the full list
+            const selectedEvents = GAME_DATA.filter(item => item.type === 'event' && selectedPeriodIds.includes(item.matchId));
+
+            currentSetData = [...selectedPeriods, ...selectedEvents];
+            totalMatches = selectedPeriods.length; // Should always be 4
+            // --- END SET SELECTION LOGIC ---
+
+            updateScore();
+            renderItems();
+        }
+
+        // 1. Render the game items (using the limited currentSetData)
+        function renderItems() {
+            periodsColumn.innerHTML = '<h3 class="text-xl font-semibold text-adventure-primary border-b pb-2 border-adventure-primary/50">Historical Periods</h3>';
+            eventsColumn.innerHTML = '<h3 class="text-xl font-semibold text-adventure-secondary border-b pb-2 border-adventure-secondary/50">Key Events</h3>';
+
+            // Shuffle events and get periods from the current set data
+            const events = shuffle(currentSetData.filter(item => item.type === 'event'));
+            const periods = currentSetData.filter(item => item.type === 'period');
+
+            periods.forEach(item => {
+                periodsColumn.appendChild(createItemElement(item));
+            });
+
+            events.forEach(item => {
+                eventsColumn.appendChild(createItemElement(item));
+            });
+        }
+
+        // Fisher-Yates shuffle algorithm
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            // While there remain elements to shuffle.
+            while (currentIndex != 0) {
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                // And swap it with the current element.
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // Creates a clickable item card
+        function createItemElement(item) {
+            const div = document.createElement('div');
+            div.id = `item-${item.id}`;
+            div.className = `match-item p-4 rounded-lg bg-slate-800 text-adventure-text shadow-lg transform transition-all duration-200 hover:shadow-xl`;
+            div.textContent = item.text;
+
+            // Add tooltip for periods
+            if (item.type === 'period' && item.tooltip) {
+                div.title = item.tooltip;
+                const span = document.createElement('span');
+                span.className = 'block text-xs text-slate-400 mt-1';
+                span.textContent = item.tooltip;
+                div.appendChild(span);
+            }
+
+            div.addEventListener('click', () => handleItemClick(item));
+            return div;
+        }
+
+        // 2. Handle click logic
+        function handleItemClick(item) {
+            const element = document.getElementById(`item-${item.id}`);
+
+            // If the item is already matched, ignore the click
+            if (element.classList.contains('matched')) return;
+
+            // --- Selection Logic ---
+            if (item.type === 'period') {
+                if (selectedItem && selectedItem.element) {
+                    selectedItem.element.classList.remove('selected');
+                }
+
+                // Select the new period item
+                selectedItem = { ...item, element: element };
+                element.classList.add('selected');
+                showMessage(`Selected: ${item.text}`, false);
+            }
+
+            // --- Matching Logic ---
+            else if (item.type === 'event') {
+                if (!selectedItem || selectedItem.type !== 'period') {
+                    showMessage("Select a Historical Period first!", true);
+                    return;
+                }
+
+                // Check for match
+                if (item.matchId === selectedItem.id) {
+                    // Match found!
+                    handleMatch(selectedItem, item);
+                } else {
+                    // Incorrect match
+                    handleError(selectedItem.element, element);
+                    showMessage("Incorrect! Try again.", true);
+                }
+            }
+        }
+
+        // 3. Match found!
+        function handleMatch(period, event) {
+            matches++;
+            updateScore();
+
+            // Apply 'matched' styling and disable future clicks
+            period.element.classList.remove('selected');
+            period.element.classList.add('matched');
+
+            const eventElement = document.getElementById(`item-${event.id}`);
+            eventElement.classList.add('matched');
+
+            selectedItem = null; // Clear selection
+
+            showMessage("Correct Match!", false);
+
+            if (matches === totalMatches) {
+                setTimeout(showVictory, 500);
+            }
+        }
+
+        // 4. Handle incorrect match (temporary error highlight)
+        function handleError(periodElement, eventElement) {
+            // Apply error styling temporarily
+            periodElement.classList.add('error');
+            eventElement.classList.add('error');
+
+            // Remove error styling after animation
+            setTimeout(() => {
+                periodElement.classList.remove('error');
+                periodElement.classList.remove('selected'); // Also remove selected status on error
+                eventElement.classList.remove('error');
+            }, 500);
+
+            selectedItem = null; // Force user to re-select a period after an error
+        }
+
+        // 5. Update the score display
+        function updateScore() {
+            // Score is updated based on the fixed SET_SIZE
+            matchCountEl.textContent = `Matches: ${matches} / ${totalMatches}`;
+        }
+
+        // 6. Show victory screen
+        function showVictory() {
+            victoryModal.classList.remove('hidden');
+        }
+
+        // 7. Initial function to show the start page when the script loads
+        window.onload = function() {
+            // Ensure only the start page is visible initially
+            startPage.classList.remove('hidden');
+            gamePage.classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
