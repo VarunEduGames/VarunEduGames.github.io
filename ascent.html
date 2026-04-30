@@ -1,0 +1,705 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Ascent!!!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+    </style>
+
+    <script>
+        // Custom Tailwind Configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5',
+                        'secondary': '#10b981',
+                        'match-bg': '#e0f2f1',
+                        'error-bg': '#fee2e2',
+                    }
+                }
+            }
+        }
+    </script>
+
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="w-full max-w-4xl p-6 bg-white shadow-xl rounded-xl">
+        <h1 class="text-3xl font-bold text-center text-primary mb-4">
+            Word Ascent!!!
+        </h1>
+        <p class="text-center text-gray-600 mb-6">
+            Match the words on the left with their correct Synonym or Antonym on the right! (5 pairs per set)
+        </p>
+
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2 text-center">Select Difficulty:</h3>
+            <div class="flex space-x-3 justify-center">
+                <button id="level-beginner" data-level="beginner" class="level-btn px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Foundational Words
+                </button>
+                <button id="level-intermediate" data-level="intermediate" class="level-btn px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Challenger
+                </button>
+                <button id="level-advanced" data-level="advanced" class="level-btn px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Master Linguist
+                </button>
+            </div>
+        </div>
+
+        <div class="border-t pt-4 border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+            <div class="flex space-x-4 justify-center">
+                <button id="synonym-mode" data-mode="synonyms" class="mode-btn px-6 py-2 rounded-lg font-medium shadow-md transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Synonyms
+                </button>
+                <button id="antonym-mode" data-mode="antonyms" class="mode-btn px-6 py-2 rounded-lg font-medium shadow-md transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    Antonyms
+                </button>
+            </div>
+            
+            <div class="flex items-center space-x-6 text-lg font-semibold">
+                <div class="text-gray-700">Score: <span id="score" class="text-primary">0</span></div>
+                <button id="start-btn" class="px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-200">
+                    Start Game
+                </button>
+            </div>
+        </div>
+
+        <div id="game-board" class="grid grid-cols-2 gap-4 lg:gap-8 min-h-[250px] items-center">
+            </div>
+
+        <div id="feedback-toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-2xl font-semibold text-white transition-opacity duration-500 opacity-0 pointer-events-none z-50">
+        </div>
+
+        <div id="complete-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+                <h2 class="text-3xl font-bold text-secondary mb-4">Set Complete!</h2>
+                <p class="text-xl text-gray-700 mb-6">Final Score: <span id="final-score" class="text-primary font-extrabold">0</span></p>
+                <button id="close-modal-btn" class="px-8 py-3 bg-primary text-white rounded-lg shadow-lg hover:bg-indigo-700 transition-all duration-200">
+                    Start Next Set
+                </button>
+            </div>
+        </div>
+        
+        <footer class="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-500">
+            Developed by Surendar Nath (G7A)
+        </footer>
+        
+    </div>
+
+    <script>
+        // --- Game Data: Organized by Level ---
+        const WORD_PAIRS_BY_LEVEL = {
+            'beginner': [
+                { word: "Happy", synonym: "Joyful", antonym: "Sad" },
+                { word: "Big", synonym: "Large", antonym: "Small" },
+                { word: "Quick", synonym: "Rapid", antonym: "Slow" },
+                { word: "Brave", synonym: "Courageous", antonym: "Cowardly" },
+                { word: "Silent", synonym: "Quiet", antonym: "Loud" },
+                { word: "Start", synonym: "Begin", antonym: "End" },
+                { word: "Rich", synonym: "Wealthy", antonym: "Poor" },
+                { word: "Easy", synonym: "Simple", antonym: "Difficult" },
+                { word: "Smart", synonym: "Intelligent", antonym: "Dull" },
+                { word: "Tiny", synonym: "Minute", antonym: "Huge" }, 
+    { word: "Cold", synonym: "Chilly", antonym: "Hot" },
+    { word: "Clean", synonym: "Tidy", antonym: "Dirty" },
+    { word: "Full", synonym: "Complete", antonym: "Empty" },
+    { word: "Fast", synonym: "Speedy", antonym: "Slow" },
+    { word: "New", synonym: "Modern", antonym: "Old" },
+    { word: "Soft", synonym: "Smooth", antonym: "Rough" },
+    { word: "True", synonym: "Correct", antonym: "False" },
+    { word: "Wet", synonym: "Damp", antonym: "Dry" },
+    { word: "Weak", synonym: "Feeble", antonym: "Strong" },
+    { word: "High", synonym: "Tall", antonym: "Low" },
+    { word: "Kind", synonym: "Nice", antonym: "Mean" },
+    { word: "Loud", synonym: "Noisy", antonym: "Quiet" },
+    { word: "Light", synonym: "Bright", antonym: "Dark" },
+    { word: "Rich", synonym: "Wealthy", antonym: "Poor" },
+    { word: "Sick", synonym: "Ill", antonym: "Healthy" },
+    { word: "Heavy", synonym: "Weighty", antonym: "Light" },
+    { word: "Wide", synonym: "Broad", antonym: "Narrow" },
+    { word: "Late", synonym: "Tardy", antonym: "Early" },
+    { word: "Shallow", synonym: "Superficial", antonym: "Deep" },
+    { word: "Short", synonym: "Brief", antonym: "Long" },
+    { word: "Go", synonym: "Move", antonym: "Stay" },
+    { word: "Come", synonym: "Arrive", antonym: "Depart" },
+    { word: "See", synonym: "Look", antonym: "Miss" },
+    { word: "Talk", synonym: "Speak", antonym: "Listen" },
+    { word: "Ask", synonym: "Inquire", antonym: "Answer" },
+    { word: "Buy", synonym: "Purchase", antonym: "Sell" },
+    { word: "Close", synonym: "Shut", antonym: "Open" },
+    { word: "Cry", synonym: "Weep", antonym: "Laugh" },
+    { word: "Find", synonym: "Locate", antonym: "Lose" },
+    { word: "Give", synonym: "Donate", antonym: "Take" },
+    { word: "Hate", synonym: "Detest", antonym: "Love" },
+    { word: "Help", synonym: "Assist", antonym: "Hurt" },
+    { word: "Keep", synonym: "Retain", antonym: "Release" },
+    { word: "Know", synonym: "Understand", antonym: "Guess" },
+    { word: "Push", synonym: "Shove", antonym: "Pull" },
+    { word: "Show", synonym: "Display", antonym: "Hide" },
+    { word: "Wait", synonym: "Pause", antonym: "Rush" },
+    { word: "Walk", synonym: "Stroll", antonym: "Run" },
+    { word: "Remember", synonym: "Recall", antonym: "Forget" },
+    { word: "Build", synonym: "Construct", antonym: "Destroy" },
+ 
+            ],
+            'intermediate': [
+                { word: "Vast", synonym: "Immense", antonym: "Limited" },
+                { word: "Frigid", synonym: "Icy", antonym: "Torrid" },
+                { word: "Ponder", synonym: "Reflect", antonym: "Dismiss" },
+                { word: "Genuine", synonym: "Authentic", antonym: "Fake" },
+                { word: "Exhausted", synonym: "Weary", antonym: "Energized" },
+                { word: "Stunning", synonym: "Magnificent", antonym: "Ordinary" },
+                { word: "Obscure", synonym: "Vague", antonym: "Clear" },
+                { word: "Abundant", synonym: "Plentiful", antonym: "Scarce" },
+                { word: "Conceal", synonym: "Hide", antonym: "Reveal" },
+                { word: "Succeed", synonym: "Triumph", antonym: "Fail" },
+    { word: "Integrity", synonym: "Honesty", antonym: "Deceit" },
+    { word: "Efficacy", synonym: "Effectiveness", antonym: "Futility" },
+    { word: "Prudent", synonym: "Sensible", antonym: "Reckless" },
+    { word: "Ambiguous", synonym: "Vague", antonym: "Clear" },
+    { word: "Inept", synonym: "Clumsy", antonym: "Adept" },
+    { word: "Prestige", synonym: "Status", antonym: "Disgrace" },
+    { word: "Plausible", synonym: "Believable", antonym: "Improbable" },
+    { word: "Diligent", synonym: "Hardworking", antonym: "Lazy" },
+    { word: "Frugal", synonym: "Thrifty", antonym: "Extravagant" },
+    { word: "Compliant", synonym: "Obedient", antonym: "Defiant" },
+    { word: "Volatile", synonym: "Unstable", antonym: "Steady" },
+    { word: "Inherent", synonym: "Intrinsic", antonym: "Acquired" },
+    { word: "Concise", synonym: "Brief", antonym: "Wordy" },
+    { word: "Futile", synonym: "Useless", antonym: "Productive" },
+    { word: "Lucid", synonym: "Clear", antonym: "Confused" },
+    { word: "Elusive", synonym: "Slippery", antonym: "Obtainable" },
+    { word: "Candid", synonym: "Frank", antonym: "Guarded" },
+    { word: "Abolish", synonym: "End", antonym: "Establish" },
+    { word: "Harrowing", synonym: "Distressing", antonym: "Pleasant" },
+    { word: "Perilous", synonym: "Dangerous", antonym: "Safe" },
+    { word: "Alleviate", synonym: "Lessen", antonym: "Aggravate" },
+    { word: "Mitigate", synonym: "Soothe", antonym: "Worsen" },
+    { word: "Refute", synonym: "Disprove", antonym: "Confirm" },
+    { word: "Ascend", synonym: "Climb", antonym: "Descend" },
+    { word: "Subside", synonym: "Decline", antonym: "Intensify" },
+    { word: "Exonerate", synonym: "Acquit", antonym: "Convict" },
+    { word: "Emulate", synonym: "Imitate", antonym: "Differentiate" },
+    { word: "Curtail", synonym: "Reduce", antonym: "Extend" },
+    { word: "Disperse", synonym: "Scatter", antonym: "Assemble" },
+    { word: "Scrutinize", synonym: "Examine", antonym: "Skim" },
+    { word: "Deter", synonym: "Prevent", antonym: "Encourage" },
+    { word: "Vary", synonym: "Change", antonym: "Maintain" },
+    { word: "Reiterate", synonym: "Repeat", antonym: "Withdraw" },
+    { word: "Sanction", synonym: "Approve", antonym: "Forbid" },
+    { word: "Commence", synonym: "Begin", antonym: "Conclude" },
+    { word: "Indulge", synonym: "Pamper", antonym: "Restrict" },
+    { word: "Deviate", synonym: "Stray", antonym: "Conform" },
+    { word: "Concede", synonym: "Admit", antonym: "Deny" },
+    { word: "Obliterate", synonym: "Destroy", antonym: "Preserve" },
+    { word: "Rectify", synonym: "Correct", antonym: "Err" },
+
+
+            ],
+            'advanced': [
+                { word: "Ephemeral", synonym: "Fleeting", antonym: "Permanent" },
+                { word: "Ubiquitous", synonym: "Pervasive", antonym: "Rare" },
+                { word: "Mellifluous", synonym: "Harmonious", antonym: "Dissonant" },
+                { word: "Cajole", synonym: "Coax", antonym: "Dissuade" },
+                { word: "Meticulous", synonym: "Diligent", antonym: "Careless" },
+                { word: "Capricious", synonym: "Fickle", antonym: "Steady" },
+                { word: "Malign", synonym: "Slander", antonym: "Praise" },
+                { word: "Voracious", synonym: "Insatiable", antonym: "Sated" },
+                { word: "Ostentatious", synonym: "Showy", antonym: "Modest" },
+                { word: "Axiomatic", synonym: "Self-evident", antonym: "Questionable" },
+                
+    { word: "Mellifluous", synonym: "Harmonious", antonym: "Cacophonous" },
+    { word: "Capricious", synonym: "Fickle", antonym: "Consistent" },
+    { word: "Obsequious", synonym: "Fawning", antonym: "Assertive" },
+    { word: "Querulous", synonym: "Complaining", antonym: "Contented" },
+    { word: "Rancorous", synonym: "Acrimonious", antonym: "Forgiving" },
+    { word: "Sedulous", synonym: "Diligent", antonym: "Indolent" },
+    { word: "Surreptitious", synonym: "Clandestine", antonym: "Open" },
+    { word: "Transient", synonym: "Ephemeral", antonym: "Permanent" },
+    { word: "Ubiquitous", synonym: "Pervasive", antonym: "Scarce" },
+    { word: "Vacuous", synonym: "Meaningless", antonym: "Intelligent" },
+    { word: "Garrulous", synonym: "Loquacious", antonym: "Reticent" },
+    { word: "Inexorable", synonym: "Relentless", antonym: "Preventable" },
+    { word: "Languid", synonym: "Listless", antonym: "Vigorous" },
+    { word: "Moribund", synonym: "Dying", antonym: "Thriving" },
+    { word: "Parsimonious", synonym: "Stingy", antonym: "Generous" },
+    { word: "Pernicious", synonym: "Detrimental", antonym: "Beneficial" },
+    { word: "Plethora", synonym: "Excess", antonym: "Dearth" },
+    { word: "Sanctimonious", synonym: "Hypocritical", antonym: "Sincere" },
+    { word: "Stolid", synonym: "Impassionate", antonym: "Emotional" },
+    { word: "Trenchant", synonym: "Incise", antonym: "Vague" },
+    { word: "Acrimonious", synonym: "Bitter", antonym: "Courteous" },
+    { word: "Cavalier", synonym: "Haughty", antonym: "Humble" },
+    { word: "Disparate", synonym: "Divergent", antonym: "Homogeneous" },
+    { word: "Extemporaneous", synonym: "Impromptu", antonym: "Planned" },
+    { word: "Gregarious", synonym: "Sociable", antonym: "Aloof" },
+    { word: "Ignominious", synonym: "Humiliating", antonym: "Honorable" },
+    { word: "Meticulous", synonym: "Punctilious", antonym: "Sloppy" },
+    { word: "Nefarious", synonym: "Wicked", antonym: "Virtuous" },
+    { word: "Ostentatious", synonym: "Showy", antonym: "Unassuming" },
+    { word: "Quixotic", synonym: "Impractical", antonym: "Pragmatic" },
+
+
+	
+            ]
+        };
+
+        const SET_SIZE = 5; // Number of questions per set
+        const LOADING_DELAY_MS = 2500; // 2.5 second delay for loading
+
+        // --- State Variables ---
+        let gameMode = null; // null by default, user must select
+        let gameLevel = null; // null by default, user must select
+        let gameStarted = false; // NEW: Tracks if the first set has begun
+        let currentSetPairs = [];
+        let selectedWord = null;
+        let matchesMade = 0;
+        let score = 0;
+
+        // --- DOM Elements ---
+        const gameBoard = document.getElementById('game-board');
+        const scoreDisplay = document.getElementById('score');
+        const feedbackToast = document.getElementById('feedback-toast');
+        const completeModal = document.getElementById('complete-modal');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const startButton = document.getElementById('start-btn'); // Renamed from restart-btn
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const levelButtons = document.querySelectorAll('.level-btn');
+
+        // --- Utility Functions ---
+        /**
+         * Shuffles an array in place using the Fisher-Yates algorithm.
+         * @param {Array} array
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /**
+         * Shows a temporary feedback toast for success or error.
+         * @param {string} message The message to display.
+         * @param {'success' | 'error'} type The type of feedback.
+         */
+        function showToast(message, type) {
+            feedbackToast.textContent = message;
+            feedbackToast.classList.remove('opacity-0', 'bg-secondary', 'bg-red-500', 'hidden');
+
+            if (type === 'success') {
+                feedbackToast.classList.add('bg-secondary');
+            } else {
+                feedbackToast.classList.add('bg-red-500');
+            }
+
+            feedbackToast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                feedbackToast.classList.remove('opacity-100');
+                feedbackToast.classList.add('opacity-0');
+                setTimeout(() => {
+                    feedbackToast.classList.add('hidden');
+                }, 500); // Wait for transition to finish
+            }, 1500);
+        }
+
+        /**
+         * Displays a temporary loading message on the game board.
+         */
+        function showLoadingScreen() {
+            gameBoard.innerHTML = `
+                <div class="col-span-2 text-center py-10 flex flex-col items-center justify-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <div class="text-xl font-bold text-gray-500 mt-3">
+                        Loading Questions...
+                    </div>
+                </div>
+            `;
+            // Deselect any card while loading
+            if (selectedWord) {
+                selectedWord.element.classList.remove('bg-primary', 'text-white', 'border-primary', 'scale-105', 'shadow-lg');
+                selectedWord = null;
+            }
+        }
+
+        // --- Game Logic ---
+
+        /**
+         * Executes the core game logic: selects words, shuffles, and renders the board.
+         * This function is called AFTER the loading delay.
+         */
+        function loadAndRenderSet() {
+            // 1. Get the word pool based on the current level
+            const wordPool = WORD_PAIRS_BY_LEVEL[gameLevel];
+
+            // 2. Select 5 random, unique pairs for this set
+            const shuffledPairs = [...wordPool];
+            shuffleArray(shuffledPairs);
+            // Ensure we don't try to slice more than are available (safety check)
+            const numPairs = Math.min(SET_SIZE, shuffledPairs.length);
+            currentSetPairs = shuffledPairs.slice(0, numPairs);
+
+            // 3. Prepare words for the current set/mode
+            const leftWords = currentSetPairs.map(p => p.word);
+            const rightWords = currentSetPairs.map(p => ({
+                text: gameMode === 'synonyms' ? p.synonym : p.antonym,
+                match: p.word
+            }));
+
+            // 4. Shuffle the columns
+            shuffleArray(leftWords);
+            shuffleArray(rightWords);
+
+            // 5. Render the game board
+            gameBoard.innerHTML = ''; // Clear the loading screen
+            renderBoard(leftWords, rightWords);
+        }
+
+        /**
+         * Sets up the initial non-playing UI state, prompting the user to select options.
+         */
+        function initializeUI() {
+            // Reset necessary state
+            gameStarted = false;
+            gameMode = null;
+            gameLevel = null;
+            selectedWord = null;
+            matchesMade = 0;
+            score = 0;
+            updateScore(0);
+            completeModal.classList.add('hidden');
+
+            // Update the button text and appearance to 'Start Game' (Primary color)
+            startButton.textContent = 'Start Game';
+            startButton.classList.remove('bg-secondary', 'hover:bg-emerald-600');
+            startButton.classList.add('bg-primary', 'hover:bg-indigo-700');
+
+            // Visually clear the board and prompt user
+            gameBoard.innerHTML = `
+                <div class="col-span-2 text-center py-10">
+                    <div class="text-xl font-bold text-gray-800 mb-2">
+                        Select your Difficulty and Mode to begin!
+                    </div>
+                    <p class="text-gray-500">
+                        Defaults: Foundational Words and Synonyms.
+                    </p>
+                </div>
+            `;
+
+            // Ensure no buttons are active visually (redundant with HTML but safe)
+            levelButtons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white', 'hover:bg-indigo-700');
+                btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            });
+            modeButtons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white', 'hover:bg-indigo-700');
+                btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            });
+        }
+
+        /**
+         * Starts or restarts a game set based on current selections.
+         * @param {boolean} isNewGame True if it's the very first start, false for subsequent 'New Set' clicks.
+         */
+        function startSet(isNewGame) {
+            // 1. Apply defaults if user didn't select
+            if (!gameLevel) {
+                gameLevel = 'beginner';
+                document.getElementById('level-beginner').click(); // visually select default
+            }
+            if (!gameMode) {
+                gameMode = 'synonyms';
+                document.getElementById('synonym-mode').click(); // visually select default
+            }
+
+            // 2. Set the game state
+            gameStarted = true;
+            selectedWord = null;
+            matchesMade = 0;
+            if (isNewGame) { // Only reset score on the very first start
+                score = 0;
+            }
+            updateScore(score);
+            completeModal.classList.add('hidden');
+
+            // 3. Change the Start button to New Set button (Secondary color)
+            startButton.textContent = 'New Set';
+            startButton.classList.remove('bg-primary', 'hover:bg-indigo-700');
+            startButton.classList.add('bg-secondary', 'hover:bg-emerald-600');
+
+            // 4. Show loading and load content
+            showLoadingScreen();
+            setTimeout(() => {
+                loadAndRenderSet();
+            }, LOADING_DELAY_MS);
+        }
+
+        /**
+         * Renders the word cards on the game board.
+         * @param {string[]} leftWords Array of words for the left column.
+         * @param {{text: string, match: string}[]} rightWords Array of word objects for the right column.
+         */
+        function renderBoard(leftWords, rightWords) {
+            const leftColumn = document.createElement('div');
+            const rightColumn = document.createElement('div');
+            leftColumn.className = 'flex flex-col space-y-4';
+            rightColumn.className = 'flex flex-col space-y-4';
+
+            leftWords.forEach(word => {
+                leftColumn.appendChild(createWordCard(word, 'left'));
+            });
+
+            rightWords.forEach(wordObj => {
+                rightColumn.appendChild(createWordCard(wordObj.text, 'right', wordObj.match));
+            });
+
+            gameBoard.appendChild(leftColumn);
+            gameBoard.appendChild(rightColumn);
+        }
+
+        /**
+         * Creates a clickable word card element.
+         * @param {string} text The text to display.
+         * @param {'left' | 'right'} type Column type.
+         * @param {string} [matchWord] The word this card matches (only for right column).
+         * @returns {HTMLElement} The word card element.
+         */
+        function createWordCard(text, type, matchWord = null) {
+            const card = document.createElement('div');
+            card.textContent = text;
+            card.className = `word-card p-4 rounded-lg shadow-md cursor-pointer transition-all duration-200
+                                  text-gray-800 font-medium text-center border-2 border-gray-200
+                                  hover:bg-indigo-50 hover:border-primary select-none`;
+            card.dataset.word = text;
+            card.dataset.type = type;
+            if (matchWord) {
+                card.dataset.match = matchWord;
+            }
+            card.addEventListener('click', handleCardClick);
+            return card;
+        }
+
+        /**
+         * Updates the displayed score.
+         * @param {number} newScore
+         */
+        function updateScore(newScore) {
+            score = newScore;
+            scoreDisplay.textContent = score;
+        }
+
+        /**
+         * Handles the click event on a word card.
+         * @param {MouseEvent} event
+         */
+        function handleCardClick(event) {
+            const card = event.currentTarget;
+            const cardWord = card.dataset.word;
+            const cardType = card.dataset.type;
+
+            // Ignore clicks on already matched cards
+            if (card.classList.contains('matched')) {
+                return;
+            }
+
+            // Define classes for selection feedback
+            const selectionClasses = ['bg-primary', 'text-white', 'border-primary', 'scale-105', 'shadow-lg'];
+
+            // 1. If no word is selected
+            if (!selectedWord) {
+                // Select the current word
+                selectedWord = { word: cardWord, element: card, type: cardType };
+                card.classList.add(...selectionClasses);
+                return;
+            }
+
+            // 2. If the same word is clicked again (deselect)
+            if (selectedWord.element === card) {
+                card.classList.remove(...selectionClasses);
+                selectedWord = null;
+                return;
+            }
+
+            // 3. If a word from the same column is clicked (change selection)
+            if (selectedWord.type === cardType) {
+                // Deselect the old one
+                selectedWord.element.classList.remove(...selectionClasses);
+                // Select the new one
+                selectedWord = { word: cardWord, element: card, type: cardType };
+                card.classList.add(...selectionClasses);
+                return;
+            }
+
+            // 4. A cross-column word is clicked (Attempt Match)
+            attemptMatch(card);
+        }
+
+        /**
+         * Attempts to match the currently selected word with the clicked card.
+         * @param {HTMLElement} secondCard The newly clicked card element.
+         */
+        function attemptMatch(secondCard) {
+            const firstCard = selectedWord.element;
+
+            // Determine which card is the "main" word (left column) and which is the "match" (right column)
+            let mainWordCard, matchCard;
+            if (selectedWord.type === 'left') {
+                mainWordCard = firstCard;
+                matchCard = secondCard;
+            } else { // selectedWord.type === 'right'
+                mainWordCard = secondCard;
+                matchCard = firstCard;
+            }
+
+            // Find the match for the main word using the current set's pairs
+            const pair = currentSetPairs.find(p => p.word === mainWordCard.dataset.word);
+            let correctMatchText = gameMode === 'synonyms' ? pair.synonym : pair.antonym;
+
+            // Remove selection classes from the first card (always a good idea before matching feedback)
+            firstCard.classList.remove('bg-primary', 'text-white', 'border-primary', 'scale-105', 'shadow-lg');
+
+            // Check if the match is correct
+            if (matchCard.dataset.word === correctMatchText) {
+                // Correct Match!
+                updateScore(score + 10);
+                matchesMade++;
+
+                // Apply 'matched' styles with GREEN color permanently
+                [firstCard, secondCard].forEach(card => {
+                    // Remove hover classes for cleanliness
+                    card.classList.remove('hover:bg-indigo-50', 'hover:border-primary');
+
+                    // Add GREEN success styles (bg-green-500, border-green-600) and flag as matched
+                    card.classList.add('bg-green-500', 'text-white', 'border-green-600', 'matched', 'cursor-default');
+                    card.removeEventListener('click', handleCardClick);
+                });
+
+                showToast('Correct Match! +10 Points', 'success');
+
+            } else {
+                // Incorrect Match
+                updateScore(Math.max(0, score - 5)); // Deduct 5 points, minimum score 0
+
+                // Flash red for error feedback
+                secondCard.classList.remove('bg-primary', 'text-white', 'border-primary', 'scale-105', 'shadow-lg');
+                secondCard.classList.add('bg-red-500', 'text-white', 'border-red-600', 'shadow-xl', 'scale-105');
+                firstCard.classList.add('bg-red-500', 'text-white', 'border-red-600', 'shadow-xl', 'scale-105');
+
+                showToast('Incorrect Match! -5 Points', 'error');
+                // Revert error flash after a short delay
+                setTimeout(() => {
+                    [firstCard, secondCard].forEach(card => {
+                        // Remove error classes
+                        card.classList.remove('bg-red-500', 'text-white', 'border-red-600', 'shadow-xl', 'scale-105');
+
+                        // Re-apply default non-selected appearance
+                        card.classList.add('bg-white', 'text-gray-800', 'border-gray-200');
+                    });
+                }, 500);
+            }
+
+            // Clear the selection after attempting the match
+            selectedWord = null;
+
+            // Check for game set completion
+            if (matchesMade === SET_SIZE) {
+                endSet();
+            }
+        }
+
+        /**
+         * Displays the "Set Complete" modal.
+         */
+        function endSet() {
+            finalScoreDisplay.textContent = score;
+            completeModal.classList.remove('hidden');
+        }
+
+        // --- Event Listeners and Initialization ---
+
+        // Level Button Handler
+        levelButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const newLevel = event.currentTarget.dataset.level;
+
+                // Update styling for all level buttons
+                levelButtons.forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white', 'hover:bg-indigo-700');
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                });
+
+                // Apply selected style to the clicked button
+                event.currentTarget.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                event.currentTarget.classList.add('bg-primary', 'text-white', 'hover:bg-indigo-700');
+
+                // Update state
+                gameLevel = newLevel;
+
+                // If the game has already started, immediately load a new set
+                if (gameStarted) {
+                    startSet(false);
+                }
+            });
+        });
+
+        // Mode Button Handler
+        modeButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const newMode = event.currentTarget.dataset.mode;
+
+                // Update styling for all mode buttons
+                modeButtons.forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white', 'hover:bg-indigo-700');
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                });
+
+                // Apply selected style to the clicked button
+                event.currentTarget.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                event.currentTarget.classList.add('bg-primary', 'text-white', 'hover:bg-indigo-700');
+
+                // Update state
+                gameMode = newMode;
+
+                // If the game has already started, immediately load a new set
+                if (gameStarted) {
+                    startSet(false);
+                }
+            });
+        });
+
+        // Start/New Set Button Handler
+        startButton.addEventListener('click', () => {
+            // isNewGame is true if the game hasn't started yet (first click)
+            const isNewGame = !gameStarted;
+            startSet(isNewGame);
+        });
+
+        // Modal "Start Next Set" Button Handler
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            // When exiting the completion modal, start a new set (score is kept)
+            startSet(false);
+        });
+
+        // --- Final Initialization ---
+        initializeUI();
+    </script>
+</body>
+</html>
