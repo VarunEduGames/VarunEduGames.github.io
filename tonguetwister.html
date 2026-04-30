@@ -1,0 +1,232 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tongue tangler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #twister-text {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #0056b3;
+            font-style: italic;
+            visibility: hidden;
+        }
+        #instructions {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #5cb85c;
+            color: white;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #game-section {
+            display: none;
+        }
+        footer {
+            margin-top: auto;
+            color: #888;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="start-section">
+            <h1>Welcome to Tongue tangler!</h1>
+            <p>Are you ready to test your articulation skills? Click the button below to begin.</p>
+            <button id="startGameButton">Start Game</button>
+        </div>
+        <div id="game-section">
+            <h1>Tongue tangler! 🤪</h1>
+            <p id="instructions">Click 'Show Twister' when you're ready.</p>
+            <p id="twister-text">Wait for it...</p>
+            
+            <button id="showTwisterButton">Show Twister</button>
+            <button id="nextButton" style="display: none;">Next Twister</button>
+        </div>
+    </div>
+    <footer>
+        <p>Developed by Surendar Nath (G7A)</p>
+    </footer>
+    <script>
+        const twisters = [
+            "She sells seashells by the seashore.",
+            "Peter Piper picked a peck of pickled peppers.",
+            "How much wood would a woodchuck chuck if a woodchuck could chuck wood?",
+            "I scream, you scream, we all scream for ice cream.",
+            "A big black bug bit a big black bear.",
+            "A flea and a fly flew up in a flue.",
+            "A proper copper coffee pot.",
+            "A sailor went to sea to see what he could see.",
+            "A shy boy saw a shy bird on a high branch.",
+            "Fat frogs flying fast, furious and fun.",
+            "Four fine fresh fish for you.",
+            "Fresh fried fish, fresh fried fish, fresh fried fish.",
+            "Fuzzy Wuzzy was a bear, Fuzzy Wuzzy had no hair.",
+            "Give me the gift of a good green glove.",
+            "How can a clam cram in a clean cream can?",
+            "I saw a kitten eating chicken in the kitchen.",
+            "I scream, you scream, we all scream for ice cream.",
+            "I wish to wash my Irish wristwatch.",
+            "If a dog chews shoes, whose shoes does he choose?",
+            "Nine nice night nurses nursing nicely.",
+            "Peter Piper picked a peck of pickled peppers.",
+            "Red lorry, yellow lorry.",
+            "She saw a shiny sea shell on the seashore.",
+            "She sells seashells by the seashore.",
+            "Six slippery snails slid slowly seaward.",
+            "Susie works in a shoeshine shop where she shines shoes.",
+            "The big bad black bug bit the big brown bear.",
+            "The big bird flew over the big brown bear.",
+            "The big bird flew over the big brown bear.",
+            "The big black bat bit a big brown dog.",
+            "The big black dog bit the big brown cat.",
+            "The big brown bear was a big bug bear.",
+            "The big brown beetle bit the big brown bear.",
+            "The big brown bug bit the big brown bat.",
+            "The big bug bit the little beetle.",
+            "The big bug bit the little black bug.",
+            "The black beetle bit the big bad bug.",
+            "The black bug bit a big black bear.",
+            "The fat frog sat on the log.",
+            "The little black kitten has a big white stripe.",
+            "The little red robin ran by the big red rock.",
+            "The proud frog jumped on the big wet log.",
+            "The quick fox jumped over the quiet quail.",
+            "The quick fox jumped over the tired turtle.",
+            "The quick fox jumped over the tired turtle.",
+            "The rain in Spain falls mainly on the plain.",
+            "The rat ran around the rough rock.",
+            "The red dress belongs to the red doll.",
+            "The sad fish sang in the still stream.",
+            "The sad fish swam with the slow snail.",
+            "The sad fish swam with the slow snail.",
+            "The sad fish swam with the slow snail.",
+            "The sad frog sat on the big wet log.",
+            "The sad frog sat on the big wet log.",
+            "The sad snail sat on the small stone.",
+            "The sad snake slid over the small stone.",
+            "The sad snake slid over the small stone.",
+            "The shy fish swam in the still water.",
+            "The shy fish swam in the still water.",
+            "The shy fish swims in the shallow water.",
+            "The shy frog jumped over the small stream.",
+            "The shy frog jumped over the small stream.",
+            "The shy snake slid past the small snail.",
+            "The shy snake slid past the small snail.",
+            "The shy snake slid through the soft sand.",
+            "The shy snake slid through the soft sand.",
+            "The sixth sick sheik's sixth sheep's sick.",
+            "The slow snail sat on the small stone.",
+            "The slow snail sat on the small stone.",
+            "The slow snail slid over the small stone.",
+            "The slow snail slid over the small stone.",
+            "The slow snake slithered over the soft stone.",
+            "The slow snake slithered past the sleeping snail.",
+            "The slow turtle crawled through the tall grass.",
+            "The slow turtle crawled through the tall grass.",
+            "The slow turtle swam in the still stream.",
+            "The slow turtle swam in the still stream.",
+            "The sly fly flew fast past the fun frog.",
+            "The sly fox saw the sleeping squirrel.",
+            "The sly mouse crept past the sleeping cat.",
+            "The sly snail slid slowly through the soft sand.",
+            "The sly snake slid past the sleeping snail.",
+            "The sly snake slid slowly through the tall grass.",
+            "The sly snake slid slowly through the tall grass.",
+            "The small shy boy saw the small shy girl.",
+            "The small snail swam in the still water.",
+            "The small snail swam in the still water.",
+            "The small snake slipped through the smooth stones.",
+            "The small spider spun a small web.",
+            "The small spider spun a small web.",
+            "The sun shines brightly on the shop signs.",
+            "The swift swan swam over the still pond.",
+            "The tired turtle told the sad story.",
+            "The tired turtle told the sad story.",
+            "The tired turtle told the sad tale.",
+            "The two sad spiders spun two small webs.",
+            "The two sad spiders spun two small webs.",
+            "The two toy boats bobbed on the waves.",
+            "The two toy boats went sailing past.",
+            "There was a fisherman named Fisher who fished for some fish.",
+            "Thirty-three thousand people thought that day.",
+            "Unique New York.",
+            "We surely shall see the sun shine soon.",
+            "You know, New York, you need unique New York.",
+            "Betty Botter bought some butter, but she said the butter's bitter."
+        ];
+        
+        const startSection = document.getElementById('start-section');
+        const gameSection = document.getElementById('game-section');
+        const startGameButton = document.getElementById('startGameButton');
+        const showTwisterButton = document.getElementById('showTwisterButton');
+        const nextButton = document.getElementById('nextButton');
+        const twisterText = document.getElementById('twister-text');
+        const instructions = document.getElementById('instructions');
+
+        startGameButton.addEventListener('click', () => {
+            startSection.style.display = 'none';
+            gameSection.style.display = 'block';
+        });
+
+        showTwisterButton.addEventListener('click', () => {
+            showRandomTwister();
+            showTwisterButton.style.display = 'none';
+            nextButton.style.display = 'inline-block';
+            instructions.textContent = "Take your time and say it aloud!";
+        });
+        
+        nextButton.addEventListener('click', () => {
+            showRandomTwister();
+            instructions.textContent = "Take your time and say it aloud!";
+        });
+
+        function showRandomTwister() {
+            const randomTwister = twisters[Math.floor(Math.random() * twisters.length)];
+            twisterText.textContent = randomTwister;
+            twisterText.style.visibility = 'visible';
+        }
+    </script>
+</body>
+</html>
