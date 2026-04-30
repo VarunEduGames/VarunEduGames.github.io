@@ -1,0 +1,621 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Trivia Challenge (10 Q)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-color: #008000; /* Green (Pitch) */
+            --secondary-color: #f7b32c; /* Gold/Yellow (Trophy) */
+            --background-color: #1e1e1e; /* Dark Background */
+            --card-color: #2b2b2b; /* Card Background */
+            --text-color: #ffffff;
+            --wrong-color: #e74c3c; /* Red */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            line-height: 1.6;
+            
+            /* Football Emojis Background */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="10" y="30" font-size="35" opacity="0.6">⚽</text><text x="60" y="80" font-size="35" opacity="0.6">🥅</text><text x="80" y="40" font-size="35" opacity="0.6">🏆</text><text x="30" y="70" font-size="35" opacity="0.6">⚽</text></svg>');
+            background-size: 150px 150px; 
+            background-repeat: repeat;
+            background-attachment: fixed;
+            background-blend-mode: overlay;
+        }
+
+        .main-content {
+            flex-grow: 1; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .quiz-container {
+            background: var(--card-color);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px;
+            border: 4px solid var(--primary-color);
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            z-index: 10;
+            
+            /* Add custom property for base font size */
+            font-size: 16px; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            font-size: 2.2em; /* Use em for relative sizing */
+            margin-bottom: 5px; /* Reduced margin to bring tip closer */
+            border-bottom: none; /* Removed border */
+            padding-bottom: 0;
+        }
+        
+        /* NEW: Style for the tip */
+        #settings-tip {
+            font-size: 0.85em; 
+            color: #aaa;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+
+        #question-text {
+            font-size: 1.2em; /* Use em for relative sizing */
+            margin-bottom: 25px;
+            min-height: 60px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: #444;
+            color: var(--text-color);
+            border: none;
+            padding: 1.2em 1.5em; /* Use em for relative sizing */
+            border-radius: 10px;
+            font-size: 1em; /* Use em for relative sizing */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+            text-align: left;
+            position: relative;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: #555;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- SETTINGS BUTTON AND MODAL STYLES --- */
+        #settings-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 20;
+            opacity: 0.7;
+        }
+        #settings-btn:hover {
+            opacity: 1;
+            transform: rotate(15deg);
+        }
+        
+        #settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); 
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-color);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 350px;
+            width: 80%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        
+        .modal-content h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        .font-size-control {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .font-size-control label {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .font-size-control input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #555;
+            border-radius: 5px;
+            margin: 0;
+            cursor: pointer;
+        }
+        .font-size-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .font-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.8em;
+            margin-top: 5px;
+            color: #ccc;
+        }
+
+        #close-modal-btn {
+            background-color: var(--primary-color);
+            color: black;
+            font-weight: 700;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        /* --- END NEW STYLES --- */
+
+        /* Existing Styles Retained for context */
+        .btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .start-screen h2 {
+            color: var(--text-color);
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+
+        .category-buttons .btn, .difficulty-buttons .btn {
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 0 #006400;
+            color: black; 
+        }
+
+        /* Footer Styles */
+        .footer {
+            width: 100%;
+            padding: 15px 0;
+            background: #111;
+            color: #777;
+            font-size: 0.8em;
+            margin-top: 30px; 
+            z-index: 5;
+        }
+
+        /* Question counter and Score display */
+        .score-info {
+            display: flex;
+            justify-content: space-between; 
+            width: 100%;
+            padding-top: 10px;
+            align-items: center;
+        }
+
+        .question-counter, .score-box {
+            font-size: 1em;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #333;
+        }
+        .score-box {
+            color: var(--secondary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            #question-text {
+                font-size: 1em;
+            }
+            .btn {
+                padding: 1em 1.2em;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <div class="quiz-container">
+            <button id="settings-btn" onclick="openSettings()">⚙️</button>
+
+            <h1>Football Trivia Challenge</h1>
+            <p id="settings-tip">*(tip: you can adjust the font by using settings)*</p>
+            
+            <div id="start-screen" class="start-screen">
+                <h2 id="selection-header">Choose Your Challenge Category</h2>
+                <div id="category-buttons" class="answer-buttons category-buttons">
+                    </div>
+                <button id="back-to-category-btn" style="display: none;" onclick="showCategorySelection()">Back to Categories</button>
+            </div>
+
+            <div id="quiz-area" style="display: none;">
+                <div id="question-text">Loading question...</div>
+                <div class="answer-buttons" id="answer-buttons">
+                    </div>
+                <div class="score-info">
+                    <div class="question-counter" id="question-counter">Question 1/10</div> 
+                    <div class="score-box">Score: <span id="current-score">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box">
+        <div class="message-content" id="message-content">
+            </div>
+    </div>
+    
+    <div id="settings-modal">
+        <div class="modal-content">
+            <h3>⚙️ Settings</h3>
+            <div class="font-size-control">
+                <label for="font-size-slider">Adjust Font Size</label>
+                <input type="range" id="font-size-slider" min="14" max="20" value="16" step="1" 
+                       oninput="updateFontSize(this.value)">
+                <div class="font-labels">
+                    <span>Small</span>
+                    <span>Large</span>
+                </div>
+            </div>
+            <button id="close-modal-btn" onclick="closeSettings()">Close</button>
+        </div>
+    </div>
+    <footer class="footer">
+        Developed by **Kevin and Surendar (G7A)**
+    </footer>
+    <script>
+        const SESSION_ID = crypto.randomUUID();
+        
+        // --- QUIZ STATE VARIABLES ---
+        let score = 0;
+        let currentQuestionIndex = 0;
+        let quizQuestions = [];
+        let selectedCategoryKey = null;
+        let selectedDifficulty = null;
+        
+        let quizResultsLog = []; 
+        
+        // --- CONSTANTS ---
+        const QUESTIONS_PER_SESSION = 10; 
+        
+        // --- QUIZ DATA ---
+        
+        function generatePlaceholderQuestions(category, difficulty) {
+            const questions = [];
+            for (let i = 1; i <= 50; i++) {
+                questions.push({
+                    question: `Which city is the home of the world's largest stadium?`, 
+                    correctAnswer: "Pyongyang",
+                    options: ["Madrid", "Barcelona", "Pyongyang", "Mexico City"]
+                });
+            }
+            return questions;
+        }
+
+        const categorizedQuizData = {
+            "world_football": {
+                title: "World Football Trivia",
+                questions: {
+                    "BEGINNER": generatePlaceholderQuestions("World", "Beginner"),
+                    "INTERMEDIATE": generatePlaceholderQuestions("World", "Intermediate"),
+                    "ADVANCED": generatePlaceholderQuestions("World", "Advanced"),
+                }
+            },
+            "major_clubs": {
+                title: "Major European Clubs",
+                questions: {
+                     "BEGINNER": generatePlaceholderQuestions("Clubs", "Beginner"),
+                    "INTERMEDIATE": generatePlaceholderQuestions("Clubs", "Intermediate"),
+                    "ADVANCED": generatePlaceholderQuestions("Clubs", "Advanced"),
+                }
+            }
+        };
+        // --- END QUIZ DATA ---
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function getFormattedDateTime() {
+            const now = new Date();
+            const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            return `${date.replace(/\//g, '-')} at ${time}`;
+        }
+
+        // --- SETTINGS FUNCTIONS ---
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function updateFontSize(value) {
+            const container = document.querySelector('.quiz-container');
+            container.style.fontSize = `${value}px`; 
+            localStorage.setItem('baseFontSize', value);
+        }
+
+        function loadSettings() {
+            const savedSize = localStorage.getItem('baseFontSize');
+            const container = document.querySelector('.quiz-container');
+            const slider = document.getElementById('font-size-slider');
+
+            if (savedSize) {
+                container.style.fontSize = `${savedSize}px`;
+                slider.value = savedSize;
+            } else {
+                container.style.fontSize = '16px'; 
+            }
+        }
+        // --- END SETTINGS FUNCTIONS ---
+        
+        // --- GAME FLOW FUNCTIONS ---
+
+        function showCategorySelection() {
+            score = 0;
+            currentQuestionIndex = 0;
+            quizQuestions = [];
+            quizResultsLog = []; 
+            selectedCategoryKey = null;
+            selectedDifficulty = null;
+
+            document.getElementById('quiz-area').style.display = 'none';
+            document.getElementById('message-box').style.display = 'none';
+            document.getElementById('settings-tip').style.display = 'block'; // Show tip on start screen
+            document.getElementById('start-screen').style.display = 'block';
+            document.getElementById('selection-header').textContent = "Choose Your Challenge Category";
+            document.getElementById('back-to-category-btn').style.display = 'none';
+
+            const categoryButtonsContainer = document.getElementById('category-buttons');
+            categoryButtonsContainer.innerHTML = '';
+            categoryButtonsContainer.className = 'answer-buttons category-buttons';
+
+            Object.keys(categorizedQuizData).forEach(key => {
+                const button = document.createElement('button');
+                button.classList.add('btn');
+                button.textContent = categorizedQuizData[key].title;
+                button.onclick = () => showDifficultySelection(key);
+                categoryButtonsContainer.appendChild(button);
+            });
+        }
+
+        function showDifficultySelection(categoryKey) {
+            selectedCategoryKey = categoryKey;
+            
+            document.getElementById('settings-tip').style.display = 'block'; // Show tip on difficulty screen
+            document.getElementById('selection-header').textContent = `Select Difficulty for ${categorizedQuizData[categoryKey].title}`;
+            document.getElementById('back-to-category-btn').style.display = 'block';
+
+            const difficultyButtonsContainer = document.getElementById('category-buttons');
+            difficultyButtonsContainer.innerHTML = '';
+            difficultyButtonsContainer.className = 'answer-buttons difficulty-buttons'; 
+
+            const difficulties = Object.keys(categorizedQuizData[categoryKey].questions);
+
+            difficulties.forEach(difficulty => {
+                const button = document.createElement('button');
+                button.classList.add('btn');
+                button.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+                button.onclick = () => startQuiz(difficulty);
+                difficultyButtonsContainer.appendChild(button);
+            });
+        }
+
+        function startQuiz(difficulty) {
+            selectedDifficulty = difficulty;
+            document.getElementById('settings-tip').style.display = 'none'; // Hide tip once quiz starts
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('quiz-area').style.display = 'block';
+            
+            let questionsPool = [...categorizedQuizData[selectedCategoryKey].questions[selectedDifficulty]];
+            shuffleArray(questionsPool);
+            
+            quizQuestions = questionsPool.slice(0, QUESTIONS_PER_SESSION); 
+
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const currentQuestion = quizQuestions[currentQuestionIndex];
+            document.getElementById('question-text').textContent = currentQuestion.question;
+            document.getElementById('question-counter').textContent = `Question ${currentQuestionIndex + 1}/${quizQuestions.length}`; 
+
+            const answerButtonsContainer = document.getElementById('answer-buttons');
+            answerButtonsContainer.innerHTML = '';
+            
+            let options = [...currentQuestion.options];
+            shuffleArray(options);
+
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('btn');
+                button.textContent = option;
+                button.onclick = () => selectAnswer(option);
+                answerButtonsContainer.appendChild(button);
+            });
+        }
+
+        function selectAnswer(selectedOption) {
+            const currentQuestion = quizQuestions[currentQuestionIndex];
+            const isCorrect = selectedOption === currentQuestion.correctAnswer;
+            const answerButtons = document.getElementById('answer-buttons').children;
+            
+            Array.from(answerButtons).forEach(button => {
+                button.disabled = true;
+            });
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('current-score').textContent = score; 
+            }
+            
+            quizResultsLog.push({
+                index: currentQuestionIndex + 1,
+                question: currentQuestion.question,
+                yourAnswer: selectedOption,
+                correctAnswer: currentQuestion.correctAnswer,
+                isCorrect: isCorrect,
+                explanation: `The correct answer is **${currentQuestion.correctAnswer}**.`
+            });
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizQuestions.length) {
+                showQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function endQuiz() {
+            document.getElementById('quiz-area').style.display = 'none';
+            document.getElementById('settings-tip').style.display = 'none';
+
+            const messageBox = document.getElementById('message-box');
+            const messageContent = document.getElementById('message-content');
+            
+            const categoryTitle = categorizedQuizData[selectedCategoryKey].title;
+            const difficultyTitle = selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1).toLowerCase();
+            const totalQuestions = quizQuestions.length; 
+            const formattedDateTime = getFormattedDateTime();
+            
+            messageContent.innerHTML = `
+                <p style="font-size: 0.9em; color: #aaa; margin-bottom: 5px;">Level: **${difficultyTitle}** (${categoryTitle})</p>
+                <p style="font-size: 0.9em; color: #aaa; margin-top: 0; margin-bottom: 25px;">Submitted on: ${formattedDateTime}</p>
+                
+                <h2 style="font-size: 2.5em; margin-top: 0; padding: 15px 0; border-radius: 10px; background: #333;">
+                    Score: ${score}/${totalQuestions}
+                </h2>
+                
+                <p style="font-size: 1.1em; color: ${score >= totalQuestions / 2 ? 'var(--primary-color)' : 'var(--wrong-color)'}; margin-bottom: 30px;">
+                    ${score === totalQuestions ? '⭐ Perfect Score! You are a Football Master! ⭐' : score > totalQuestions / 2 ? 'Great effort! You know your stuff.' : 'Don\'t give up. Try again!'}
+                </p>
+                
+                <div id="detailed-review-list" style="max-height: 50vh; overflow-y: auto; text-align: left; padding-right: 15px;">
+                    </div>
+                
+                <button id="restart-btn" onclick="showCategorySelection()">Change Category</button>
+            `;
+
+            const reviewListContainer = document.getElementById('detailed-review-list');
+            
+            quizResultsLog.forEach(result => {
+                const resultClass = result.isCorrect ? 'correct-box' : 'incorrect-box';
+                const icon = result.isCorrect ? '✅' : '❌';
+                
+                const reviewItem = document.createElement('div');
+                reviewItem.classList.add('review-item', resultClass);
+                
+                reviewItem.innerHTML = `
+                    <p style="font-weight: 700; margin-top: 0;">${icon} ${result.index}. ${result.question}</p>
+                    <p style="margin-left: 20px;">Your Answer: <strong>${result.yourAnswer}</strong></p>
+                    <p style="margin-left: 20px; color: ${result.isCorrect ? 'black' : '#f7b32c'};">Correct Answer: <strong>${result.correctAnswer}</strong></p>
+                    <p style="font-style: italic; font-size: 0.9em; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px;">
+                        Explanation: This is the definitive answer for the question.
+                    </p>
+                `;
+                reviewListContainer.appendChild(reviewItem);
+            });
+            
+            messageBox.style.display = 'flex';
+            setTimeout(() => {
+                messageContent.classList.add('show');
+            }, 10);
+        }
+        
+        window.onload = () => {
+            loadSettings(); 
+            showCategorySelection();
+        }
+    </script>
+</body>
+</html>
