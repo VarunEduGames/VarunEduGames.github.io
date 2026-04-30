@@ -1,0 +1,470 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elemental Escape</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: #0d0e13; /* Dark background for lab aesthetic */
+            color: #c9e0c9; /* Light green text */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column; /* Allow content to stack vertically */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Custom glow effect for UI elements */
+        .neon-glow {
+            box-shadow: 0 0 5px #38bdf8, 0 0 10px #38bdf8, 0 0 15px #38bdf840;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .neon-glow:hover {
+            box-shadow: 0 0 8px #06b6d4, 0 0 15px #06b6d4, 0 0 25px #06b6d460;
+            transform: translateY(-1px);
+        }
+
+        /* Specific styles for the game container */
+        .lab-container {
+            max-width: 90%;
+            width: 500px;
+            border: 2px solid #ef4444; /* Red border for 'Hazard' */
+            background-color: #1a1e26;
+        }
+        
+        .timer-bar {
+            background-color: #ef4444; /* Red for danger */
+            transition: width 1s linear;
+        }
+        
+        /* Answer Button Style */
+        .answer-btn {
+            background-color: #272a33;
+            border: 1px solid #475569;
+            color: #c9e0c9;
+        }
+
+        .answer-btn:hover {
+            background-color: #06b6d4; /* Cyan on hover */
+            color: #0d0e13;
+            border-color: #06b6d4;
+        }
+
+        .answer-btn.correct {
+            background-color: #10b981; /* Emerald green for correct */
+            color: #0d0e13;
+            border-color: #10b981;
+        }
+
+        .answer-btn.incorrect {
+            background-color: #ef4444; /* Red for incorrect */
+            color: #0d0e13;
+            border-color: #ef4444;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Game Container -->
+    <div id="game-container" class="lab-container rounded-lg p-6 shadow-2xl">
+        
+        <!-- Header / Status Display -->
+        <div class="mb-6 pb-4 border-b border-red-500">
+            <h1 class="text-3xl text-red-500 font-bold tracking-widest text-center">
+                WARNING: REACTOR MELTDOWN
+            </h1>
+            <p class="text-xs text-center text-gray-400 mt-1">
+                Solve the sequence to initiate 'ELEMENTAL ESCAPE' protocol.
+            </p>
+        </div>
+
+        <!-- Timer/Progress Bar -->
+        <div id="timer-status" class="mb-6">
+            <div class="text-sm flex justify-between mb-1">
+                <!-- Status shows score to win -->
+                <span><span id="score-display" class="font-bold text-cyan-400">0</span> / 3 Solutions to Escape</span>
+                <span id="timer-text" class="text-red-500 font-bold">Time: 40s</span>
+            </div>
+            <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                <div id="timer-bar-fill" class="timer-bar h-full" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Protocol Initiation Screen -->
+        <div id="start-screen" class="text-center p-8">
+            <h2 class="text-2xl text-cyan-400 font-bold mb-4 tracking-wider">
+                PROTOCOL INITIATION
+            </h2>
+            <p id="loading-status" class="text-sm text-yellow-500 mb-4">
+                <!-- Status will be updated by JS on load -->
+                [Loading critical data...]
+            </p>
+            <p class="text-xl mb-6 text-cyan-400">
+                You are trapped! The lab is destabilizing. To open the main door, you must correctly answer <span class="font-bold">5 critical science questions</span>.
+            </p>
+            <button id="start-button" class="bg-gray-600 text-black font-bold py-3 px-8 rounded-lg neon-glow cursor-not-allowed" disabled>
+                INITIATE PROTOCOL
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden">
+            <div id="question-card" class="bg-gray-800 p-5 rounded-lg mb-4 neon-glow">
+                <!-- Sequence number shows current attempt out of 5 total -->
+                <p class="text-sm text-red-400 mb-2">ATTEMPT [<span id="sequence-number">1</span>/5]</p>
+                <p id="question-text" class="text-lg font-medium text-white">Question text goes here?</p>
+            </div>
+            
+            <div id="options-container" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <!-- Answer buttons injected here -->
+            </div>
+            
+            <!-- Feedback/Message Area -->
+            <div id="feedback-message" class="mt-4 text-center font-bold h-6"></div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="hidden text-center p-8">
+            <h2 id="end-title" class="text-4xl font-bold mb-4"></h2>
+            <p id="end-message" class="text-xl mb-6"></p>
+            <button id="restart-button" class="bg-gray-600 hover:bg-gray-500 text-black font-bold py-3 px-8 rounded-lg neon-glow">
+                RETRY EXPERIMENT
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Footer for credit -->
+    <footer class="mt-4 text-center text-xs text-gray-500">
+        Developed By Surendar Nath (G7A)
+    </footer>
+
+    <script>
+        // Global variables for Firebase context (required for all apps)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // --- Game Data ---
+        let gameQuestions = []; // Array to hold parsed question objects
+        
+        // CSV data embedded directly into the HTML file as a multi-line string (template literal)
+        const CSV_DATA = `question,option1,option2,option3,option4,answer,topic
+What element has the chemical symbol 'Fe'?,Fluorine,Iron,Ferrum,Fermium,Iron,Chemistry
+Which of the following is an inert (noble) gas?,Oxygen,Nitrogen,Neon,Chlorine,Neon,Chemistry
+What is the unit of electrical resistance?,Watt,Volt,Ampere,Ohm,Ohm,Physics
+What process converts light energy into chemical energy in plants?,Respiration,Fermentation,Photosynthesis,Transpiration,Photosynthesis,Biology
+What is the chemical formula for table salt?,H2O,CO2,NaCl,C6H12O6,NaCl,Chemistry
+If a wave's frequency increases, what happens to its wavelength (assuming constant speed)?,Increases,Decreases,Stays the same,Doubles,Decreases,Physics
+What is the smallest unit of matter that retains an element's properties?,Proton,Molecule,Atom,Electron,Atom,Chemistry
+Which type of mirror is used in car headlights?,Plane,Convex,Concave,Cylindrical,Concave,Physics`;
+
+        // --- Game State Variables ---
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const INITIAL_TIMER_VALUE = 40; // Constant for the starting time
+        let timer = INITIAL_TIMER_VALUE; 
+        let timerInterval;
+        const questionsToWin = 5;    // Total number of questions to attempt
+        const scoreToWin = 3;        // Number of correct answers needed to win
+        let isGameOver = false;
+
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const scoreDisplay = document.getElementById('score-display');
+        const sequenceNumber = document.getElementById('sequence-number');
+        const timerText = document.getElementById('timer-text');
+        const timerBarFill = document.getElementById('timer-bar-fill');
+        const endTitle = document.getElementById('end-title');
+        const endMessage = document.getElementById('end-message');
+        const timerStatus = document.getElementById('timer-status');
+        const loadingStatus = document.getElementById('loading-status');
+
+        // --- Core Functions ---
+
+        /**
+         * Parses the questions from the embedded CSV data string.
+         */
+        function loadQuestionsFromCSV() {
+            try {
+                const csvText = CSV_DATA.trim();
+                
+                // Split lines and handle headers
+                const lines = csvText.split('\n');
+                if (lines.length < 2) {
+                    throw new Error("CSV data is empty or only contains headers.");
+                }
+                
+                // Parse data lines, skipping the header line (lines[0])
+                gameQuestions = lines.slice(1).map(line => {
+                    // Simple split by comma for CSV reading
+                    const values = line.split(',');
+                    return {
+                        question: values[0],
+                        options: [values[1], values[2], values[3], values[4]],
+                        answer: values[5],
+                        topic: values[6]
+                    };
+                });
+
+                if (gameQuestions.length === 0) {
+                     throw new Error("Parsed zero questions. Check CSV format.");
+                }
+
+                // Questions successfully loaded and ready - update button immediately
+                loadingStatus.textContent = '[DATA LOAD COMPLETE]';
+                startButton.disabled = false;
+                startButton.classList.remove('bg-gray-600', 'cursor-not-allowed');
+                startButton.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
+
+            } catch (error) {
+                console.error("Error loading or parsing questions:", error);
+                // Display error message directly on the loading status element
+                loadingStatus.textContent = `[CRITICAL ERROR: Failed to parse data. See console. ${error.message}]`;
+            }
+        }
+
+        /**
+         * Shuffles an array using the Fisher-Yates algorithm.
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Initializes and starts the game.
+         */
+        function startGame() {
+            if (gameQuestions.length < questionsToWin) {
+                loadingStatus.textContent = `[ERROR: Need at least ${questionsToWin} questions to start.]`;
+                return;
+            }
+
+            // Reset state
+            score = 0;
+            currentQuestionIndex = 0;
+            timer = INITIAL_TIMER_VALUE; // Reset to 40
+            isGameOver = false;
+
+            // Select and shuffle the required number of questions
+            currentQuestions = shuffleArray([...gameQuestions]).slice(0, questionsToWin);
+
+            // Update UI to game view
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            timerStatus.classList.remove('hidden'); // Show timer/status when game starts
+
+            // Show the simulated fetching message immediately upon start
+            feedbackMessage.textContent = 'FETCHING LIVE QUESTIONS...';
+            
+            updateStatusDisplay();
+            startTimer(); // Timer starts ticking
+
+            // Delay showing the first question by 5 seconds
+            setTimeout(() => {
+                feedbackMessage.textContent = ''; // Clear the fetching message
+                showQuestion();
+            }, 5000); // Changed from 2000ms to 5000ms
+        }
+
+        /**
+         * Starts or resumes the countdown timer.
+         */
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (isGameOver) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                timer--;
+                updateTimerDisplay();
+                
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    endGame(false); // Player ran out of time
+                }
+            }, 1000);
+        }
+
+        /**
+         * Updates the timer display and progress bar.
+         */
+        function updateTimerDisplay() {
+            timerText.textContent = `Time: ${timer}s`;
+            const percentage = (timer / INITIAL_TIMER_VALUE) * 100; // Calculate based on INITIAL_TIMER_VALUE
+            timerBarFill.style.width = `${percentage}%`;
+            
+            // Change color as time runs out
+            if (timer <= 10) { 
+                timerBarFill.style.backgroundColor = '#facc15'; // Amber
+                timerText.classList.remove('text-red-500');
+                timerText.classList.add('text-amber-400');
+            } else if (timer <= 5) { 
+                timerBarFill.style.backgroundColor = '#ef4444'; // Red
+                timerText.classList.remove('text-amber-400');
+                timerText.classList.add('text-red-500');
+            } else {
+                timerBarFill.style.backgroundColor = '#ef4444';
+                timerText.classList.add('text-red-500');
+                timerText.classList.remove('text-amber-400');
+            }
+        }
+
+        /**
+         * Updates the score and sequence number display.
+         */
+        function updateStatusDisplay() {
+            scoreDisplay.textContent = score;
+            // Sequence number shows the current attempt number out of the total 5 questions
+            sequenceNumber.textContent = currentQuestionIndex < questionsToWin ? currentQuestionIndex + 1 : questionsToWin;
+        }
+
+        /**
+         * Displays the current question and its options.
+         */
+        function showQuestion() {
+            if (currentQuestionIndex >= questionsToWin) {
+                // If all 5 questions are attempted and the required score hasn't been reached, the player loses.
+                // We check if score < scoreToWin here, since score >= scoreToWin triggers an immediate win earlier.
+                if (score < scoreToWin) {
+                    endGame(false); 
+                }
+                return;
+            }
+
+            const q = currentQuestions[currentQuestionIndex];
+            questionText.textContent = q.question;
+            optionsContainer.innerHTML = ''; // Clear previous options
+            updateStatusDisplay();
+
+            // Create buttons for each option
+            shuffleArray([...q.options]).forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('answer-btn', 'text-left', 'p-3', 'rounded-md', 'font-medium', 'neon-glow', 'text-sm');
+                button.onclick = () => checkAnswer(option, button);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Checks the user's selected answer.
+         * @param {string} selectedOption The option chosen by the user.
+         * @param {HTMLElement} button The button element that was clicked.
+         */
+        function checkAnswer(selectedOption, button) {
+            const q = currentQuestions[currentQuestionIndex];
+            const isCorrect = selectedOption === q.answer;
+            
+            // Disable all buttons immediately after an answer is clicked
+            Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+
+            if (isCorrect) {
+                score++;
+                feedbackMessage.textContent = 'ACCESS GRANTED: Correct Sequence.';
+                button.classList.add('correct');
+
+                // IMMEDIATE WIN CHECK: Check if the score reaches the required amount (3)
+                if (score >= scoreToWin) {
+                    endGame(true); // ESCAPE SUCCESSFUL!
+                    return;
+                }
+
+            } else {
+                // If incorrect, apply a time penalty (5 seconds)
+                timer = Math.max(0, timer - 5); 
+                updateTimerDisplay(); // Immediately update the display
+                feedbackMessage.textContent = 'ACCESS DENIED: Incorrect Value. [-5s Penalty]';
+                button.classList.add('incorrect');
+                // Highlight the correct answer
+                Array.from(optionsContainer.children).find(btn => btn.textContent === q.answer).classList.add('correct');
+
+                // Check for immediate loss after penalty
+                if (timer === 0) {
+                    endGame(false);
+                    return;
+                }
+            }
+
+            updateStatusDisplay();
+            
+            // Move to the next question after a brief delay
+            setTimeout(() => {
+                currentQuestionIndex++;
+                feedbackMessage.textContent = ''; // Clear feedback
+                showQuestion();
+            }, 1500);
+        }
+
+        /**
+         * Ends the game and displays the results.
+         * @param {boolean} won True if the player won, false otherwise.
+         */
+        function endGame(won) {
+            isGameOver = true;
+            clearInterval(timerInterval);
+            
+            quizScreen.classList.add('hidden');
+            timerStatus.classList.add('hidden'); // Hide status on end screen
+            endScreen.classList.remove('hidden');
+
+            if (won) {
+                endTitle.textContent = 'ESCAPE SUCCESSFUL';
+                endTitle.classList.remove('text-red-500');
+                endTitle.classList.add('text-cyan-400');
+                endMessage.textContent = `Protocol complete! You solved ${scoreToWin} science challenges and escaped the lab with ${timer} seconds remaining.`;
+                restartButton.textContent = 'PLAY AGAIN';
+                restartButton.classList.remove('bg-gray-600');
+                restartButton.classList.add('bg-cyan-600');
+            } else {
+                endTitle.textContent = 'MELTDOWN FAILED';
+                endTitle.classList.remove('text-cyan-400');
+                endTitle.classList.add('text-red-500');
+                endMessage.textContent = `You failed to complete the sequence in time or failed to reach the required ${scoreToWin} solutions. Total correct: ${score}/${scoreToWin}. Try again!`;
+                restartButton.textContent = 'RETRY EXPERIMENT';
+                restartButton.classList.remove('bg-cyan-600');
+                restartButton.classList.add('bg-gray-600');
+            }
+        }
+
+        // --- Event Listeners and Initial Setup ---
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        window.onload = () => {
+             // Initial state: Timer/Status should not show detailed info until game starts
+             timerStatus.classList.add('hidden'); 
+             updateTimerDisplay();
+             // Start loading the questions synchronously from the embedded string
+             loadQuestionsFromCSV();
+        };
+
+    </script>
+</body>
+</html>
