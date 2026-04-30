@@ -1,0 +1,423 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Challenge: Modern History Timeline Quiz (Mission Select Mode)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a historical feel */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e8; /* Light parchment color */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; /* Allow footer to sit below app container */
+        }
+
+        #app {
+            background-color: #ffffff;
+            border: 4px solid #a0522d; /* Sienna brown border */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 550px; /* Slightly wider to accommodate menu buttons */
+        }
+
+        .historical-title {
+            font-family: 'Cinzel', serif;
+            color: #4b341f;
+        }
+
+        .scroll-bg {
+            background-color: #fffaf0; /* Creamy white for the content area */
+        }
+
+        .button-choice {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px #8b4513; /* Darker brown shadow for depth */
+        }
+
+        .button-choice:active {
+            box-shadow: 0 0 #8b4513;
+            transform: translateY(4px);
+        }
+
+        .correct-answer {
+            background-color: #4CAF50 !important; /* Green */
+            color: white !important;
+            box-shadow: 0 4px #388e3c;
+        }
+
+        .incorrect-answer {
+            background-color: #F44336 !important; /* Red */
+            color: white !important;
+            box-shadow: 0 4px #d32f2f;
+        }
+
+        /* Mission Complete Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div id="app" class="mx-auto rounded-xl p-6 md:p-8">
+        <header class="text-center mb-6">
+            <h1 class="historical-title text-3xl md:text-4xl font-bold mb-2">Chronos Mission Mode</h1>
+            <p class="text-sm text-gray-600">Select a mission to test your knowledge of the modern eras.</p>
+        </header>
+
+        <div id="menu-screen" class="p-4">
+            <h2 class="historical-title text-2xl font-bold mb-4 text-center text-gray-800">Mission Briefing</h2>
+            <div id="mission-buttons-container" class="space-y-4">
+                </div>
+            <p class="text-center text-sm mt-6 text-gray-500">Total score tracks cumulative performance across all completed missions.</p>
+        </div>
+
+        <main id="game-container" class="scroll-bg rounded-lg p-5 border border-gray-300 hidden">
+            <div class="mb-4 space-y-2">
+                <div class="flex justify-between items-center text-lg font-semibold text-gray-700 p-2 bg-gray-100 rounded-lg">
+                    <span id="current-era-display" class="historical-title text-xl text-indigo-700">Mission 1: The Secret Unlocks</span>
+                    <span id="score-display">Total Score: 0</span>
+                </div>
+                <div class="flex justify-between items-center text-md font-medium text-gray-600 px-2">
+                    <span id="era-progress-display">Question: 1/5</span>
+                    <span id="points-value-display" class="text-yellow-600">Value: 1 Point</span>
+                </div>
+            </div>
+
+            <div id="event-box" class="min-h-[100px] bg-amber-100 p-4 rounded-lg shadow-inner flex items-center justify-center mb-6 text-center">
+                <p id="event-text" class="text-xl md:text-2xl historical-title">Loading Mission...</p>
+            </div>
+
+            <div id="choices-container" class="grid grid-cols-2 gap-4">
+                </div>
+
+        </main>
+
+        <div id="end-screen" class="hidden text-center p-8">
+            <h2 class="historical-title text-4xl font-bold mb-4 text-green-700">Mission Accomplished!</h2>
+            <p class="text-xl mb-3 text-gray-800">Mission Score: <span id="mission-score" class="font-extrabold text-indigo-600"></span></p>
+            <p class="text-lg mb-6 text-gray-600">Total Campaign Score: <span id="final-score" class="font-extrabold text-red-600"></span></p>
+            <button id="restart-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg button-choice text-lg w-full">
+                Return to Mission Briefing
+            </button>
+        </div>
+    </div>
+
+    <footer class="text-center mt-8 text-sm text-gray-600 font-medium">
+        Developed By **keertana (G7A)**
+    </footer>
+
+    <script>
+        // --- GAME CONFIGURATION ---
+        const API_KEY = "";
+
+        // Combined configuration for cleaner mission data
+        const MISSION_DATA = {
+            "1990s": { id: 1, name: "The Secret Unlocks", points: 1, goal: 5 },
+            "2000s": { id: 2, name: "The Shockwave Unfolds", points: 2, goal: 4 },
+            "2010s": { id: 3, name: "Global Unrest", points: 3, goal: 4 },
+            "2020s": { id: 4, name: "The Next Frontier", points: 4, goal: 3 }
+        };
+
+        const ERAS_ORDER = ["1990s", "2000s", "2010s", "2020s"];
+        const ALL_ERAS = ["1990s", "2000s", "2010s", "2020s"];
+
+        // --- GAME DATA ---
+        const quizData = [
+            // 1990s Events (Mission 1)
+            { event: "Dissolution of the Soviet Union (Formal end)", date: 1991, correctEra: "1990s", era: "1990s" },
+            { event: "Nelson Mandela is released from prison in South Africa", date: 1990, correctEra: "1990s", era: "1990s" },
+            { event: "The World Wide Web is released to the public by CERN", date: 1993, correctEra: "1990s", era: "1990s" },
+            { event: "The first successful cloning of a mammal (Dolly the Sheep)", date: 1996, correctEra: "1990s", era: "1990s" },
+            { event: "Signing of the Good Friday Agreement in Northern Ireland", date: 1998, correctEra: "1990s", era: "1990s" },
+
+            // 2000s Events (Mission 2)
+            { event: "The Euro currency is introduced as physical banknotes and coins", date: 2002, correctEra: "2000s", era: "2000s" },
+            { event: "The attacks of September 11th in the United States", date: 2001, correctEra: "2000s", era: "2000s" },
+            { event: "Launch of the first iPhone by Apple, beginning the smartphone revolution", date: 2007, correctEra: "2000s", era: "2000s" },
+            { event: "The Global Financial Crisis intensifies with the collapse of Lehman Brothers", date: 2008, correctEra: "2000s", era: "2000s" },
+
+            // 2010s Events (Mission 3)
+            { event: "The Arab Spring wave of protests and conflicts begins", date: 2010, correctEra: "2010s", era: "2010s" },
+            { event: "NASA's Curiosity rover successfully lands on Mars", date: 2012, correctEra: "2010s", era: "2010s" },
+            { event: "The Paris Agreement on climate change is signed", date: 2016, correctEra: "2010s", era: "2010s" },
+            { event: "The UK votes to leave the European Union (Brexit Referendum)", date: 2016, correctEra: "2010s", era: "2010s" },
+
+            // 2020s Events (Mission 4)
+            { event: "The World Health Organization (WHO) declares COVID-19 a pandemic", date: 2020, correctEra: "2020s", era: "2020s" },
+            { event: "Launch of the James Webb Space Telescope (JWST)", date: 2021, correctEra: "2020s", era: "2020s" },
+            { event: "The rise of generative AI tools (e.g., ChatGPT public launch)", date: 2022, correctEra: "2020s", era: "2020s" },
+        ];
+        // --- GAME STATE ---
+        let state = {
+            totalCampaignScore: 0,
+            currentMissionScore: 0,
+            currentEra: null, // The era/mission currently being played (e.g., "1990s")
+            currentEraQuestions: [], // All questions for the current mission
+            currentQuestionIndex: 0,
+            isProcessing: false, // Prevents multiple clicks
+        };
+
+        // --- DOM ELEMENTS ---
+        const elements = {
+            menuScreen: document.getElementById('menu-screen'),
+            gameContainer: document.getElementById('game-container'),
+            endScreen: document.getElementById('end-screen'),
+            scoreDisplay: document.getElementById('score-display'),
+            currentEraDisplay: document.getElementById('current-era-display'),
+            eraProgressDisplay: document.getElementById('era-progress-display'),
+            pointsValueDisplay: document.getElementById('points-value-display'),
+            eventText: document.getElementById('event-text'),
+            choicesContainer: document.getElementById('choices-container'),
+            finalScore: document.getElementById('final-score'),
+            missionScore: document.getElementById('mission-score'),
+            restartButton: document.getElementById('restart-button'),
+            missionButtonsContainer: document.getElementById('mission-buttons-container')
+        };
+
+        // --- UTILITY FUNCTIONS ---
+        /**
+         * Shuffles an array using the Fisher-Yates algorithm.
+         */
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+
+        /**
+         * Manages which primary view is visible.
+         * @param {string} view - 'MENU', 'GAME', or 'END'
+         */
+        const setView = (view) => {
+            elements.menuScreen.classList.add('hidden');
+            elements.gameContainer.classList.add('hidden');
+            elements.endScreen.classList.add('hidden');
+
+            if (view === 'MENU') {
+                elements.menuScreen.classList.remove('hidden');
+            } else if (view === 'GAME') {
+                elements.gameContainer.classList.remove('hidden');
+            } else if (view === 'END') {
+                elements.endScreen.classList.remove('hidden');
+            }
+        };
+
+        // --- GAME LOGIC: MISSION SELECT MODE ---
+
+        /**
+         * Initializes the game by resetting state and showing the menu.
+         */
+        const initGame = () => {
+            state.currentMissionScore = 0;
+            state.currentEra = null;
+            state.currentQuestionIndex = 0;
+            updateDisplays(); // Refresh score display
+            renderMenuButtons();
+            setView('MENU');
+        };
+
+        /**
+         * Creates the mission buttons on the menu screen.
+         */
+        const renderMenuButtons = () => {
+            elements.missionButtonsContainer.innerHTML = '';
+
+            ERAS_ORDER.forEach(era => {
+                const config = MISSION_DATA[era];
+                const button = document.createElement('button');
+
+                // MODIFIED LINE: Removed the numerical year string from the textContent
+                button.textContent = `Mission ${config.id}: ${config.name} ()`;
+
+                button.dataset.era = era;
+                button.className = 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl button-choice text-lg historical-title';
+                button.addEventListener('click', () => startMission(era));
+
+                elements.missionButtonsContainer.appendChild(button);
+            });
+        };
+
+        /**
+         * Starts a mission for the selected era.
+         * @param {string} era - The name of the era to start (e.g., "1990s")
+         */
+        const startMission = (era) => {
+            state.currentEra = era;
+            state.currentMissionScore = 0;
+            state.currentQuestionIndex = 0;
+            state.isProcessing = false;
+
+            // 1. Filter and shuffle questions for the current era
+            const filteredQ = quizData.filter(q => q.era === era);
+            state.currentEraQuestions = shuffleArray(filteredQ);
+
+            // 2. Load first question and show game screen
+            updateDisplays();
+            loadQuestion();
+            setView('GAME');
+        };
+
+        /**
+         * Updates the score and mission progress display.
+         */
+        const updateDisplays = () => {
+            const currentEra = state.currentEra;
+
+            // Always show the total campaign score
+            elements.scoreDisplay.textContent = `Total Score: ${state.totalCampaignScore}`;
+
+            if (currentEra) {
+                const config = MISSION_DATA[currentEra];
+                const currentQNumber = state.currentQuestionIndex + 1;
+
+                // Show Mission number and Thematic Name
+                elements.currentEraDisplay.textContent = `Mission ${config.id}: ${config.name}`;
+
+                elements.eraProgressDisplay.textContent =
+                    `Question: ${currentQNumber}/${state.currentEraQuestions.length}`;
+                elements.pointsValueDisplay.textContent = `Value: ${config.points} Point${config.points > 1 ? 's' : ''}`;
+            }
+        };
+
+        /**
+         * Renders the current question and choices.
+         */
+        const loadQuestion = () => {
+            const q = state.currentEraQuestions[state.currentQuestionIndex];
+
+            elements.eventText.textContent = q.event;
+            elements.choicesContainer.innerHTML = '';
+
+            // Ensure choices are shuffled
+            const shuffledChoices = shuffleArray([...ALL_ERAS]);
+
+            shuffledChoices.forEach(era => {
+                const button = document.createElement('button');
+                button.textContent = era;
+                button.dataset.era = era;
+                button.className = 'button-choice bg-amber-400 hover:bg-amber-500 text-gray-800 font-bold py-3 px-4 rounded-lg text-lg historical-title';
+                button.addEventListener('click', handleChoiceClick);
+                elements.choicesContainer.appendChild(button);
+            });
+        };
+
+        /**
+         * Handles the user clicking a choice button.
+         * @param {Event} event
+         */
+        const handleChoiceClick = (event) => {
+            if (state.isProcessing) return;
+            state.isProcessing = true;
+
+            const selectedButton = event.currentTarget;
+            const selectedEra = selectedButton.dataset.era;
+            const currentQ = state.currentEraQuestions[state.currentQuestionIndex];
+            const isCorrect = selectedEra === currentQ.correctEra;
+            const config = MISSION_DATA[state.currentEra];
+
+            // Apply feedback classes
+            Array.from(elements.choicesContainer.children).forEach(button => {
+                button.removeEventListener('click', handleChoiceClick); // Disable further clicks
+                if (button.dataset.era === currentQ.correctEra) {
+                    button.classList.add('correct-answer');
+                } else if (button === selectedButton && !isCorrect) {
+                    button.classList.add('incorrect-answer');
+                }
+            });
+
+            // Show feedback message
+            showInlineFeedback(isCorrect, currentQ.date);
+
+            if (isCorrect) {
+                state.currentMissionScore += config.points;
+            }
+
+            // Check if mission is complete
+            if (state.currentQuestionIndex >= state.currentEraQuestions.length - 1) {
+                // End the game after a short delay
+                setTimeout(() => {
+                    state.totalCampaignScore += state.currentMissionScore;
+                    finishGame();
+                }, 1800);
+                return;
+            }
+
+            state.currentQuestionIndex++;
+
+            // Move to the next question after a delay
+            setTimeout(() => {
+                state.isProcessing = false;
+                updateDisplays();
+                loadQuestion();
+            }, 1800);
+        };
+
+        /**
+         * Displays temporary feedback inside the event box.
+         * @param {boolean} isCorrect
+         * @param {number} actualDate
+         */
+        const showInlineFeedback = (isCorrect, actualDate) => {
+            const dateStr = `${actualDate}`;
+
+            elements.eventText.classList.remove('text-xl', 'md:text-2xl', 'historical-title');
+            elements.eventText.classList.add('text-3xl', 'font-extrabold', isCorrect ? 'text-green-700' : 'text-red-700');
+            elements.eventText.textContent = isCorrect
+                ? `✅ Correct! (+${MISSION_DATA[state.currentEra].points} points)`
+                : `❌ Incorrect! (${dateStr})`;
+
+            // Revert after feedback is processed
+            setTimeout(() => {
+                elements.eventText.classList.remove('text-3xl', 'font-extrabold', 'text-green-700', 'text-red-700');
+                elements.eventText.classList.add('text-xl', 'md:text-2xl', 'historical-title');
+            }, 1700);
+        };
+
+        /**
+         * Displays the end-game screen for the mission and returns to menu.
+         */
+        const finishGame = () => {
+            elements.missionScore.textContent = state.currentMissionScore;
+            elements.finalScore.textContent = state.totalCampaignScore;
+            elements.restartButton.textContent = "Return to Mission Briefing";
+
+            elements.restartButton.onclick = initGame;
+
+            setView('END');
+        };
+
+        // --- START GAME ---
+        document.addEventListener('DOMContentLoaded', initGame);
+
+    </script>
+</body>
+</html>
