@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Blitz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1a202c;
+            display: flex;
+            flex-direction: column; /* Changed to column to stack container and footer */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px; /* Added padding for space around the page */
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            max-width: 90vw;
+            width: 500px;
+            margin-bottom: 1rem; /* Space between container and new footer */
+        }
+        .number-display {
+            background-color: #3b82f6;
+            color: #fff;
+            font-size: 5rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 150px;
+            width: 150px;
+            border-radius: 50%;
+            margin: 0 auto 2rem;
+            border: 5px solid #2563eb;
+            transition: transform 0.2s ease-in-out;
+        }
+        .number-display.called {
+            transform: scale(1.1);
+        }
+        .called-numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #e2e8f0;
+        }
+        .called-numbers-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        .called-numbers-grid::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .called-numbers-grid::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+        .called-number-item {
+            background-color: #e2e8e0;
+            color: #4a5568;
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+        button:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+<div class="container text-center">
+    <h1 class="text-4xl font-bold mb-6 text-rainbow-800">
+    Bingo Blitz</h1>
+    <div id="scoreDisplay" class="text-xl font-semibold mb-2 text-gray-600">Score: 0</div>
+    <div id="numberDisplay" class="number-display">
+        <span class="text-2xl">?</span>
+    </div>
+
+    <div id="questionDisplay" class="text-xl font-semibold mb-4 text-gray-600 h-6"></div>
+
+    <button id="callNumberBtn" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-lg mb-6 transition-all duration-200 ease-in-out hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+        Get Question
+    </button>
+    <button id="resetBtn" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg text-lg mb-6 transition-all duration-200 ease-in-out hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 hidden">
+        Reset Game
+    </button>
+        <hr class="my-6 border-gray-300">
+        <div class="mb-4">
+        <h2 class="text-2xl font-bold mb-2 text-gray-700">Called Numbers</h2>
+        <div id="calledNumbersList" class="called-numbers-grid">
+            </div>
+    </div>
+</div>
+
+<div class="text-sm text-gray-500 mt-4">
+    Developed By **Sharran**
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const numberDisplay = document.getElementById('numberDisplay');
+        const questionDisplay = document.getElementById('questionDisplay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const callNumberBtn = document.getElementById('callNumberBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const calledNumbersList = document.getElementById('calledNumbersList');
+
+        let numbersPool = [];
+        let calledNumbers = [];
+        let currentNumberToCall = null;
+        let isQuestionStage = true;
+        let score = 0;
+
+        // India-specific questions for middle school science and social science
+        const quizQuestions = {
+            1: "How many districts are there in Delhi?",
+            2: "The number of major seasons in India?",
+            3: "How many colors are in the Indian national flag?",
+            4: "How many vedas are there?",
+            5: "How many colors are in a rainbow?",
+            6: "What is the atomic number of Carbon ($C$)?",
+            7: "How many major continents are there on Earth?",
+            8: "How many Union Territories does India have?",
+            9: "What is the atomic number of Fluorine ($F$)?",
+            10: "How many planets are in our solar system?",
+            11: "In what year did the British East India Company establish its first factory in Surat?",
+            12: "How many pairs of ribs does a human have?",
+            13: "What is the atomic number of Aluminium ($Al$)?",
+            14: "What is the highest number on the pH scale?",
+            15: "What is the atomic number of Phosphorus ($P$)?",
+            16: "In which year was the partition of Bengal?",
+            17: "The number of years it takes to get a new Lok Sabha after an election.",
+            18: "What is the atomic number of Argon ($Ar$)?",
+            19: "The number of years in a full-term for a President of India?",
+            20: "What is the atomic number of Calcium ($Ca$)?",
+            21: "The number of states in India?",
+            22: "What is the atomic number of Titanium ($Ti$)?",
+            23: "How many official languages are there in India?",
+            24: "How many hours are in a day?",
+            25: "In what year was the first Indian National Congress meeting held? (18..)",
+            26: "What is the number of Fundamental Rights in the Indian Constitution?",
+            27: "What is the atomic number of Cobalt ($Co$)?",
+            28: "How many states were there in India after the States Reorganisation Act?",
+            29: "What is the atomic number of Copper ($Cu$)?",
+            30: "How many days are in the month of November?",
+            31: "How many districts are there in the state of Tamil Nadu?",
+            32: "What is the freezing point of water in degrees Fahrenheit?",
+            33: "What is the atomic number of Arsenic ($As$)?",
+            34: "In what year did India win its first Cricket World Cup? (19..)",
+            35: "How many countries share a land border with India?",
+            36: "The number of articles in the original Indian Constitution?",
+            37: "The number of districts in the state of Uttar Pradesh?",
+            38: "What is the atomic number of Strontium ($Sr$)?",
+            39: "In what year was the first session of the Constituent Assembly of India held? (19..)",
+            40: "The number of districts in the state of Maharashtra?",
+            41: "What is the atomic number of Niobium ($Nb$)?",
+            42: "The number of chapters in the Rigveda?",
+            43: "What is the atomic number of Technetium ($Tc$)?",
+            44: "How many states are in the United States?", // A common comparison for social science
+            45: "How many years are in a 'Golden Jubilee'?",
+            46: "How many chromosomes do humans have?",
+            47: "What is the atomic number of Silver ($Ag$)?",
+            48: "How many districts are in the state of Rajasthan?",
+            49: "What is the atomic number of Indium ($In$)?",
+            50: "The year India won its first Olympic medal? (19...)",
+            51: "What is the atomic number of Antimony ($Sb$)?",
+            52: "How many years are in a 'Golden Jubilee' plus two?",
+            53: "What is the atomic number of Iodine ($I$)?",
+            54: "How many players are on the field for a hockey team?",
+            55: "What is the atomic number of Cesium ($Cs$)?",
+            56: "What is the atomic number of Barium ($Ba$)?",
+            57: "How many years did the Indian Rebellion of 1857 last?",
+            58: "In what year did the Quit India Movement start? (19..)",
+            59: "In what year was the Indian National Army founded? (19..)",
+            60: "How many seconds are in a minute?",
+            61: "The number of years since India's first successful nuclear test in 1974?",
+            62: "In what year did the Sino-Indian War take place? (19..)",
+            63: "What is the atomic number of Europium ($Eu$)?",
+            64: "The number of squares on a chessboard?",
+            65: "How many years are in a 'Diamond Jubilee'?",
+            66: "How many years after independence did India become a republic?",
+            67: "In what year did the Bangladesh Liberation War take place? (19..)",
+            68: "The number of Indian states with a coastline?",
+            69: "The number of years since the first Indian General Election?",
+            70: "The number of years after independence the Indian Constitution was adopted?",
+            71: "The number of Indian states that share a border with Pakistan?",
+            72: "What is the number of years a person must be a citizen to become the President of India?",
+            73: "What is the atomic number of Tantalum ($Ta$)?",
+            74: "What is the atomic number of Tungsten ($W$)?",
+            75: "What is the maximum number of balls in a standard Bingo game?"
+        };
+
+        const generateQuizQuestion = (number) => {
+            const question = quizQuestions[number];
+            if (question) {
+                return question;
+            }
+            return `Question not found for number ${number}. Please reset.`;
+        };
+
+        const resetGame = () => {
+            numbersPool = Object.keys(quizQuestions).map(Number);
+            calledNumbers = [];
+            currentNumberToCall = null;
+            isQuestionStage = true;
+            score = 0;
+            numberDisplay.innerHTML = '<span>?</span>';
+            questionDisplay.textContent = '';
+            scoreDisplay.textContent = 'Score: 0';
+            numberDisplay.classList.remove('called');
+            calledNumbersList.innerHTML = '';
+            callNumberBtn.disabled = false;
+            callNumberBtn.textContent = 'Get Question';
+            callNumberBtn.classList.remove('hidden');
+            resetBtn.classList.add('hidden');
+        };
+
+        const processCall = () => {
+            if (isQuestionStage) {
+                if (numbersPool.length === 0) {
+                    numberDisplay.innerHTML = '<span>End</span>';
+                    callNumberBtn.disabled = true;
+                    callNumberBtn.classList.add('hidden');
+                    resetBtn.classList.remove('hidden');
+                    return;
+                }
+
+                const randomIndex = Math.floor(Math.random() * numbersPool.length);
+                currentNumberToCall = numbersPool.splice(randomIndex, 1)[0];
+
+                // Ensure LaTeX is correctly formatted for display in HTML, if necessary.
+                // The original code uses a placeholder for LaTeX that won't render directly,
+                // but we will keep the original structure for compatibility.
+                const questionText = generateQuizQuestion(currentNumberToCall).replace(/\$([^\$]*)\$/g, (match, p1) => {
+                    // Simple replacement for atomic numbers like C, F, Al, etc., to make them bold.
+                    return `**${p1.trim()}**`;
+                });
+                questionDisplay.innerHTML = questionText;
+
+                callNumberBtn.textContent = 'Reveal Answer';
+                isQuestionStage = false;
+
+            } else {
+                calledNumbers.push(currentNumberToCall);
+
+                // Scoring Logic: +10 points if number is between 31 and 45 (inclusive)
+                if (currentNumberToCall >= 31 && currentNumberToCall <= 45) {
+                    score += 10;
+                    scoreDisplay.textContent = 'Score: ' + score;
+                }
+
+                numberDisplay.classList.remove('called');
+                numberDisplay.innerHTML = `<span>${currentNumberToCall}</span>`;
+                void numberDisplay.offsetWidth; // Trigger reflow for animation
+                numberDisplay.classList.add('called');
+
+                const numberItem = document.createElement('div');
+                numberItem.classList.add('called-number-item');
+                numberItem.textContent = currentNumberToCall;
+                calledNumbersList.appendChild(numberItem);
+
+                calledNumbersList.scrollTop = calledNumbersList.scrollHeight;
+
+                questionDisplay.textContent = '';
+                callNumberBtn.textContent = 'Get Question';
+                isQuestionStage = true;
+            }
+        };
+
+        callNumberBtn.addEventListener('click', processCall);
+        resetBtn.addEventListener('click', resetGame);
+
+        resetGame();
+    });
+</script>
+</body>
+</html>
