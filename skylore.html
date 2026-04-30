@@ -1,0 +1,905 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyLore: Journey Through Space & Knowledge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', 'Arial', sans-serif;
+        }
+
+        body {
+            background: #000010;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Space Background */
+        .space-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(31, 40, 85, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(79, 172, 254, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(0, 242, 254, 0.15) 0%, transparent 50%);
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+                radial-gradient(2px 2px at 40% 70%, #fff, transparent),
+                radial-gradient(1px 1px at 60% 20%, #fff, transparent),
+                radial-gradient(1px 1px at 80% 50%, #fff, transparent),
+                radial-gradient(2px 2px at 30% 80%, #fff, transparent),
+                radial-gradient(1px 1px at 70% 10%, #fff, transparent),
+                radial-gradient(2px 2px at 90% 40%, #fff, transparent),
+                radial-gradient(1px 1px at 10% 60%, #fff, transparent),
+                radial-gradient(3px 3px at 25% 15%, #fff, transparent),
+                radial-gradient(1px 1px at 85% 25%, #fff, transparent);
+            background-repeat: repeat;
+            animation: twinkle 8s infinite alternate;
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px #4facfe;
+            animation: shooting 15s infinite;
+        }
+
+        .shooting-star:nth-child(1) {
+            top: 10%;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .shooting-star:nth-child(2) {
+            top: 30%;
+            left: -100px;
+            animation-delay: 5s;
+        }
+
+        .shooting-star:nth-child(3) {
+            top: 60%;
+            left: -100px;
+            animation-delay: 10s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes shooting {
+            0% {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            10% {
+                transform: translateX(100vw) translateY(100px);
+                opacity: 1;
+            }
+            11%, 100% {
+                transform: translateX(100vw) translateY(100px);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #4facfe, #00f2fe, #667eea);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(79, 172, 254, 0.7);
+            letter-spacing: 2px;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px rgba(79, 172, 254, 0.7),
+                             0 0 30px rgba(79, 172, 254, 0.5),
+                             0 0 40px rgba(79, 172, 254, 0.3);
+            }
+            to {
+                text-shadow: 0 0 30px rgba(79, 172, 254, 0.9),
+                             0 0 40px rgba(79, 172, 254, 0.7),
+                             0 0 50px rgba(79, 172, 254, 0.5);
+            }
+        }
+
+        .tagline {
+            font-size: 1.3rem;
+            color: #a0d2fe;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(160, 210, 254, 0.5);
+            letter-spacing: 1px;
+        }
+
+        .start-screen, .main-screen, .era-screen, .quiz-screen, .results-screen, .scores-screen {
+            background: rgba(10, 15, 40, 0.85);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 50px rgba(79, 172, 254, 0.3),
+                        inset 0 0 20px rgba(79, 172, 254, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        .start-screen::before, .main-screen::before, .quiz-screen::before, .results-screen::before, .scores-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #4facfe, #00f2fe, transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .active {
+            display: block;
+            animation: cosmicAppear 0.8s ease-out;
+        }
+
+        @keyframes cosmicAppear {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.95);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+        }
+
+        .start-container {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .start-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #4facfe, #00f2fe, #667eea);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 25px;
+            text-shadow: 0 0 25px rgba(79, 172, 254, 0.7);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        .start-description {
+            font-size: 1.4rem;
+            color: #b0d5fe;
+            margin-bottom: 30px;
+            line-height: 1.7;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            text-shadow: 0 0 10px rgba(176, 213, 254, 0.3);
+        }
+
+        .start-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .feature {
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.6), rgba(15, 23, 42, 0.8));
+            padding: 25px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .feature:hover::before {
+            left: 100%;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.2);
+            border-color: rgba(79, 172, 254, 0.4);
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            color: #4facfe;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            color: #a0d2fe;
+            line-height: 1.5;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 35px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 25px rgba(79, 172, 254, 0.4);
+            margin: 20px 0 30px 0;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+        }
+
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .start-btn:hover::before {
+            left: 100%;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(79, 172, 254, 0.6);
+        }
+
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.8), rgba(15, 23, 42, 0.9));
+            color: #a0d2fe;
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-btn:hover::before {
+            left: 100%;
+        }
+
+        .nav-btn:hover {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+            border-color: rgba(79, 172, 254, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.2);
+        }
+
+        .eras-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .era-card {
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.7), rgba(15, 23, 42, 0.9));
+            border-radius: 15px;
+            padding: 30px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: block;
+        }
+
+        .era-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .era-card:hover::before {
+            left: 100%;
+        }
+
+        .era-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(79, 172, 254, 0.3);
+            border-color: rgba(79, 172, 254, 0.5);
+        }
+
+        .era-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #4facfe;
+            text-shadow: 0 0 10px rgba(79, 172, 254, 0.3);
+        }
+
+        .era-description {
+            font-size: 1rem;
+            color: #b0d5fe;
+            line-height: 1.6;
+        }
+
+        .era-card.ancient { 
+            background: linear-gradient(135deg, rgba(45, 26, 75, 0.7), rgba(26, 15, 55, 0.9));
+            border-color: rgba(147, 112, 219, 0.3);
+        }
+        .era-card.exploration { 
+            background: linear-gradient(135deg, rgba(26, 75, 61, 0.7), rgba(15, 55, 41, 0.9));
+            border-color: rgba(50, 205, 50, 0.3);
+        }
+        .era-card.space-race { 
+            background: linear-gradient(135deg, rgba(75, 45, 26, 0.7), rgba(55, 26, 15, 0.9));
+            border-color: rgba(255, 99, 71, 0.3);
+        }
+        .era-card.modern { 
+            background: linear-gradient(135deg, rgba(26, 61, 75, 0.7), rgba(15, 41, 55, 0.9));
+            border-color: rgba(30, 144, 255, 0.3);
+        }
+        .era-card.future { 
+            background: linear-gradient(135deg, rgba(75, 26, 61, 0.7), rgba(55, 15, 41, 0.9));
+            border-color: rgba(186, 85, 211, 0.3);
+        }
+
+        .question-container {
+            margin: 40px 0;
+        }
+
+        .question {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            text-align: center;
+            color: #e6f2ff;
+            text-shadow: 0 0 10px rgba(230, 242, 255, 0.2);
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .option {
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.6), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            border-radius: 12px;
+            padding: 18px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #b0d5fe;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.1), transparent);
+            transition: left 0.4s ease;
+        }
+
+        .option:hover::before {
+            left: 100%;
+        }
+
+        .option:hover {
+            background: rgba(79, 172, 254, 0.15);
+            transform: translateX(8px);
+            border-color: rgba(79, 172, 254, 0.4);
+            color: #e6f2ff;
+        }
+
+        .option.selected {
+            background: rgba(79, 172, 254, 0.25);
+            border-color: rgba(79, 172, 254, 0.6);
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.8), rgba(15, 23, 42, 0.9));
+            color: #a0d2fe;
+            border: 1px solid rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+            border-color: rgba(79, 172, 254, 0.6);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(31, 40, 85, 0.6);
+            border-radius: 5px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid rgba(79, 172, 254, 0.2);
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+        }
+
+        .quiz-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            color: #a0d2fe;
+            text-shadow: 0 0 8px rgba(160, 210, 254, 0.3);
+        }
+
+        .results-container {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .score-header {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            color: #4facfe;
+            text-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+        }
+
+        .score-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #4facfe, #00f2fe, #667eea);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 15px 0 25px 0;
+            text-shadow: 0 0 20px rgba(79, 172, 254, 0.7);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        .encouragement {
+            font-size: 1.6rem;
+            margin-bottom: 50px;
+            color: #b0d5fe;
+            font-style: italic;
+            text-shadow: 0 0 10px rgba(176, 213, 254, 0.3);
+        }
+
+        .question-review {
+            text-align: left;
+            margin: 40px 0;
+            border-top: 2px solid rgba(79, 172, 254, 0.3);
+            padding-top: 40px;
+        }
+
+        .review-item {
+            margin-bottom: 35px;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.5), rgba(15, 23, 42, 0.7));
+            border-radius: 15px;
+            border-left: 5px solid #4facfe;
+            transition: all 0.3s ease;
+        }
+
+        .review-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.2);
+        }
+
+        .review-item.correct {
+            border-left-color: #00ff88;
+        }
+
+        .review-item.incorrect {
+            border-left-color: #ff4444;
+        }
+
+        .review-question {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #e6f2ff;
+            font-weight: 600;
+            text-shadow: 0 0 8px rgba(230, 242, 255, 0.2);
+        }
+
+        .review-answer {
+            margin: 12px 0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+        }
+
+        .user-answer {
+            color: #ff6b6b;
+            border-left: 3px solid #ff6b6b;
+        }
+
+        .correct-answer {
+            color: #51cf66;
+            border-left: 3px solid #51cf66;
+        }
+
+        .review-explanation {
+            margin-top: 15px;
+            font-style: italic;
+            color: #a0d2fe;
+            border-left: 3px solid #4facfe;
+            padding-left: 20px;
+            line-height: 1.5;
+        }
+
+        .home-btn {
+            margin-top: 25px;
+        }
+
+        .scores-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .scores-table th, .scores-table td {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+        }
+
+        .scores-table th {
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.8), rgba(15, 23, 42, 0.9));
+            color: #4facfe;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .scores-table tr {
+            background: rgba(31, 40, 85, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .scores-table tr:hover {
+            background: rgba(79, 172, 254, 0.1);
+            transform: translateX(5px);
+        }
+
+        .score-value-small {
+            font-weight: 600;
+            color: #4facfe;
+            text-shadow: 0 0 8px rgba(79, 172, 254, 0.3);
+        }
+
+        .score-percentage {
+            color: #a0d2fe;
+        }
+
+        .total-score {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(31, 40, 85, 0.5), rgba(15, 23, 42, 0.7));
+            border-radius: 15px;
+            border: 1px solid rgba(79, 172, 254, 0.3);
+        }
+
+        .total-score-value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 15px 0;
+            text-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #6688cc;
+            font-size: 1rem;
+            text-shadow: 0 0 8px rgba(102, 136, 204, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .eras-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo {
+                font-size: 2.8rem;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+            
+            .main-nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .start-title {
+                font-size: 2.8rem;
+            }
+            
+            .start-features {
+                grid-template-columns: 1fr;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated Space Background -->
+    <div class="space-background">
+        <div class="stars"></div>
+        <div class="shooting-star"></div>
+        <div class="shooting-star"></div>
+        <div class="shooting-star"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">SkyLore</div>
+            <div class="tagline">Journey Through Space & Knowledge</div>
+        </header>
+
+        <!-- Start Screen -->
+        <div class="start-screen active" id="startScreen">
+            <div class="start-container">
+                <button class="start-btn" id="startGameBtn">Begin Cosmic Journey</button>
+                
+                <div class="start-description">
+                    Embark on an epic cosmic journey through the history of astronomy and space exploration. 
+                    From ancient skywatchers to future space colonization, test your knowledge across five incredible eras of cosmic discovery.
+                </div>
+                
+                <div class="start-features">
+                    <div class="feature">
+                        <div class="feature-title">Five Historical Eras</div>
+                        <div class="feature-desc">Ancient Skywatchers  |  Age of Exploration  |  Space Race  |  Modern Science  |  Future Horizons</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Menu Screen -->
+        <div class="main-screen" id="mainScreen">
+            <!-- Navigation buttons removed as requested -->
+            
+            <h2>Select Your Era</h2>
+            <p style="text-align: center; margin-bottom: 20px; color: #b0d5fe;">Embark on a journey through the history of astronomy and space exploration</p>
+            
+            <div class="eras-grid">
+                <a href="https://skylore2025.github.io/ancient.html" class="era-card ancient" data-era="ancient">
+                    <div class="era-title">Ancient Skywatchers</div>
+                    <div class="era-description">Explore how ancient civilizations like the Maya, Egyptians, and Greeks understood the cosmos.</div>
+                </a>
+                
+                <a href="http://skylore2025.github.io/medieval.html" class="era-card exploration" data-era="exploration">
+                    <div class="era-title">Age of Exploration</div>
+                    <div class="era-description">Discover the revolutionary work of Copernicus, Galileo, Kepler, and Newton.</div>
+                </a>
+                
+                <a href="http://skylore2025.github.io/spacerace.html" class="era-card space-race" data-era="spaceRace">
+                    <div class="era-title">Space Race Era</div>
+                    <div class="era-description">Relive the Cold War rivalry that took us to the Moon with Sputnik and Apollo.</div>
+                </a>
+                
+                <a href="http://skylore2025.github.io/modern.html" class="era-card modern" data-era="modern">
+                    <div class="era-title">Modern Space Science</div>
+                    <div class="era-description">Explore Hubble, ISS, Mars rovers, and the search for exoplanets.</div>
+                </a>
+                
+                <a href="http://skylore2025.github.io/future.html" class="era-card future" data-era="future">
+                    <div class="era-title">Future Horizons</div>
+                    <div class="era-description">Look ahead to Artemis missions, Mars colonization, and interstellar travel.</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quiz Screen - Content removed as requested -->
+        <div class="quiz-screen" id="quizScreen">
+            <!-- Quiz content removed -->
+        </div>
+
+        <!-- Results Screen - Content removed as requested -->
+        <div class="results-screen" id="resultsScreen">
+            <!-- Results content removed -->
+        </div>
+
+        <!-- Scores Screen - Content removed as requested -->
+        <div class="scores-screen" id="scoresScreen">
+            <!-- Scores content removed -->
+        </div>
+    </div>
+
+    <footer>
+        <p>Designed & Developed by Balsam Dream Chasers | NASA Space Apps Challenge 2025</p>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const startScreen = document.getElementById('startScreen');
+        const mainScreen = document.getElementById('mainScreen');
+        const startGameBtn = document.getElementById('startGameBtn');
+
+        // Event Listeners for Navigation
+        startGameBtn.addEventListener('click', () => {
+            startScreen.classList.remove('active');
+            mainScreen.classList.add('active');
+        });
+    </script>
+</body>
+</html>
