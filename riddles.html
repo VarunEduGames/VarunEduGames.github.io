@@ -1,0 +1,423 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Critical Thinking App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen p-4 sm:p-6 bg-gray-100">
+    <div class="flex-grow flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 sm:p-8">
+            <header class="text-center mb-6 sm:mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800">Riddle Trainer</h1>
+                <p class="mt-2 text-gray-600 text-sm sm:text-base">Sharpen your mind with a series of riddles.</p>
+            </header>
+
+            <div id="exercise-container" class="space-y-6">
+
+                <div id="welcome-screen" class="text-center">
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <h2 class="text-2xl font-semibold text-blue-800">Welcome!</h2>
+                        <p class="mt-2 text-blue-700">Can you solve these riddles? Let's find out!</p>
+                    </div>
+                    <button id="start-button" class="mt-6 w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors">Start Riddles</button>
+                </div>
+                
+                <div id="riddle-exercise" class="hidden">
+                    <div class="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Riddle Solver</h2>
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+                            <div class="flex-grow">
+                                <span id="timer-display" class="text-lg font-bold text-gray-700 hidden"></span>
+                            </div>
+                            <button id="toggle-timer-button" onclick="toggleTimerOptions()" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition-colors">Toggle Timer</button>
+                            <button id="show-options-button" onclick="showOptions()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors">Show Options</button>
+                        </div>
+                        <div id="timer-options" class="grid grid-cols-3 gap-2 mb-4 hidden">
+                            <button onclick="setTimer(20)" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-lg transition-colors">20s</button>
+                            <button onclick="setTimer(25)" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-lg transition-colors">25s</button>
+                            <button onclick="setTimer(30)" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-lg transition-colors">30s</button>
+                        </div>
+
+                        <p id="riddle-question" class="text-lg text-gray-700 font-medium mb-4">Riddle goes here.</p>
+                        <div id="riddle-options" class="space-y-3 hidden">
+                            </div>
+
+                        <div id="riddle-result" class="mt-4 text-center p-3 rounded-lg hidden"></div>
+                    </div>
+                    <button id="next-riddle-button" onclick="nextRiddle()" class="mt-4 w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors hidden">Next Riddle</button>
+                </div>
+
+                <div id="final-screen" class="hidden text-center">
+                    <div class="bg-green-50 rounded-lg p-6">
+                        <h2 class="text-2xl font-semibold text-green-800">Riddles Complete!</h2>
+                        <p class="mt-2 text-green-700">You've finished all the riddles.</p>
+                        <p class="mt-4 text-xl font-bold">Your Score: <span id="final-score">0</span> / <span id="total-questions">0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="mt-auto text-center text-gray-500 text-sm py-4">
+        <p>Designed by Surendranath (G7A)</p>
+    </footer>
+    <script>
+        // Data for each exercise
+        const exercises = {
+            sets: [
+                {
+                    name: "Riddle Set 1",
+                    riddles: [
+                        {
+                            question: "What has an eye, but cannot see?",
+                            correctAnswer: "A needle",
+                            options: ["A camera", "A storm", "A needle", "A potato"]
+                        },
+                        {
+                            question: "What has cities, but no houses; mountains, but no trees; and water, but no fish?",
+                            correctAnswer: "A map",
+                            options: ["A river", "A book", "A map", "A city"]
+                        },
+                        {
+                            question: "What has four legs in the morning, two legs at noon, and three legs in the evening?",
+                            correctAnswer: "A human",
+                            options: ["A dog", "An elephant", "A human", "A table"]
+                        },
+                        {
+                            question: "I have four legs, a head, and a body, but cannot walk. What am I?",
+                            correctAnswer: "A bed",
+                            options: ["A car", "A bed", "A spider", "A chair"]
+                        },
+                        {
+                            question: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+                            correctAnswer: "An echo",
+                            options: ["A whisper", "A mirror", "A song", "An echo"]
+                        },
+                        {
+                            question: "What can be broken, but is never held?",
+                            correctAnswer: "A promise",
+                            options: ["A glass", "A promise", "A heart", "A bone"]
+                        },
+                        {
+                            question: "What is full of holes but still holds water?",
+                            correctAnswer: "A sponge",
+                            options: ["A sieve", "A sponge", "A bucket", "A net"]
+                        },
+                        {
+                            question: "What building has the most stories?",
+                            correctAnswer: "A library",
+                            options: ["A tower", "A museum", "A library", "A skyscraper"]
+                        },
+                        {
+                            question: "What is always in front of you but can’t be seen?",
+                            correctAnswer: "The future",
+                            options: ["The sky", "The past", "The future", "Your nose"]
+                        },
+                        {
+                            question: "What goes up but never comes down?",
+                            correctAnswer: "Your age",
+                            options: ["A ball", "Your age", "A rocket", "An elevator"]
+                        },
+                        {
+                            question: "What gets wet while drying?",
+                            correctAnswer: "A towel",
+                            options: ["A hair dryer", "A towel", "A sponge", "A hand"]
+                        },
+                        {
+                            question: "What has a neck but no head?",
+                            correctAnswer: "A bottle",
+                            options: ["A person", "A shirt", "A giraffe", "A bottle"]
+                        },
+                        {
+                            question: "What is easy to get into, but hard to get out of?",
+                            correctAnswer: "Trouble",
+                            options: ["A car", "A house", "A river", "Trouble"]
+                        },
+                        {
+                            question: "What has to be broken before you can use it?",
+                            correctAnswer: "An egg",
+                            options: ["A stick", "A plate", "An egg", "A toy"]
+                        },
+                        {
+                            question: "What is the end of everything?",
+                            correctAnswer: "The letter G",
+                            options: ["The ocean", "The letter G", "The universe", "The earth"]
+                        },
+                        {
+                            question: "What has a thumb and four fingers, but is not alive?",
+                            correctAnswer: "A glove",
+                            options: ["A hand", "A sock", "A glove", "A plant"]
+                        },
+                        {
+                            question: "What is full of holes but holds water?",
+                            correctAnswer: "A sponge",
+                            options: ["A sieve", "A bucket", "A sponge", "A glass"]
+                        },
+                        {
+                            question: "What question can you never answer yes to?",
+                            correctAnswer: "Are you asleep yet?",
+                            options: ["Are you okay?", "Is it cold outside?", "Are you hungry?", "Are you asleep yet?"]
+                        },
+                        {
+                            question: "What is always coming, but never arrives?",
+                            correctAnswer: "Tomorrow",
+                            options: ["Yesterday", "The moon", "Tomorrow", "The sun"]
+                        },
+                        {
+                            question: "What can you catch, but not throw?",
+                            correctAnswer: "A cold",
+                            options: ["A ball", "A cold", "A frisbee", "A fish"]
+                        },
+                        {
+                            question: "I’m tall when I’m young, and I’m short when I’m old. What am I?",
+                            correctAnswer: "A candle",
+                            options: ["A tree", "A building", "A candle", "A person"]
+                        },
+                        {
+                            question: "What belongs to you, but other people use it more than you do?",
+                            correctAnswer: "Your name",
+                            options: ["Your car", "Your name", "Your house", "Your phone"]
+                        },
+                        {
+                            question: "What can you see in a mirror, but not with your eyes?",
+                            correctAnswer: "Your reflection",
+                            options: ["Your back", "The sky", "Your reflection", "Your brain"]
+                        },
+                        {
+                            question: "What kind of room has no doors or windows?",
+                            correctAnswer: "A mushroom",
+                            options: ["A closet", "A prison", "A mushroom", "A cave"]
+                        },
+                        {
+                            question: "What has a face and two hands, but no arms or legs?",
+                            correctAnswer: "A clock",
+                            options: ["A statue", "A scarecrow", "A doll", "A clock"]
+                        },
+                        {
+                            question: "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
+                            correctAnswer: "A map",
+                            options: ["A globe", "A book", "A map", "A painting"]
+                        },
+                        {
+                            question: "What is always hungry and will die if not fed, but anything it drinks will kill it?",
+                            correctAnswer: "Fire",
+                            options: ["A person", "A plant", "Fire", "A monster"]
+                        },
+                        {
+                            question: "What word is spelled wrong in every dictionary?",
+                            correctAnswer: "Wrong",
+                            options: ["Mistake", "Incorrect", "Incorrectly", "Wrong"]
+                        },
+                        {
+                            question: "What can travel all over the world without leaving its corner?",
+                            correctAnswer: "A stamp",
+                            options: ["A passport", "A plane", "A stamp", "A bus"]
+                        },
+                        {
+                            question: "What has an eye, but cannot see?",
+                            correctAnswer: "A needle",
+                            options: ["A camera", "A storm", "A needle", "A potato"]
+                        },
+                        {
+                            question: "What has cities, but no houses; mountains, but no trees; and water, but no fish?",
+                            correctAnswer: "A map",
+                            options: ["A river", "A book", "A map", "A city"]
+                        },
+                        {
+                            question: "What has four legs in the morning, two legs at noon, and three legs in the evening?",
+                            correctAnswer: "A human",
+                            options: ["A dog", "An elephant", "A human", "A table"]
+                        },
+                        {
+                            question: "I have four legs, a head, and a body, but cannot walk. What am I?",
+                            correctAnswer: "A bed",
+                            options: ["A car", "A bed", "A spider", "A chair"]
+                        },
+                        {
+                            question: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+                            correctAnswer: "An echo",
+                            options: ["A whisper", "A mirror", "A song", "An echo"]
+                        },
+                        {
+                            question: "What can be broken, but is never held?",
+                            correctAnswer: "A promise",
+                            options: ["A glass", "A promise", "A heart", "A bone"]
+                        },
+                        {
+                            question: "What is full of holes but still holds water?",
+                            correctAnswer: "A sponge",
+                            options: ["A sieve", "A sponge", "A bucket", "A net"]
+                        },
+                        {
+                            question: "What building has the most stories?",
+                            correctAnswer: "A library",
+                            options: ["A tower", "A museum", "A library", "A skyscraper"]
+                        },
+                        {
+                            question: "What is always in front of you but can’t be seen?",
+                            correctAnswer: "The future",
+                            options: ["The sky", "The past", "The future", "Your nose"]
+                        },
+                        {
+                            question: "What goes up but never comes down?",
+                            correctAnswer: "Your age",
+                            options: ["A ball", "Your age", "A rocket", "An elevator"]
+                        },
+                        {
+                            question: "What gets wet while drying?",
+                            correctAnswer: "A towel",
+                            options: ["A hair dryer", "A towel", "A sponge", "A hand"]
+                        },
+                        {
+                            question: "What has a neck but no head?",
+                            correctAnswer: "A bottle",
+                            options: ["A person", "A shirt", "A giraffe", "A bottle"]
+                        },
+                        {
+                            question: "What is easy to get into, but hard to get out of?",
+                            correctAnswer: "Trouble",
+                            options: ["A car", "A house", "A river", "Trouble"]
+                        },
+                        {
+                            question: "What has to be broken before you can use it?",
+                            correctAnswer: "An egg",
+                            options: ["A stick", "A plate", "An egg", "A toy"]
+                        },
+                        {
+                            question: "What is the end of everything?",
+                            correctAnswer: "The letter G",
+                            options: ["The ocean", "The letter G", "The universe", "The earth"]
+                        },
+                        {
+                            question: "What has a thumb and four fingers, but is not alive?",
+                            correctAnswer: "A glove",
+                            options: ["A hand", "A sock", "A glove", "A plant"]
+                        },
+                        {
+                            question: "What is full of holes but holds water?",
+                            correctAnswer: "A sponge",
+                            options: ["A sieve", "A bucket", "A sponge", "A glass"]
+                        },
+                        {
+                            question: "What question can you never answer yes to?",
+                            correctAnswer: "Are you asleep yet?",
+                            options: ["Are you okay?", "Is it cold outside?", "Are you hungry?", "Are you asleep yet?"]
+                        },
+                        {
+                            question: "What is always coming, but never arrives?",
+                            correctAnswer: "Tomorrow",
+                            options: ["Yesterday", "The moon", "Tomorrow", "The sun"]
+                        },
+                        {
+                            question: "What can you catch, but not throw?",
+                            correctAnswer: "A cold",
+                            options: ["A ball", "A cold", "A frisbee", "A fish"]
+                        },
+                        {
+                            question: "I’m tall when I’m young, and I’m short when I’m old. What am I?",
+                            correctAnswer: "A candle",
+                            options: ["A tree", "A building", "A candle", "A person"]
+                        },
+                        {
+                            question: "What belongs to you, but other people use it more than you do?",
+                            correctAnswer: "Your name",
+                            options: ["Your car", "Your name", "Your house", "Your phone"]
+                        },
+                        {
+                            question: "What can you see in a mirror, but not with your eyes?",
+                            correctAnswer: "Your reflection",
+                            options: ["Your back", "The sky", "Your reflection", "Your brain"]
+                        },
+                        {
+                            question: "What kind of room has no doors or windows?",
+                            correctAnswer: "A mushroom",
+                            options: ["A closet", "A prison", "A mushroom", "A cave"]
+                        },
+                        {
+                            question: "What has a face and two hands, but no arms or legs?",
+                            correctAnswer: "A clock",
+                            options: ["A statue", "A scarecrow", "A doll", "A clock"]
+                        },
+                        {
+                            question: "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
+                            correctAnswer: "A map",
+                            options: ["A globe", "A book", "A map", "A painting"]
+                        },
+                        {
+                            question: "What is always hungry and will die if not fed, but anything it drinks will kill it?",
+                            correctAnswer: "Fire",
+                            options: ["A person", "A plant", "Fire", "A monster"]
+                        },
+                        {
+                            question: "What word is spelled wrong in every dictionary?",
+                            correctAnswer: "Wrong",
+                            options: ["Mistake", "Incorrect", "Incorrectly", "Wrong"]
+                        },
+                        {
+                            question: "What can travel all over the world without leaving its corner?",
+                            correctAnswer: "A stamp",
+                            options: ["A passport", "A plane", "A stamp", "A bus"]
+                        },
+                        {
+                            question: "What has an eye, but cannot see?",
+                            correctAnswer: "A needle",
+                            options: ["A camera", "A storm", "A needle", "A potato"]
+                        },
+                        {
+                            question: "What has cities, but no houses; mountains, but no trees; and water, but no fish?",
+                            correctAnswer: "A map",
+                            options: ["A river", "A book", "A map", "A city"]
+                        },
+                        {
+                            question: "What has four legs in the morning, two legs at noon, and three legs in the evening?",
+                            correctAnswer: "A human",
+                            options: ["A dog", "An elephant", "A human", "A table"]
+                        },
+                        {
+                            question: "I have four legs, a head, and a body, but cannot walk. What am I?",
+                            correctAnswer: "A bed",
+                            options: ["A car", "A bed", "A spider", "A chair"]
+                        },
+                        {
+                            question: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+                            correctAnswer: "An echo",
+                            options: ["A whisper", "A mirror", "A song", "An echo"]
+                        },
+                        {
+                            question: "What can be broken, but is never held?",
+                            correctAnswer: "A promise",
+                            options: ["A glass", "A promise", "A heart", "A bone"]
+                        },
+                        {
+                            question: "What is full of holes but still holds water?",
+                            correctAnswer: "A sponge",
+                            options: ["A sieve", "A sponge", "A bucket", "A net"]
+                        },
+                        {
+                            question: "What building has the most stories?",
+                            correctAnswer: "A library",
+                            options: ["A tower", "A museum", "A library", "A skyscraper"]
+                        },
+                        {
+                            question: "What is always in front of you but can’t be seen?",
+                            correctAnswer: "The future",
+                            options: ["The sky", "The past", "The future", "Your nose"]
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+</body>
+</html>
