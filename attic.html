@@ -1,0 +1,274 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Attic Lockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@14.7.58/build/Tone.min.js"></script>
+    <style>
+        /* Custom styles for the horror atmosphere */
+        body {
+            background-color: #000000; /* Pure black background */
+            color: #d1d5db; /* Light gray text for contrast */
+            font-family: 'Courier New', Courier, monospace; /* Use a fixed-width font for a retro/unsettling feel */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .game-container {
+            max-width: 90%;
+            width: 700px;
+            background-color: #1a1a1a; /* Dark gray for the main area */
+            border: 4px solid #8b0000; /* Deep red border for horror */
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.7); /* Red glow effect */
+            padding: 1.5rem;
+            border-radius: 12px;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        #game-title {
+            color: #ff4d4d; /* Brighter red for title */
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #ff0000;
+        }
+        #game-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            text-shadow: 0 0 1px #d1d5db;
+            flex-grow: 1;
+        }
+        .choice-button {
+            background-color: #8b0000; /* Deep red buttons */
+            color: white;
+            border: 2px solid #ff4d4d;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            width: 100%; /* Full width for easy tapping on mobile */
+            text-align: left;
+        }
+        .choice-button:hover {
+            background-color: #ff4d4d; /* Lighten on hover */
+            box-shadow: 0 0 10px #ff4d4d;
+        }
+        .choice-button:active {
+            transform: translateY(1px);
+        }
+        /* Custom style for the ghost image */
+        .ghost-image {
+            filter: drop-shadow(0 0 5px #ff0000); /* Red glow for the ghost */
+            opacity: 0.8; /* Slightly transparent */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 id="game-title">The Attic Lockup</h1>
+        
+        <img src="https://cdn.vectorstock.com/i/1000v/90/36/cute-ghost-isolated-halloween-concept-vector-47559036.jpg" 
+             alt="A ghostly figure" 
+             class="mx-auto my-4 ghost-image w-32 h-32 object-contain"> 
+             <div id="game-text" class="text-gray-300">
+            Click "Start Game" to begin your nightmare.
+        </div>
+
+        <div id="choices" class="flex flex-col gap-3">
+            <button id="start-button" class="choice-button" onclick="startGame()">Start Game</button>
+        </div>
+
+        <div id="sound-status" class="text-center text-xs text-red-500 mt-2">
+            Please click the screen/Start Game to enable ambient sound.
+        </div>
+        
+        <div class="text-center text-xs text-gray-500 mt-4 pt-2 border-t border-gray-700">
+            Developed By Nandeesh (G7A)
+        </div>
+    </div>
+    <script>
+        // Global variables
+        let db, auth, userId;
+        let ambientNoise, ambientFilter;
+
+        // --- TONE.JS AMBIENCE SETUP ---
+        // This function creates a very low, pulsing sound to build tension.
+        function startAtmosphere() {
+            try {
+                // Tone.start() must be called after a user gesture (like clicking 'Start Game')
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+
+                // Create a low-frequency brown noise (sounds like static or a deep rumble)
+                ambientNoise = new Tone.Noise("brown").toDestination(); 
+
+                // Use an AutoFilter to create a slow, pulsing effect (like a distant heartbeat)
+                ambientFilter = new Tone.AutoFilter({
+                    frequency: "0.1hz", // Very slow pulse
+                    depth: 0.5,
+                    baseFrequency: 300,
+                    octaves: 2
+                }).toDestination();
+
+                // Connect the noise to the pulsing filter
+                ambientNoise.connect(ambientFilter);
+
+                // Set volume very low (e.g., -30 decibels) to make it background atmosphere
+                ambientNoise.volume.value = -30;
+
+                // Start the sound and the filter effect
+                ambientNoise.start();
+                ambientFilter.start();
+
+                // Hide the prompt once sound is active
+                document.getElementById('sound-status').style.display = 'none';
+                console.log("Ambient horror sound started.");
+
+            } catch (error) {
+                console.error("Could not start audio context:", error);
+            }
+        }
+
+        // --- GAME SCENES (Story Definition) ---
+        const Scenes = {
+            START: {
+                text: "You wake up on a cold, dusty wooden floor. Your head is pounding, and the air smells like mothballs and decay. You are in a small, dark attic. The only door is locked from the outside. A faint, low hum seems to be coming from the darkness in the corner.",
+                choices: [
+                    { text: "Try to kick the locked door open", nextScene: "DOOR_KICK" },
+                    { text: "Look around the small room for a light source", nextScene: "SEARCH_LIGHT" }
+                ]
+            },
+            DOOR_KICK: {
+                text: "You stumble over to the door and throw your shoulder against it. It holds fast, and a splinter tears into your palm. The loud bang echoes in the small space, and the low hum in the corner seems to pause, then resume, louder than before.",
+                choices: [
+                    { text: "Worry about the noise and search for a key", nextScene: "SEARCH_KEY" },
+                    { text: "Ignore the hum and search for a window", nextScene: "SEARCH_WINDOW" }
+                ]
+            },
+            SEARCH_LIGHT: {
+                text: "You feel along the dusty walls. Your fingers brush against something cold and smooth—a bare light switch! You flip it. A single, weak, flickering bulb illuminates the room. It’s small, and the shadow in the corner is still impossibly deep.",
+                choices: [
+                    { text: "Investigate the deep shadow in the corner", nextScene: "CORNER_SHADOW" },
+                    { text: "Examine the locked door clearly now", nextScene: "DOOR_EXAMINE" }
+                ]
+            },
+            CORNER_SHADOW: {
+                text: "You slowly walk toward the corner. The hum intensifies, feeling less like a sound and more like a vibration. As you get closer, you see it's not a shadow—it's a dusty, child-sized wooden chest. It has a heavy padlock on it.",
+                choices: [
+                    { text: "Look for something to break the lock", nextScene: "BREAK_LOCK" },
+                    { text: "Go back to the door; this feels too wrong", nextScene: "DOOR_EXAMINE" }
+                ]
+            },
+            DOOR_EXAMINE: {
+                text: "The door is solid and thick. You notice a small, rusty metal plate near the handle. Behind the plate, there's a tiny, empty slot—a slot for a specific type of thin key or card.",
+                choices: [
+                    { text: "Go back and check the chest (it might contain the key)", nextScene: "CORNER_SHADOW" },
+                    { text: "Search the floor again, near where you woke up", nextScene: "SEARCH_FLOOR" }
+                ]
+            },
+            SEARCH_FLOOR: {
+                text: "You crawl along the floor, sweeping your hands through the dust. Suddenly, your fingers close around a small, smooth object. It's an old, tarnished silver KEY CARD!",
+                choices: [
+                    { text: "Use the KEY CARD on the door slot", nextScene: "ESCAPE_SUCCESS" },
+                    { text: "Try the KEY CARD on the chest lock", nextScene: "FAIL_CHEST" }
+                ]
+            },
+            BREAK_LOCK: {
+                text: "You try to find a heavy object, but all you find are old, rotting newspapers. You can't break the lock. The hum continues, mocking you.",
+                choices: [
+                    { text: "Focus on escaping through the door instead", nextScene: "DOOR_EXAMINE" }
+                ]
+            },
+            FAIL_CHEST: {
+                text: "The key card is thin and doesn't fit the padlock on the chest. As you pull it out, the lock clicks and falls open on its own. You look inside. It's empty, but a low voice whispers, 'Wrong choice, lost child.' The door slams shut and you are trapped forever.",
+                choices: [
+                    { text: "The End: Try Again", nextScene: "START" }
+                ]
+            },
+            SEARCH_KEY: {
+                text: "You can't see anything in the pitch black. You trip and fall on something hard. It rattles away into the darkness. You panic and scramble back to the door.",
+                choices: [
+                    { text: "Search for a light source first", nextScene: "SEARCH_LIGHT" }
+                ]
+            },
+            SEARCH_WINDOW: {
+                text: "There is no window. Only dark, unbroken wood paneling. The hum is now clearly right behind you. You feel a cold breath on the back of your neck. YOU LOSE.",
+                choices: [
+                    { text: "The End: Try Again", nextScene: "START" }
+                ]
+            },
+            ESCAPE_SUCCESS: {
+                text: "You slide the key card into the door slot. A quiet *click* is followed by the sound of the deadbolt retracting. You throw the door open and sprint down the stairs, away from the attic and the cold, lingering hum. You are free! Congratulations, you survived The Attic Lockup!",
+                choices: [
+                    { text: "Play Again", nextScene: "START" }
+                ]
+            }
+        };
+
+        // --- GAME LOGIC FUNCTIONS ---
+
+        /**
+         * Starts the game, initiates the sound, and loads the first scene.
+         */
+        function startGame() {
+            // Start the spooky sound effect on the user's first click
+            startAtmosphere();
+            // Start the game at the beginning scene
+            updateScene("START");
+
+            // Remove the start button after the game has begun
+            const startButton = document.getElementById('start-button');
+            if (startButton) {
+                startButton.remove();
+            }
+        }
+
+        /**
+         * Updates the game state based on the next scene ID.
+         * @param {string} sceneId - The ID of the next scene (key in the Scenes object).
+         */
+        function updateScene(sceneId) {
+            const scene = Scenes[sceneId];
+            const gameTextElement = document.getElementById('game-text');
+            const choicesElement = document.getElementById('choices');
+
+            // 1. Update the main story text
+            gameTextElement.innerHTML = scene.text;
+
+            // 2. Clear old choices
+            choicesElement.innerHTML = "";
+
+            // 3. Create new choice buttons
+            scene.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-button';
+                button.textContent = choice.text;
+
+                // Set the click handler to load the next scene
+                button.onclick = () => updateScene(choice.nextScene);
+
+                choicesElement.appendChild(button);
+            });
+
+            // Scroll to the top of the text area if the content is long
+            gameTextElement.scrollTop = 0;
+        }
+
+        // Initialize game title styling on load
+        window.onload = () => {
+             console.log("Game loaded. Click 'Start Game' to begin.");
+        };
+
+    </script>
+</body>
+</html>
