@@ -1,0 +1,688 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Maze Challenge (Multi-Level)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --path-color: #f0fdf4; /* Green 50 */
+            --wall-color: #000000; /* Black for thin walls */
+            --player-color: #f59e0b; /* Amber 500 */
+            --goal-color: #dc2626; /* Red 600 */
+            --question-color: #2563eb; /* Blue 600 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e7eb; /* Gray 200 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 1rem;
+        }
+        canvas {
+            /* Reduced border size for a 'thinner wall' aesthetic */
+            border: 2px solid #333333; 
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            touch-action: none; 
+            /* Added min-width/height to prevent extreme shrinking on small screens */
+            min-width: 300px;
+            min-height: 300px;
+        }
+        /* Custom styles for the game area */
+        .message-box {
+            min-height: 6rem;
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="game-container" class="game-container bg-white rounded-xl shadow-2xl overflow-hidden">
+        
+        <!-- Header -->
+        <header class="p-4 bg-green-700 text-white rounded-t-lg">
+            <h1 class="text-3xl font-extrabold text-center">🧠 Multi-Level Math Maze 🚀</h1>
+        </header>
+
+        <main class="p-6 md:flex">
+            
+            <!-- Game Canvas -->
+            <div class="md:w-3/5 flex justify-center items-center mb-6 md:mb-0">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+
+            <!-- Controls and Questions -->
+            <div class="md:w-2/5 md:pl-6">
+                
+                <!-- Level Selection Area -->
+                <div class="mb-4 p-3 bg-gray-100 rounded-lg shadow-inner flex justify-around">
+                    <button data-level="beginner" class="level-btn px-3 py-2 text-sm font-semibold rounded-full shadow-md bg-green-500 text-white hover:bg-green-600 transition duration-150 transform hover:scale-105">
+                        Beginner (21x21)
+                    </button>
+                    <button data-level="intermediate" class="level-btn px-3 py-2 text-sm font-semibold rounded-full shadow-md bg-yellow-500 text-white hover:bg-yellow-600 transition duration-150 transform hover:scale-105">
+                        Intermediate (35x35)
+                    </button>
+                    <button data-level="advanced" class="level-btn px-3 py-2 text-sm font-semibold rounded-full shadow-md bg-red-500 text-white hover:bg-red-600 transition duration-150 transform hover:scale-105">
+                        Advanced (51x51)
+                    </button>
+                </div>
+
+                <div class="message-box p-4 rounded-lg bg-green-50 border-2 border-green-200 shadow-inner mb-6">
+                    <p id="gameMessage" class="text-lg font-semibold text-gray-800">Select a difficulty level to start your maze challenge!</p>
+                </div>
+                
+                <!-- Math Question Area -->
+                <div id="mathQuestionArea" class="hidden p-4 rounded-xl bg-blue-100 border-2 border-blue-400 shadow-md transition duration-300 ease-in-out mb-6">
+                    <p class="text-xl font-bold text-blue-800 mb-3" id="questionText">Question goes here?</p>
+                    <div class="flex space-x-2">
+                        <input type="number" id="answerInput" class="flex-grow p-2 border-2 border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Your Answer" autofocus>
+                        <button id="submitAnswer" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg transform transition duration-150 hover:scale-105">
+                            Submit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex flex-col items-center space-y-2 mt-4">
+                    <p class="text-sm text-gray-600 font-semibold mb-2">Control Movement (Use Arrow Keys or Buttons)</p>
+                    <button data-direction="up" class="control-btn w-16 h-10 bg-gray-300 hover:bg-gray-400 rounded-lg shadow-md font-bold transform transition duration-100 hover:scale-110">
+                        &#x25B2;
+                    </button>
+                    <div class="flex space-x-2">
+                        <button data-direction="left" class="control-btn w-16 h-10 bg-gray-300 hover:bg-gray-400 rounded-lg shadow-md font-bold transform transition duration-100 hover:scale-110">
+                            &#x25C0;
+                        </button>
+                        <button data-direction="down" class="control-btn w-16 h-10 bg-gray-300 hover:bg-gray-400 rounded-lg shadow-md font-bold transform transition duration-100 hover:scale-110">
+                            &#x25BC;
+                        </button>
+                        <button data-direction="right" class="control-btn w-16 h-10 bg-gray-300 hover:bg-gray-400 rounded-lg shadow-md font-bold transform transition duration-100 hover:scale-110">
+                            &#x25B6;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="mt-8">
+                    <button id="resetButton" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-extrabold rounded-lg shadow-xl transform transition duration-150 hover:scale-[1.02]">
+                        Restart Maze
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameMessage = document.getElementById('gameMessage');
+        const mathQuestionArea = document.getElementById('mathQuestionArea');
+        const questionText = document.getElementById('questionText');
+        const answerInput = document.getElementById('answerInput');
+        const submitAnswer = document.getElementById('submitAnswer');
+        const resetButton = document.getElementById('resetButton');
+        const controlButtons = document.querySelectorAll('.control-btn');
+        const levelButtons = document.querySelectorAll('.level-btn');
+
+        let CELL_SIZE = 10; 
+        const WALL = 1;
+        const PATH = 0;
+        const START = 2;
+        const END = 3;
+        const DOOR = 4; // Requires math question to solve
+        
+        // --- LEVEL CONFIGURATION ---
+        const LEVEL_CONFIG = {
+            beginner: {
+                MAZE_SIZE: 21, 
+                NUM_DOORS: 5,
+                MSG: "A small maze to get started. Focus on simple arithmetic!",
+                MAX_NUM: 15,
+                MAX_MULT: 5,
+                OPERATIONS: 2 // 0: +, 1: -
+            },
+            intermediate: {
+                MAZE_SIZE: 35,
+                NUM_DOORS: 10,
+                MSG: "A moderate maze. You'll need faster calculation and better navigation.",
+                MAX_NUM: 40,
+                MAX_MULT: 10,
+                OPERATIONS: 3 // 0: +, 1: -, 2: *
+            },
+            advanced: {
+                MAZE_SIZE: 51,
+                NUM_DOORS: 15,
+                MSG: "The Mega Maze! Large size, numerous problems, and complex calculations including division.",
+                MAX_NUM: 80,
+                MAX_MULT: 15,
+                OPERATIONS: 4 // 0: +, 1: -, 2: *, 3: /
+            }
+        };
+
+        let maze, numRows, numCols, playerX, playerY, currentQuestion;
+        let isBlocked = false; 
+        let currentLevelKey = 'beginner'; 
+        let MAZE_SIZE, NUM_DOORS; // Will be set by initializeGame
+
+        // --- MAZE GENERATION LOGIC (Prim's Algorithm) ---
+        /**
+         * Generates a single-path maze using a randomized version of Prim's algorithm.
+         * @param {number} size The dimension of the square maze (e.g., 51). Must be odd.
+         * @param {number} numDoors The number of doors to place.
+         * @returns {number[][]} The generated maze grid.
+         */
+        function generateMaze(size, numDoors) {
+            // 1. Initialize grid with walls (1)
+            let grid = Array.from({ length: size }, () => Array(size).fill(WALL));
+
+            // 2. Start point (must be on an odd index for Prim's to work well)
+            let startY = 1, startX = 1;
+            grid[startY][startX] = PATH;
+
+            // Helper to check if a cell is within bounds
+            const isWithinBounds = (x, y) => x > 0 && x < size - 1 && y > 0 && y < size - 1;
+
+            // 3. Prim's Algorithm setup (using coordinates of walls 2 units away as frontier)
+            let frontier = [];
+            const directions = [[0, -2], [0, 2], [-2, 0], [2, 0]]; // Step by 2 for grid cell/wall structure
+
+            // Add initial frontier (walls 2 units away)
+            for (const [dy, dx] of directions) {
+                if (isWithinBounds(startX + dx, startY + dy)) {
+                    frontier.push({ x: startX + dx, y: startY + dy });
+                }
+            }
+
+            // 4. Main loop: carve the maze
+            while (frontier.length > 0) {
+                // Pick a random frontier wall
+                const index = Math.floor(Math.random() * frontier.length);
+                const { x, y } = frontier.splice(index, 1)[0];
+
+                // Find path neighbors (2 units away)
+                const pathNeighbors = [];
+                for (const [dy, dx] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (isWithinBounds(nx, ny) && grid[ny][nx] === PATH) {
+                        pathNeighbors.push({ x: nx, y: ny });
+                    }
+                }
+
+                // If a path neighbor is found
+                if (pathNeighbors.length > 0) {
+                    // Choose one random path neighbor
+                    const neighbor = pathNeighbors[Math.floor(Math.random() * pathNeighbors.length)];
+
+                    // Calculate the wall cell between the frontier and the neighbor
+                    const wallX = (x + neighbor.x) / 2;
+                    const wallY = (y + neighbor.y) / 2;
+
+                    // Carve the path (frontier cell and the wall between it and neighbor)
+                    grid[y][x] = PATH;
+                    grid[wallY][wallX] = PATH;
+
+                    // Add new frontier cells (2 units away from the newly carved cell)
+                    for (const [dy, dx] of directions) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (isWithinBounds(nx, ny) && grid[ny][nx] === WALL) {
+                            // Check if already in frontier to avoid duplicates (O(N) check, but OK for small N)
+                            let isNew = true;
+                            for (const f of frontier) {
+                                if (f.x === nx && f.y === ny) {
+                                    isNew = false;
+                                    break;
+                                }
+                            }
+                            if (isNew) {
+                                frontier.push({ x: nx, y: ny });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Place Start, End, and Doors
+            grid[1][1] = START; // Top-left
+            grid[size - 2][size - 2] = END; // Bottom-right
+
+            let doorsPlaced = 0;
+            const doorLocations = [];
+
+            // Iterate over the grid and place doors on PATH cells
+            while (doorsPlaced < numDoors) {
+                const randY = Math.floor(Math.random() * (size - 2)) + 1;
+                const randX = Math.floor(Math.random() * (size - 2)) + 1;
+
+                // Only convert a path cell (0) that is not S or E
+                if (grid[randY][randX] === PATH) {
+                    // Simple check: don't place too close to S/E (4 cells away)
+                    if (Math.abs(randX - 1) < 4 && Math.abs(randY - 1) < 4) continue;
+                    if (Math.abs(randX - (size - 2)) < 4 && Math.abs(randY - (size - 2)) < 4) continue;
+
+                    // Check if it's too close to an existing door (5 cells apart)
+                    let tooClose = false;
+                    for (const {x, y} of doorLocations) {
+                        if (Math.abs(randX - x) < 5 && Math.abs(randY - y) < 5) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+
+                    if (!tooClose) {
+                        grid[randY][randX] = DOOR;
+                        doorLocations.push({x: randX, y: randY});
+                        doorsPlaced++;
+                    }
+                }
+            }
+
+            return grid;
+        }
+
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts a raw value (like 4) in the maze into its corresponding path value (0)
+         * if it represents a door that has been solved.
+         * @param {number} x The column index.
+         * @param {number} y The row index.
+         */
+        function solveDoor(x, y) {
+            if (maze[y][x] === DOOR) {
+                maze[y][x] = PATH;
+            }
+        }
+
+        /**
+         * Generates a random math question based on the current level difficulty.
+         * @returns {{text: string, answer: number}} The question text and the correct answer.
+         */
+        function generateQuestion() {
+            const config = LEVEL_CONFIG[currentLevelKey];
+            // operation is based on the max operations defined for the level
+            const operation = Math.floor(Math.random() * config.OPERATIONS); 
+            let num1, num2, answer, text;
+
+            switch (operation) {
+                case 0: // Addition
+                    num1 = Math.floor(Math.random() * config.MAX_NUM) + 1;
+                    num2 = Math.floor(Math.random() * config.MAX_NUM) + 1;
+                    answer = num1 + num2;
+                    text = `${num1} + ${num2} = ?`;
+                    break;
+                case 1: // Subtraction
+                    num1 = Math.floor(Math.random() * config.MAX_NUM) + 1;
+                    num2 = Math.floor(Math.random() * config.MAX_NUM) + 1;
+                    if (num1 < num2) [num1, num2] = [num2, num1]; // Ensure non-negative result
+                    answer = num1 - num2;
+                    text = `${num1} - ${num2} = ?`;
+                    break;
+                case 2: // Multiplication
+                    num1 = Math.floor(Math.random() * (config.MAX_MULT - 2)) + 3; // 3 to MAX_MULT
+                    num2 = Math.floor(Math.random() * (config.MAX_MULT - 2)) + 3;
+                    answer = num1 * num2;
+                    text = `${num1} × ${num2} = ?`;
+                    break;
+                case 3: // Division (Only for Advanced)
+                    let divisor = Math.floor(Math.random() * (config.MAX_MULT - 2)) + 3;
+                    answer = Math.floor(Math.random() * (config.MAX_MULT - 2)) + 3;
+                    num1 = answer * divisor; // Dividend is product (ensures integer answer)
+                    num2 = divisor; // Divisor
+                    text = `${num1} ÷ ${num2} = ?`;
+                    break;
+                default:
+                    // Fallback to addition (should not be reached)
+                    num1 = Math.floor(Math.random() * config.MAX_NUM) + 1;
+                    num2 = Math.floor(Math.random() * config.MAX_NUM) + 1;
+                    answer = num1 + num2;
+                    text = `${num1} + ${num2} = ?`;
+            }
+
+            return { text, answer };
+        }
+
+        /**
+         * Updates the game message box with new text and an optional color/style.
+         */
+        function updateMessage(msg, type = 'default') {
+            gameMessage.textContent = msg;
+            gameMessage.className = 'text-lg font-semibold message-box p-4 rounded-lg shadow-inner mb-6';
+
+            switch (type) {
+                case 'error':
+                    gameMessage.classList.add('bg-red-100', 'border-red-400', 'text-red-800');
+                    break;
+                case 'success':
+                    gameMessage.classList.add('bg-green-100', 'border-green-400', 'text-green-800');
+                    break;
+                case 'question':
+                    gameMessage.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-800');
+                    break;
+                case 'win':
+                    gameMessage.classList.add('bg-yellow-100', 'border-yellow-500', 'text-yellow-800', 'font-extrabold', 'text-xl');
+                    break;
+                case 'default':
+                default:
+                    gameMessage.classList.add('bg-green-50', 'border-green-200', 'text-gray-800');
+                    break;
+            }
+        }
+
+        // --- Drawing Logic ---
+
+        /**
+         * Draws the entire maze grid onto the canvas.
+         */
+        function drawMaze() {
+            // Adjust canvas size based on current CELL_SIZE
+            canvas.width = numCols * CELL_SIZE;
+            canvas.height = numRows * CELL_SIZE;
+
+            for (let y = 0; y < numRows; y++) {
+                for (let x = 0; x < numCols; x++) {
+                    const value = maze[y][x];
+                    let color = 'white'; 
+
+                    switch (value) {
+                        case WALL:
+                            color = getComputedStyle(document.documentElement).getPropertyValue('--wall-color');
+                            break;
+                        case PATH:
+                        case START:
+                            color = getComputedStyle(document.documentElement).getPropertyValue('--path-color');
+                            break;
+                        case END:
+                            color = getComputedStyle(document.documentElement).getPropertyValue('--goal-color');
+                            break;
+                        case DOOR:
+                            color = getComputedStyle(document.documentElement).getPropertyValue('--question-color');
+                            break;
+                    }
+
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+                    // Add markers for Start, End, and Door (smaller font for larger mazes)
+                    ctx.fillStyle = 'white';
+                    ctx.font = `${CELL_SIZE * 0.7}px Inter`;
+                    ctx.textAlign = 'center';
+                    
+                    if (value === START) {
+                        ctx.fillText('S', x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE * 0.85);
+                    } else if (value === END) {
+                        ctx.fillText('E', x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE * 0.85);
+                    } else if (value === DOOR) {
+                        // Draw a question mark icon for the door
+                        ctx.fillText('?', x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE * 0.85);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Draws the player character on the canvas.
+         */
+        function drawPlayer() {
+            const playerColor = getComputedStyle(document.documentElement).getPropertyValue('--player-color');
+            const radius = CELL_SIZE / 3;
+            const centerX = playerX * CELL_SIZE + CELL_SIZE / 2;
+            const centerY = playerY * CELL_SIZE + CELL_SIZE / 2;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = playerColor;
+            ctx.fill();
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1; 
+            ctx.stroke();
+        }
+
+        /**
+         * Redraws the entire game state.
+         */
+        function drawGame() {
+            drawMaze();
+            drawPlayer();
+        }
+
+        // --- Game Logic ---
+
+        /**
+         * Initializes the game state, maze, and player position for a given level.
+         * @param {string} levelKey The key for the level configuration ('beginner', 'intermediate', 'advanced').
+         */
+        function initializeGame(levelKey = 'beginner') {
+            currentLevelKey = levelKey;
+            const config = LEVEL_CONFIG[currentLevelKey];
+
+            // Update globals based on config
+            MAZE_SIZE = config.MAZE_SIZE;
+            NUM_DOORS = config.NUM_DOORS;
+            
+            // Generate the maze
+            maze = generateMaze(MAZE_SIZE, NUM_DOORS); 
+            numRows = MAZE_SIZE;
+            numCols = MAZE_SIZE;
+
+            // Start position is always (1,1) in the dynamically generated maze
+            playerX = 1;
+            playerY = 1;
+            
+            isBlocked = false;
+            currentQuestion = null;
+            mathQuestionArea.classList.add('hidden');
+            answerInput.value = '';
+
+            // Update button styles to show current selection
+            levelButtons.forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-offset-2', 'ring-blue-500');
+                if (btn.getAttribute('data-level') === levelKey) {
+                    btn.classList.add('ring-4', 'ring-offset-2', 'ring-blue-500');
+                }
+            });
+
+            // Handle responsiveness and draw
+            handleResize();
+            drawGame();
+            updateMessage(`${currentLevelKey.toUpperCase()} Maze (${MAZE_SIZE}x${MAZE_SIZE}) ready! Solve ${NUM_DOORS} doors to find the Exit (E).`);
+        }
+
+        /**
+         * Attempts to move the player in the given direction.
+         * @param {number} dx Change in x position.
+         * @param {number} dy Change in y position.
+         */
+        function movePlayer(dx, dy) {
+            if (isBlocked) {
+                updateMessage("You must solve the math problem to continue!", 'question');
+                answerInput.focus();
+                return;
+            }
+
+            const newX = playerX + dx;
+            const newY = playerY + dy;
+
+            // Check boundaries
+            if (newX < 0 || newX >= numCols || newY < 0 || newY >= numRows) {
+                return;
+            }
+
+            const targetCell = maze[newY][newX];
+
+            if (targetCell === WALL) {
+                updateMessage("Ouch! That's a solid wall.", 'error');
+            } else if (targetCell === DOOR) {
+                // Encountered a door, block movement and present question
+                isBlocked = true;
+                currentQuestion = generateQuestion();
+                
+                questionText.textContent = currentQuestion.text;
+                mathQuestionArea.classList.remove('hidden');
+                answerInput.value = '';
+                answerInput.focus();
+                updateMessage("Door is locked! Solve this problem to pass.", 'question');
+                
+            } else if (targetCell === END) {
+                // Goal reached!
+                playerX = newX;
+                playerY = newY;
+                drawGame();
+                updateMessage(`VICTORY! You have conquered the ${currentLevelKey.toUpperCase()} Math Maze!`, 'win');
+                isBlocked = true; // Block movement after winning
+            } else { // PATH or START
+                // Regular movement
+                playerX = newX;
+                playerY = newY;
+                updateMessage("Great move! Keep going.");
+            }
+            
+            drawGame();
+        }
+
+        /**
+         * Handles the answer submission from the user.
+         */
+        function handleSubmit() {
+            if (!isBlocked || !currentQuestion) return;
+
+            // Use parseInt for integer math.
+            const userAnswer = parseInt(answerInput.value, 10);
+            
+            if (isNaN(userAnswer)) {
+                updateMessage("Please enter a valid number.", 'error');
+                return;
+            }
+
+            if (userAnswer === currentQuestion.answer) {
+                // Correct answer! Allow movement and clear block
+                isBlocked = false;
+                mathQuestionArea.classList.add('hidden');
+                updateMessage("Correct! The door is now open. You can move again.", 'success');
+                
+                // Find the door location and solve it (the adjacent cell that is the door)
+                const directions = [{dx: 0, dy: -1}, {dx: 0, dy: 1}, {dx: -1, dy: 0}, {dx: 1, dy: 0}];
+                
+                for(const dir of directions) {
+                    const doorX = playerX + dir.dx;
+                    const doorY = playerY + dir.dy;
+                    
+                    // Check bounds and if the adjacent cell is a door
+                    if (doorY >= 0 && doorY < numRows && doorX >= 0 && doorX < numCols && maze[doorY][doorX] === DOOR) {
+                        // Solve the door (convert it to PATH)
+                        solveDoor(doorX, doorY);
+                        // Move the player into the now-opened path
+                        playerX = doorX;
+                        playerY = doorY;
+                        break;
+                    }
+                }
+                
+                drawGame();
+            } else {
+                updateMessage(`Incorrect. The answer was not ${userAnswer}. Try again!`, 'error');
+                answerInput.value = '';
+                answerInput.focus();
+            }
+        }
+
+        // --- Event Listeners and Setup ---
+
+        /**
+         * Handles keyboard input for movement and answer submission.
+         */
+        document.addEventListener('keydown', (e) => {
+            if (isBlocked && e.key === 'Enter') {
+                handleSubmit();
+            } else if (!isBlocked) {
+                let dx = 0, dy = 0;
+                if (e.key === 'ArrowUp') dy = -1;
+                else if (e.key === 'ArrowDown') dy = 1;
+                else if (e.key === 'ArrowLeft') dx = -1;
+                else if (e.key === 'ArrowRight') dx = 1;
+
+                if (dx !== 0 || dy !== 0) {
+                    e.preventDefault(); // Prevent default scroll action for arrows
+                    movePlayer(dx, dy);
+                }
+            }
+        });
+
+        // Event listeners for on-screen control buttons
+        controlButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const direction = button.getAttribute('data-direction');
+                let dx = 0, dy = 0;
+                if (direction === 'up') dy = -1;
+                else if (direction === 'down') dy = 1;
+                else if (direction === 'left') dx = -1;
+                else if (direction === 'right') dx = 1;
+
+                movePlayer(dx, dy);
+            });
+        });
+
+        // Event listeners for level selection buttons
+        levelButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                initializeGame(button.getAttribute('data-level'));
+            });
+        });
+
+
+        // Event listeners for question input
+        submitAnswer.addEventListener('click', handleSubmit);
+        answerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSubmit();
+        });
+
+        // Event listener for the reset button
+        resetButton.addEventListener('click', () => initializeGame(currentLevelKey));
+
+        /**
+         * Responsive canvas handling.
+         */
+        function handleResize() {
+            // Only proceed if numCols is defined (i.e., game has been initialized)
+            if (!numCols) return;
+
+            // Get the width of the game canvas's parent container
+            const gameCanvasContainer = document.querySelector('.md\\:w-3\\/5');
+            const containerWidth = gameCanvasContainer.clientWidth;
+            
+            const mazeDim = numCols; 
+            
+            // Calculate a new cell size that fits the maze well in the container
+            const newCellSize = Math.floor((containerWidth - 8) / mazeDim); 
+            
+            // Ensure a reasonable min/max size based on the current maze size
+            // Larger mazes need smaller cells
+            let minCell = 8;
+            let maxCell = (mazeDim <= 25) ? 20 : 15;
+
+            CELL_SIZE = Math.min(Math.max(newCellSize, minCell), maxCell); 
+
+            drawGame();
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        // Start the game when the window loads
+        window.onload = () => initializeGame('beginner'); // Start with beginner selected
+
+    </script>
+</body>
+</html>
