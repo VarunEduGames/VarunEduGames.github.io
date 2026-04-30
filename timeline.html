@@ -1,0 +1,539 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline Architect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the game board */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background */
+        }
+        
+        /* Timeline slots are horizontal, using flex-grow to fill the width */
+        .timeline-slot {
+            height: 120px; /* Fixed height for visual consistency */
+            width: 30%; /* Set width for initial visual balance */
+            border: 3px dashed #4b5563; 
+            transition: all 0.2s;
+            flex-grow: 1; /* Makes slots share horizontal space equally */
+        }
+        .timeline-slot.drag-over {
+            background-color: #1e293b; 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); 
+        }
+        
+        /* Ensure the card container fits the height of the control panel */
+        #event-cards-list {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            height: 100%; /* Important: Takes full height of its grid cell */
+        }
+
+        .draggable-card {
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .draggable-card:active {
+            cursor: grabbing;
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
+        }
+        .card-correct {
+            border: 4px solid #10b981; 
+            background-color: #064e3b; 
+        }
+        .card-incorrect {
+            border: 4px solid #ef4444; 
+            background-color: #7f1d1d; 
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        /* CSS Grid for the bottom section to align cards and controls */
+        #bottom-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Cards take 2/3 width, controls 1/3 */
+            gap: 2rem;
+            flex-grow: 1;
+        }
+
+        /* --- RAINBOW FOOTER STYLES --- */
+        .game-footer {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-top: 1px solid #1f2937;
+            text-align: center;
+            font-size: 1.1rem; /* Slightly larger for better visibility */
+            font-weight: 700;
+        }
+
+        .rainbow-text {
+            /* 1. Define the gradient background */
+            background: linear-gradient(
+                90deg, 
+                #ff0000, /* Red */ 
+                #ffa500, /* Orange */ 
+                #ffff00, /* Yellow */ 
+                #008000, /* Green */ 
+                #0000ff, /* Blue */ 
+                #4b0082, /* Indigo */ 
+                #ee82ee  /* Violet */
+            );
+            /* 2. Clip the background to the text area */
+            -webkit-background-clip: text;
+            background-clip: text;
+            /* 3. Make the text transparent so the background shows through */
+            -webkit-text-fill-color: transparent;
+            text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto flex flex-col h-full min-h-[90vh]">
+        <header class="text-center mb-6 p-4 bg-gray-900 border-b border-blue-600 rounded-t-xl shadow-2xl">
+            <h1 class="text-3xl font-extrabold text-blue-400 tracking-wider">
+                Timeline Architect
+            </h1>
+            <p class="text-gray-300 mt-1 text-base">Drag the events to place them in the correct chronological order on the timeline (Oldest to Newest)</p>
+        </header>
+
+        <div id="timeline-track" class="p-4 bg-gray-800 rounded-xl shadow-inner mb-6">
+            <h2 class="text-2xl font-bold text-gray-100 border-b border-gray-700 pb-2 mb-4"></h2>
+            
+            <div id="timeline-slots-area" class="flex justify-between space-x-4">
+                </div>
+        </div>
+
+        <div id="bottom-grid" class="flex-grow">
+            
+            <div id="cards-container-wrapper" class="p-4 bg-gray-800 rounded-xl shadow-inner flex flex-col">
+                <h3 class="text-xl font-bold text-gray-100 border-b border-gray-700 pb-2 mb-4"></h3>
+                <div id="event-cards-list">
+                    </div>
+            </div>
+
+            <div class="flex flex-col justify-center items-center p-4 bg-gray-800 rounded-xl shadow-inner">
+                 <div id="message-box" class="mb-8 text-center text-xl font-bold text-gray-300 h-16 flex items-center justify-center">
+                    Game started. Drag cards from below onto the timeline.
+                </div>
+                
+                <div class="flex flex-col space-y-4 w-full max-w-xs">
+                    <button id="check-button" onclick="checkOrder()" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition duration-150 shadow-lg transform hover:scale-105">
+                        ✅ CHECK ORDER
+                    </button>
+                    <button id="reset-button" onclick="resetCurrentGame()" class="px-8 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition duration-150 shadow-lg transform hover:scale-105">
+                        🔄 RESET GAME
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <footer class="game-footer">
+        <span class="rainbow-text">Developed By Sukesh and Lishanth (G7A)</span>
+    </footer>
+    
+    <script>
+        // *** 103 EVENTS DATA ***
+        const ALL_EVENTS_DATA = [
+            { id: 1, event: "Construction of Great Pyramid of Giza", year: -2560, emoji: "🔺" },
+            { id: 2, event: "Building of the Parthenon in Athens", year: -447, emoji: "🏛️" },
+            { id: 3, event: "Start of Construction of the Colosseum", year: 70, emoji: "🏟️" },
+            { id: 4, event: "Invention of the printing press by Gutenberg", year: 1440, emoji: "🖨️" },
+            { id: 5, event: "Fall of the Western Roman Empire", year: 476, emoji: "⚔️" },
+            { id: 6, event: "Birth of Buddha", year: -563, emoji: "🧘" },
+            { id: 7, event: "Founding of the city of Rome", year: -753, emoji: "🐺" },
+            { id: 8, event: "First Olympic Games recorded", year: -776, emoji: "🥇" },
+            { id: 9, event: "Construction of Stonehenge completed", year: -2500, emoji: "🪨" },
+            { id: 10, event: "Reign of Pharaoh Tutankhamun begins", year: -1332, emoji: "👑" },
+            { id: 11, event: "Moses leads the Exodus from Egypt", year: -1300, emoji: "🌊" },
+            { id: 12, event: "Trojan War takes place (approximate)", year: -1200, emoji: "🐎" },
+            { id: 13, event: "Life of Homer (approximate)", year: -800, emoji: "📖" },
+            { id: 14, event: "Founding of the Roman Republic", year: -509, emoji: "🏛️" },
+            { id: 15, event: "Battle of Marathon", year: -490, emoji: "🛡️" },
+            { id: 16, event: "Death of Socrates", year: -399, emoji: "💭" },
+            { id: 17, event: "Birth of Alexander the Great", year: -356, emoji: "🗺️" },
+            { id: 18, event: "Archimedes formulates his principle", year: -250, emoji: "🛁" },
+            { id: 19, event: "First Punic War begins", year: -264, emoji: "🚢" },
+            { id: 20, event: "Julius Caesar invades Britain", year: -55, emoji: "🗡️" },
+            { id: 21, event: "Birth of Jesus Christ (approximate)", year: 1, emoji: "🌟" },
+            { id: 22, event: "Eruption of Mount Vesuvius, destroying Pompeii", year: 79, emoji: "🌋" },
+            { id: 23, event: "Emperor Constantine legalizes Christianity", year: 313, emoji: "✝️" },
+            { id: 24, event: "Completion of the Hagia Sophia in Constantinople", year: 537, emoji: "🕌" },
+            { id: 25, event: "Birth of the Prophet Muhammad", year: 570, emoji: "🌙" },
+            { id: 26, event: "First use of paper money in China", year: 800, emoji: "💴" },
+            { id: 27, event: "Vikings discover and settle in Iceland", year: 874, emoji: "🧊" },
+            { id: 28, event: "Norman conquest of England (Battle of Hastings)", year: 1066, emoji: "🏹" },
+            { id: 29, event: "First Crusade begins", year: 1096, emoji: "🛡️" },
+            { id: 30, event: "Signing of the Magna Carta in England", year: 1215, emoji: "📜" },
+            { id: 31, event: "Marco Polo begins his journey to Asia", year: 1271, emoji: "Silk Road" },
+            { id: 32, event: "Black Death peaks in Europe", year: 1347, emoji: "💀" },
+            { id: 33, event: "Fall of Constantinople to the Ottoman Empire", year: 1453, emoji: "🇹🇷" },
+            { id: 34, event: "Christopher Columbus reaches the Americas", year: 1492, emoji: "⛵" },
+            { id: 35, event: "Martin Luther initiates the Protestant Reformation", year: 1517, emoji: "🙏" },
+            { id: 36, event: "Copernicus publishes his heliocentric model", year: 1543, emoji: "🪐" },
+            { id: 37, event: "Defeat of the Spanish Armada", year: 1588, emoji: "🌊" },
+            { id: 38, event: "Galileo observes the moons of Jupiter", year: 1610, emoji: "🔭" },
+            { id: 39, event: "Founding of Jamestown, first English settlement", year: 1607, emoji: "🏘️" },
+            { id: 40, event: "Trial of Galileo by the Inquisition", year: 1633, emoji: "⚖️" },
+            { id: 41, event: "Isaac Newton publishes *Principia Mathematica*", year: 1687, emoji: "🍎" },
+            { id: 42, event: "Start of the French Revolution (Storming of the Bastille)", year: 1789, emoji: "🇫🇷" },
+            { id: 43, event: "Invention of the cotton gin by Eli Whitney", year: 1793, emoji: "⚙️" },
+            { id: 44, event: "Napoleon crowns himself Emperor of France", year: 1804, emoji: "🤴" },
+            { id: 45, event: "Battle of Waterloo (Napoleon's final defeat)", year: 1815, emoji: "🐎" },
+            { id: 46, event: "Invention of the photograph (Daguerreotype)", year: 1839, emoji: "📸" },
+            { id: 47, event: "Publication of *The Communist Manifesto*", year: 1848, emoji: "🚩" },
+            { id: 48, event: "Darwin publishes *On the Origin of Species*", year: 1859, emoji: "🐒" },
+            { id: 49, event: "Start of the American Civil War", year: 1861, emoji: "🔫" },
+            { id: 50, event: "Invention of the telephone by Alexander Graham Bell", year: 1876, emoji: "📞" },
+            { id: 51, event: "Edison invents the practical incandescent light bulb", year: 1879, emoji: "💡" },
+            { id: 52, event: "Nikola Tesla patents the AC induction motor", year: 1888, emoji: "⚡" },
+            { id: 53, event: "First modern Olympic Games held in Athens", year: 1896, emoji: "🏅" },
+            { id: 54, event: "Wright brothers achieve first powered flight", year: 1903, emoji: "✈️" },
+            { id: 55, event: "Henry Ford introduces the Model T assembly line", year: 1913, emoji: "🚗" },
+            { id: 56, event: "Start of World War I", year: 1914, emoji: "💣" },
+            { id: 57, event: "Discovery of penicillin by Alexander Fleming", year: 1928, emoji: "🧪" },
+            { id: 58, event: "Stock Market Crash (The Great Depression begins)", year: 1929, emoji: "📉" },
+            { id: 59, event: "Start of World War II (Invasion of Poland)", year: 1939, emoji: "🌍" },
+            { id: 60, event: "Atomic bomb dropped on Hiroshima", year: 1945, emoji: "☢️" },
+            { id: 61, event: "Founding of the United Nations", year: 1945, emoji: "🕊️" },
+            { id: 62, event: "India gains independence from Britain", year: 1947, emoji: "🇮🇳" },
+            { id: 63, event: "DNA structure is discovered by Watson and Crick", year: 1953, emoji: "🧬" },
+            { id: 64, event: "Launch of Sputnik 1 (Start of the Space Race)", year: 1957, emoji: "🛰️" },
+            { id: 65, event: "Berlin Wall construction begins", year: 1961, emoji: "🧱" },
+            { id: 66, event: "Martin Luther King Jr. delivers 'I Have a Dream' speech", year: 1963, emoji: "🎤" },
+            { id: 67, event: "First human lands on the Moon (Apollo 11)", year: 1969, emoji: "🚀" },
+            { id: 68, event: "Invention of the microprocessor (Intel 4004)", year: 1971, emoji: "🖥️" },
+            { id: 69, event: "Microsoft is founded by Bill Gates and Paul Allen", year: 1975, emoji: "💻" },
+            { id: 70, event: "Launch of the first Space Shuttle (Columbia)", year: 1981, emoji: "🧑‍🚀" },
+            { id: 71, event: "Fall of the Berlin Wall", year: 1989, emoji: "🚧" },
+            { id: 72, event: "The World Wide Web is released to the public", year: 1991, emoji: "🌐" },
+            { id: 73, event: "Dolly the sheep, the first cloned mammal, is born", year: 1996, emoji: "🐑" },
+            { id: 74, event: "Hong Kong reverts to Chinese rule", year: 1997, emoji: "🇨🇳" },
+            { id: 75, event: "Launch of the International Space Station (ISS)", year: 1998, emoji: "🛰️" },
+            { id: 76, event: "Completion of the Human Genome Project", year: 2003, emoji: "🔬" },
+            { id: 77, event: "Launch of Facebook", year: 2004, emoji: "👍" },
+            { id: 78, event: "Release of the first iPhone", year: 2007, emoji: "📱" },
+            { id: 79, event: "Election of Barack Obama as US President", year: 2008, emoji: "🇺🇸" },
+            { id: 80, event: "Bitcoin is launched", year: 2009, emoji: "₿" },
+            { id: 81, event: "Arab Spring revolutions begin", year: 2010, emoji: "📣" },
+            { id: 82, event: "Discovery of the Higgs Boson particle", year: 2012, emoji: "✨" },
+            { id: 83, event: "SpaceX successfully lands a Falcon 9 rocket stage", year: 2015, emoji: "🪐" },
+            { id: 84, event: "Paris Agreement on climate change takes effect", year: 2016, emoji: "🤝" },
+            { id: 85, event: "Landing of the Perseverance rover on Mars", year: 2021, emoji: "🔴" },
+            { id: 86, event: "The Library of Alexandria is founded", year: -280, emoji: "📚" },
+            { id: 87, event: "Construction of the Great Wall of China begins", year: -220, emoji: "🇨🇳" },
+            { id: 88, event: "Mayan civilization reaches its peak", year: 600, emoji: "🗿" },
+            { id: 89, event: "The establishment of the first university (Bologna)", year: 1088, emoji: "🎓" },
+            { id: 90, event: "Renaissance begins in Italy (approximate)", year: 1300, emoji: "🖼️" },
+            { id: 91, event: "Leonardo da Vinci paints the Mona Lisa", year: 1503, emoji: "🎨" },
+            { id: 92, event: "Founding of Harvard University", year: 1636, emoji: "🏫" },
+            { id: 93, event: "Signing of the U.S. Declaration of Independence", year: 1776, emoji: "🗽" },
+            { id: 94, event: "End of the Seven Years' War", year: 1763, emoji: "📜" },
+            { id: 95, event: "Abolition of slavery in the British Empire", year: 1833, emoji: "⛓️" },
+            { id: 96, event: "Invention of dynamite by Alfred Nobel", year: 1867, emoji: "🧨" },
+            { id: 97, event: "The sinking of the Titanic", year: 1912, emoji: "🧊" },
+            { id: 98, event: "Granting of women's suffrage in the USA", year: 1920, emoji: "🗳️" },
+            { id: 99, event: "Start of the Korean War", year: 1950, emoji: "🇰🇷" },
+            { id: 100, event: "Establishment of CERN", year: 1954, emoji: "⚛️" },
+            { id: 101, event: "The Cuban Missile Crisis", year: 1962, emoji: "🥶" },
+            { id: 102, event: "Watergate Scandal begins", year: 1972, emoji: "🤫" },
+            { id: 103, event: "Iran Hostage Crisis begins", year: 1979, emoji: "🇮🇷" }
+        ];
+
+        let selectedEvents = []; 
+        let shuffledEvents = [];
+        let timelineSlots = [];
+        
+        // --- Element References ---
+        const cardsListContainer = document.getElementById('event-cards-list'); 
+        const timelineSlotsArea = document.getElementById('timeline-slots-area');
+        const messageBox = document.getElementById('message-box');
+        const checkButton = document.getElementById('check-button');
+        const resetButton = document.getElementById('reset-button'); 
+
+        function formatYear(year) {
+            if (year < 0) {
+                return `${Math.abs(year)} BCE`;
+            }
+            return `${year} CE`;
+        }
+        
+        function selectRandomEvents(data, count) {
+            const shuffled = data.sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        function shuffleArray(array) {
+            let current = array.length, temporary, random;
+            while (0 !== current) {
+                random = Math.floor(Math.random() * current);
+                current -= 1;
+                temporary = array[current];
+                array[current] = array[random];
+                array[random] = temporary;
+            }
+            return array;
+        }
+
+        // --- Core Functions ---
+
+        // Function to create and render the draggable event cards
+        function createDraggableCards() {
+            cardsListContainer.innerHTML = ''; // Clear previous cards
+            shuffledEvents.forEach(eventData => {
+                const card = document.createElement('div');
+                card.draggable = true;
+                card.id = `card-${eventData.id}`;
+                card.dataset.id = eventData.id;
+                
+                card.classList.add(
+                    'draggable-card', 'p-3', 'bg-gray-700', 'text-white', 'rounded-xl',
+                    'text-left', 'font-semibold', 'text-base', 'border', 'border-gray-600',
+                    'hover:bg-gray-600', 'transition', 'flex', 'items-center'
+                );
+                
+                // Card content: emoji + event name
+                card.innerHTML = `<span class="text-2xl mr-4 inline-block">${eventData.emoji}</span>${eventData.event}`;
+
+                card.addEventListener('dragstart', dragStart);
+                cardsListContainer.appendChild(card);
+            });
+        }
+        
+        // Function to create and render the empty timeline slots
+        function createTimelineSlots() {
+            timelineSlotsArea.innerHTML = ''; // Clear previous slots
+            selectedEvents.forEach((data, index) => { 
+                const slot = document.createElement('div');
+                slot.id = `slot-${index}`;
+                slot.dataset.index = index;
+                
+                slot.classList.add(
+                    'timeline-slot', 'rounded-xl', 'p-2', 'bg-gray-900',
+                    'text-gray-400', 'flex', 'items-center', 'justify-center',
+                    'text-center', 'relative'
+                );
+                const positionText = ["1st", "2nd", "3rd"][index];
+                slot.innerHTML = `Slot ${index + 1}<br><span class="text-sm font-normal">(${positionText} in time)</span>`;
+
+                slot.addEventListener('dragover', dragOver);
+                slot.addEventListener('dragleave', dragLeave);
+                slot.addEventListener('drop', drop);
+
+                timelineSlotsArea.appendChild(slot);
+            });
+        }
+
+        // Function to initialize a BRAND NEW game (selects new events)
+        function initGame() {
+            if (!cardsListContainer || !timelineSlotsArea) return;
+
+            // 1. SELECT NEW EVENTS
+            selectedEvents = selectRandomEvents(ALL_EVENTS_DATA, 3);
+            
+            // 2. Reset state
+            shuffledEvents = shuffleArray([...selectedEvents]); 
+            timelineSlots = new Array(selectedEvents.length).fill(null); 
+
+            // 3. Update UI
+            messageBox.textContent = 'Game started! 3 random events selected. Drag cards from below onto the timeline.';
+            checkButton.disabled = false;
+            checkButton.classList.remove('opacity-50');
+
+            // Set button back to default "RESET GAME" (calls resetCurrentGame)
+            resetButton.textContent = '🔄 RESET GAME'; 
+            resetButton.onclick = resetCurrentGame; // Set handler to reset current game
+            resetButton.classList.remove('bg-blue-600', 'hover:bg-blue-700'); 
+            resetButton.classList.add('bg-red-600', 'hover:bg-red-700'); 
+
+            // 4. Create content
+            createDraggableCards();
+            createTimelineSlots();
+        }
+
+        // NEW: Function to reset the CURRENT game (uses existing selectedEvents)
+        function resetCurrentGame() {
+            if (!cardsListContainer || !timelineSlotsArea) return;
+            
+            // 1. Reset state
+            shuffledEvents = shuffleArray([...selectedEvents]); // Reshuffle existing events
+            timelineSlots = new Array(selectedEvents.length).fill(null); 
+
+            // 2. Update UI
+            messageBox.textContent = 'Game reset! The events are shuffled. Try placing them again.';
+            checkButton.disabled = false;
+            checkButton.classList.remove('opacity-50');
+
+            // 3. Re-create content based on existing selected events
+            createDraggableCards();
+            createTimelineSlots();
+        }
+
+        // --- Drag and Drop Handlers ---
+        let draggedCardId = null;
+
+        function dragStart(e) {
+            draggedCardId = e.target.dataset.id;
+            e.dataTransfer.setData('text/plain', draggedCardId);
+            setTimeout(() => e.target.classList.add('opacity-50'), 0);
+        }
+
+        function dragOver(e) {
+            e.preventDefault(); 
+            const slot = e.currentTarget;
+            if (timelineSlots[parseInt(slot.dataset.index)] === null) {
+                 slot.classList.add('drag-over');
+            }
+        }
+
+        function dragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const slot = e.currentTarget;
+            const cardId = e.dataTransfer.getData('text/plain');
+            const card = document.getElementById(`card-${cardId}`);
+            const newSlotIndex = parseInt(slot.dataset.index);
+
+            // Check if slot is occupied
+            if (timelineSlots[newSlotIndex] !== null) {
+                slot.classList.add('shake');
+                messageBox.textContent = 'Slot is already occupied! Move the existing card first.';
+                setTimeout(() => {
+                    slot.classList.remove('shake');
+                    messageBox.textContent = 'Drag cards from below onto the timeline.';
+                }, 2000);
+                card.classList.remove('opacity-50'); 
+                return;
+            }
+
+            // --- Card Removal from Previous Location ---
+            const oldIndex = timelineSlots.findIndex(id => id === parseInt(cardId));
+            
+            if (oldIndex !== -1) {
+                // Remove from old slot
+                timelineSlots[oldIndex] = null;
+                const oldSlot = document.getElementById(`slot-${oldIndex}`);
+                const oldPositionText = ["1st", "2nd", "3rd"][oldIndex];
+                oldSlot.innerHTML = `Slot ${oldIndex + 1}<br><span class="text-sm font-normal">(${oldPositionText} in time)</span>`;
+                oldSlot.classList.remove('p-1');
+                oldSlot.classList.add('text-gray-400', 'p-2'); 
+                oldSlot.classList.remove('bg-gray-700', 'border-green-600', 'border-red-600'); 
+            } else {
+                // If the card was previously in the options container, just remove it from there
+                cardsListContainer.removeChild(card);
+            }
+
+            // --- Update to New Location (Timeline Slot) ---
+            timelineSlots[newSlotIndex] = parseInt(cardId);
+
+            // Restyle the card to fit the slot
+            card.classList.remove(
+                'opacity-50', 'text-left', 'p-3', 'hover:bg-gray-600', 
+                'bg-gray-700', 'border-gray-600', 'items-center', 'text-base'
+            );
+            card.classList.add(
+                'absolute', 'inset-0', 'w-full', 'h-full', 'flex', 'flex-col', 'justify-center', 
+                'items-center', 'text-center', 'p-1', 'transition', 'bg-gray-700', 'text-sm'
+            );
+
+            // Clear the slot content and append the card
+            slot.textContent = '';
+            slot.appendChild(card);
+            slot.classList.remove('text-gray-400', 'p-2'); 
+            slot.classList.add('p-1'); 
+
+            card.draggable = true;
+            card.addEventListener('dragstart', dragStart);
+
+            messageBox.textContent = 'Event placed! Now fill the other slots.';
+        }
+
+        // --- Game Logic ---
+        function checkOrder() {
+            if (timelineSlots.includes(null)) {
+                messageBox.textContent = 'Please fill all timeline slots before checking!';
+                messageBox.classList.add('text-yellow-400');
+                setTimeout(() => messageBox.classList.remove('text-yellow-400'), 2000);
+                return;
+            }
+            
+            const correctOrder = [...selectedEvents] 
+                .sort((a, b) => a.year - b.year)
+                .map(event => event.id);
+
+            let isCorrect = true;
+            let firstIncorrectIndex = -1;
+
+            timelineSlots.forEach((cardId, index) => {
+                const card = document.getElementById(`card-${cardId}`);
+                card.classList.remove('card-correct', 'card-incorrect', 'shake');
+
+                if (cardId === correctOrder[index]) {
+                    card.classList.add('card-correct');
+                } else {
+                    card.classList.add('card-incorrect');
+                    isCorrect = false;
+                    if (firstIncorrectIndex === -1) {
+                        firstIncorrectIndex = index;
+                    }
+                }
+            });
+
+            if (isCorrect) {
+                messageBox.textContent = '🥳 HISTORY MASTER! The timeline is perfectly correct! Click "Start New Game" for a new challenge.';
+                checkButton.disabled = true;
+                checkButton.classList.add('opacity-50');
+                
+                // --- CORRECT: Change to "START NEW GAME" (Blue) ---
+                resetButton.textContent = '🎉 START NEW GAME'; 
+                resetButton.onclick = initGame; // Set handler to start a NEW game
+                resetButton.classList.remove('bg-red-600', 'hover:bg-red-700'); 
+                resetButton.classList.add('bg-blue-600', 'hover:bg-blue-700'); 
+
+                timelineSlots.forEach(cardId => {
+                    const eventData = ALL_EVENTS_DATA.find(e => e.id === cardId); 
+                    const card = document.getElementById(`card-${cardId}`);
+                    // Add year information upon correct completion
+                    card.innerHTML = `<span class="text-2xl">${eventData.emoji}</span><br>${eventData.event}<br><span class="text-xs font-normal">(${formatYear(eventData.year)})</span>`;
+                });
+
+            } else {
+                messageBox.textContent = `❌ INCORRECT! Slot ${firstIncorrectIndex + 1} is wrong. Click "Reset Game" to start this same puzzle over.`;
+                document.getElementById(`slot-${firstIncorrectIndex}`).classList.add('shake');
+                setTimeout(() => document.getElementById(`slot-${firstIncorrectIndex}`).classList.remove('shake'), 500);
+
+                // --- INCORRECT: Ensure it is "RESET GAME" (Red) ---
+                resetButton.textContent = '🔄 RESET GAME'; 
+                resetButton.onclick = resetCurrentGame; // Set handler to reset CURRENT game
+                resetButton.classList.remove('bg-blue-600', 'hover:bg-blue-700'); 
+                resetButton.classList.add('bg-red-600', 'hover:bg-red-700'); 
+            }
+        }
+
+        // Initialize the game when the window loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>
