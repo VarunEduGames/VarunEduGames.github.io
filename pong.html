@@ -1,0 +1,478 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizontal Paddle Pong</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font import: Switched to Space Mono for readability and clean italic support */
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+        /* Custom styling for the retro look */
+        .retro-font {
+            font-family: 'Space Mono', monospace; /* Using Space Mono */
+            font-style: italic; /* Applying italic style as requested */
+        }
+        .game-container {
+            width: 100vw;
+            min-height: 100vh; /* Ensures it covers the screen */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a; /* Dark background */
+            padding: 1rem; /* Added padding for safety on tiny screens */
+            box-sizing: border-box;
+            overflow: auto; /* Allows scrolling if content is still too big */
+        }
+        .game-card {
+            background-color: #2c2c2c;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.4), 0 0 10px rgba(0, 0, 0, 0.5) inset;
+            border: 4px solid #00ff00;
+            padding: 1.5rem 0.5rem; /* 1.5rem top/bottom, 0.5rem left/right */
+            border-radius: 12px;
+            /* Ensures the card doesn't get squashed, preserving readability */
+            flex-shrink: 0; 
+        }
+        canvas {
+            border: 2px solid #00ff00; /* Neon green border */
+            background-color: #000000;
+            display: block;
+            touch-action: none; /* Prevent unwanted touch behavior */
+        }
+
+        /* Ensure radio button label is highlighted correctly with new font/styling */
+        #difficulty-options input[type="radio"]:checked + label {
+            background-color: #047857; /* A slightly darker green for checked state */
+            color: #ffffff;
+        }
+        /* Ensure labels look good on the side panel */
+        #difficulty-options label {
+            transition: background-color 0.15s ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="game-card">
+        <h1 class="text-3xl text-center mb-4 text-green-400 retro-font">PONG (Horizontal Paddles)</h1>
+        
+        <!-- FLEX CONTAINER: Changed items-start to items-center to vertically center content --><!-- Adjusted space-x for ideal spacing between canvas and buttons --><div class="flex items-center justify-center space-x-4">
+
+            <!-- LEFT/CENTER COLUMN: Game Play Area (Info + Canvas + Message) --><div class="flex flex-col items-center">
+                <div id="game-info" class="text-center text-green-300 retro-font text-sm mb-4">
+                    <!-- NEW DEBUG/INFO DISPLAY --><p>Player 1 (A/D or Arrows) vs. CPU</p>
+                    <p id="game-stats">Difficulty: <span id="current-difficulty">EASY</span> | CPU Speed: <span id="cpu-speed-display">2</span></p>
+                    <p id="score-display">P1 (Bottom): 0 | CPU (Top): 0</p>
+                </div>
+                <canvas id="pongCanvas"></canvas>
+                <div id="message-box" class="text-center mt-4 text-green-400 retro-font text-lg h-8">
+                    Select Difficulty, then Press SPACE to Start
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Difficulty Selection Panel (No top padding, label right-aligned) --><div id="difficulty-panel" class="text-green-300 retro-font text-xs">
+                <!-- Label alignment and proximity to buttons --><label class="block mb-2 text-right">Select Difficulty:</label> 
+                <!-- Changed to vertical stacking (flex-col) and added widths for alignment --><div id="difficulty-options" class="flex flex-col space-y-2">
+                    <input type="radio" id="easy" name="difficulty" value="2" checked class="hidden">
+                    <label for="easy" class="px-4 py-2 text-center rounded-lg cursor-pointer border border-green-500 bg-green-700 w-28">EASY</label>
+                    
+                    <input type="radio" id="medium" name="difficulty" value="4" class="hidden">
+                    <label for="medium" class="px-4 py-2 text-center rounded-lg cursor-pointer border border-green-500 hover:bg-green-700 w-28">MEDIUM</label>
+                    
+                    <input type="radio" id="hard" name="difficulty" value="6" class="hidden">
+                    <label for="hard" class="px-4 py-2 text-center rounded-lg cursor-pointer border border-green-500 hover:bg-green-700 w-28">HARD</label>
+                    
+                    <input type="radio" id="extreme" name="difficulty" value="8" class="hidden">
+                    <label for="extreme" class="px-4 py-2 text-center rounded-lg cursor-pointer border border-green-500 hover:bg-green-700 w-28">EXTREME</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FOOTER: Added the required developer credit --><div class="text-center mt-6 text-green-500 retro-font text-xs">
+            Developed by **Surendar Nath (G7A)**
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CANVAS AND CONTEXT SETUP ---
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score-display');
+    const messageBox = document.getElementById('message-box');
+    
+    // NEW DEBUG ELEMENTS
+    const currentDifficultyDisplay = document.getElementById('current-difficulty');
+    const cpuSpeedDisplay = document.getElementById('cpu-speed-display');
+
+    // --- DIFFICULTY SELECTION ELEMENTS ---
+    const difficultyOptions = document.getElementById('difficulty-options');
+    const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
+    const difficultyLabels = document.querySelectorAll('#difficulty-options label');
+
+    // Game state variables
+    let gameInterval;
+    let isGameRunning = false;
+    let userControls = {
+        left: false, // Now controls horizontal left movement
+        right: false // Now controls horizontal right movement
+    };
+
+    // --- GAME CONSTANTS (Portrait View with Horizontal Paddles) ---
+    const GAME_WIDTH = 300; // REDUCED SIZE
+    const GAME_HEIGHT = 500; // REDUCED SIZE
+
+    const PADDLE_WIDTH = 100; // Wide paddle
+    const PADDLE_HEIGHT = 10; // Short paddle
+    const PADDLE_SPEED = 6; // Player 1 Speed
+    // Removed global CPU_PADDLE_SPEED to use cpu.speed as the single source of truth
+
+    const BALL_SIZE = 10;
+    const BALL_START_SPEED = 4;
+    const MAX_BALL_SPEED = 8;
+    const BALL_SPEED_INCREMENT = 0.5;
+
+    // Set canvas dimensions
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+
+    // --- GAME OBJECTS ---
+    let player1 = {
+        x: GAME_WIDTH / 2 - PADDLE_WIDTH / 2, // Centered horizontally
+        y: GAME_HEIGHT - PADDLE_HEIGHT - 10, // 10 pixels up from the bottom edge
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+        score: 0
+    };
+
+    let cpu = {
+        x: GAME_WIDTH / 2 - PADDLE_WIDTH / 2, // Centered horizontally
+        y: 10, // 10 pixels down from the top edge
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+        score: 0,
+        speed: 2 // Initial speed is 2 (Easy)
+    };
+
+    let ball = {
+        x: GAME_WIDTH / 2,
+        y: GAME_HEIGHT / 2,
+        size: BALL_SIZE,
+        speedX: BALL_START_SPEED,
+        speedY: BALL_START_SPEED,
+        speed: BALL_START_SPEED
+    };
+
+    // --- DIFFICULTY HANDLER ---
+    function setDifficulty(speed, difficultyName) {
+        // Now only update the speed property on the cpu object
+        cpu.speed = speed;
+        // Update the new display indicators so the user can see the change
+        currentDifficultyDisplay.textContent = difficultyName.toUpperCase();
+        cpuSpeedDisplay.textContent = speed;
+    }
+
+    // Initialize difficulty based on the checked radio button (default is Easy=2)
+    difficultyInputs.forEach(input => {
+        if (input.checked) {
+            // Initial call sets speed and updates the display
+            setDifficulty(parseInt(input.value), 'Easy');
+        }
+    });
+
+    // Add listeners to update difficulty and button styling
+    difficultyOptions.addEventListener('change', (e) => {
+        if (e.target.name === 'difficulty') {
+            const speed = parseInt(e.target.value);
+            const difficultyName = e.target.id;
+            setDifficulty(speed, difficultyName);
+
+            // Update label styling
+            difficultyLabels.forEach(label => {
+                const isChecked = label.htmlFor === e.target.id;
+                // Use consistent Tailwind classes for checked/unchecked states
+                if (isChecked) {
+                    label.classList.add('bg-green-700');
+                    label.classList.remove('hover:bg-green-700'); // Remove hover for checked state
+                    label.setAttribute('data-checked', 'true');
+                } else {
+                    label.classList.remove('bg-green-700');
+                    label.classList.add('hover:bg-green-700'); // Add hover for unchecked state
+                    label.removeAttribute('data-checked');
+                }
+            });
+        }
+        messageBox.textContent = `Ready on ${e.target.id.toUpperCase()}. Press SPACE to Start.`;
+    });
+
+
+    // --- UTILITY FUNCTIONS ---
+
+    // Resets the ball to the center and reverses direction for the serving player
+    function resetBall(servingPlayer) {
+        ball.x = GAME_WIDTH / 2;
+        ball.y = GAME_HEIGHT / 2;
+        ball.speed = BALL_START_SPEED;
+        messageBox.textContent = `${servingPlayer} serves next!`;
+        isGameRunning = false;
+
+        // Determine initial direction after score (Y direction now matters)
+        const directionY = (servingPlayer === 'P1') ? -ball.speed : ball.speed;
+        ball.speedY = directionY;
+        
+        // Randomize X direction slightly
+        ball.speedX = (Math.random() < 0.5 ? 1 : -1) * BALL_START_SPEED * 0.5;
+
+        // Wait for spacebar press to restart
+        setTimeout(() => {
+            messageBox.textContent = `Press SPACE to continue`;
+        }, 1000);
+    }
+
+    // --- DRAWING FUNCTIONS ---
+
+    function drawRect(x, y, width, height, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, height);
+    }
+
+    function drawCircle(x, y, radius, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+        ctx.fill();
+    }
+
+    function drawNet() {
+        ctx.strokeStyle = '#333333'; // Faint line
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+        ctx.moveTo(0, GAME_HEIGHT / 2); // Start left, middle
+        ctx.lineTo(GAME_WIDTH, GAME_HEIGHT / 2); // End right, middle
+        ctx.stroke();
+    }
+
+    function drawGame() {
+        // Clear canvas
+        drawRect(0, 0, GAME_WIDTH, GAME_HEIGHT, '#000000');
+        
+        // Draw Net
+        drawNet();
+
+        // Draw Paddles (Neon Green)
+        drawRect(player1.x, player1.y, player1.width, player1.height, '#00ff00');
+        drawRect(cpu.x, cpu.y, cpu.width, cpu.height, '#00ff00');
+
+        // Draw Ball (White)
+        drawCircle(ball.x, ball.y, ball.size / 2, '#ffffff');
+
+        // Update Score Display
+        scoreDisplay.textContent = `P1 (Bottom): ${player1.score} | CPU (Top): ${cpu.score}`;
+    }
+
+    // --- GAME LOGIC ---
+
+    function movePaddles() {
+        // Player 1 Movement (A/D or Arrows for Left/Right)
+        if (userControls.left) {
+            player1.x -= PADDLE_SPEED;
+        }
+        if (userControls.right) {
+            player1.x += PADDLE_SPEED;
+        }
+
+        // Clamp player paddle position (stay within horizontal bounds)
+        player1.x = Math.max(0, Math.min(player1.x, GAME_WIDTH - player1.width));
+
+        // CPU AI Movement (Tracking ball's X position)
+        const targetX = ball.x - cpu.width / 2;
+        if (cpu.x < targetX) {
+            // Now correctly using cpu.speed
+            cpu.x += Math.min(cpu.speed, targetX - cpu.x);
+        } else if (cpu.x > targetX) {
+            // Now correctly using cpu.speed
+            cpu.x -= Math.min(cpu.speed, cpu.x - targetX);
+        }
+        
+        // Clamp CPU paddle position
+        cpu.x = Math.max(0, Math.min(cpu.x, GAME_WIDTH - cpu.width));
+    }
+
+    function ballCollision(paddle) {
+        
+        // Increase speed slightly, up to a max
+        ball.speed = Math.min(MAX_BALL_SPEED, ball.speed + BALL_SPEED_INCREMENT);
+
+        // Calculate the horizontal reflection based on the center hit point
+        // This calculates the horizontal distance from the center of the paddle (ranging from -paddle.width/2 to +paddle.width/2)
+        const relativeIntersectX = (paddle.x + (paddle.width / 2)) - ball.x;
+        const normalizedRelativeIntersectionX = relativeIntersectX / (paddle.width / 2);
+        
+        // Determine the angle for horizontal movement (X-axis component)
+        // Max 70% of speed goes to X component for a shallow angle
+        const newSpeedX = ball.speed * -normalizedRelativeIntersectionX * 0.7; 
+
+        // Calculate the magnitude of the new vertical speed using Pythagorean theorem
+        const newSpeedYMagnitude = Math.sqrt(Math.max(0, ball.speed * ball.speed - newSpeedX * newSpeedX));
+        
+        // Apply new speed X
+        ball.speedX = newSpeedX;
+        
+        // Check which paddle was hit to determine Y direction
+        if (paddle === player1) {
+            // Hit bottom paddle, must go UP (negative Y)
+            ball.speedY = -newSpeedYMagnitude;
+        } else {
+            // Hit top paddle (CPU), must go DOWN (positive Y)
+            ball.speedY = newSpeedYMagnitude;
+        }
+    }
+
+    function moveBall() {
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;
+
+        // 1. Wall Collision (Left/Right - Bouncing on the short edges)
+        if (ball.x < ball.size / 2 || ball.x > GAME_WIDTH - ball.size / 2) {
+            ball.speedX = -ball.speedX; // Reverse X direction
+        }
+
+        // 2. Paddle Collision Check (Player 1 - Bottom Paddle)
+        if (ball.y + ball.size / 2 > player1.y && // ball bottom edge past paddle top edge
+            ball.x + ball.size / 2 > player1.x && // ball right edge past paddle left edge
+            ball.x - ball.size / 2 < player1.x + player1.width && // ball left edge past paddle right edge
+            ball.speedY > 0 // only check if ball is moving towards the paddle (downwards)
+        ) {
+            // FIX: Reposition the ball to prevent "sticking"
+            ball.y = player1.y - ball.size / 2;
+            ballCollision(player1);
+        }
+
+        // 3. Paddle Collision Check (CPU - Top Paddle)
+        if (ball.y - ball.size / 2 < cpu.y + cpu.height && // ball top edge past paddle bottom edge
+            ball.x + ball.size / 2 > cpu.x &&
+            ball.x - ball.size / 2 < cpu.x + cpu.width &&
+            ball.speedY < 0 // only check if ball is moving towards the paddle (upwards)
+        ) {
+            // FIX: Reposition the ball to prevent "sticking"
+            ball.y = cpu.y + cpu.height + ball.size / 2;
+            ballCollision(cpu);
+        }
+
+        // 4. Scoring (Top/Bottom walls - Missed Paddle)
+        if (ball.y < 0) {
+            player1.score++; // P1 scores if CPU misses (ball hits top edge)
+            resetBall('P1');
+        } else if (ball.y > GAME_HEIGHT) {
+            cpu.score++; // CPU scores if P1 misses (ball hits bottom edge)
+            resetBall('CPU');
+        }
+    }
+
+    function update() {
+        if (!isGameRunning) return;
+
+        movePaddles();
+        moveBall();
+    }
+
+    function gameLoop() {
+        update();
+        drawGame();
+        
+        // Request the next frame
+        requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+        if (!isGameRunning) {
+            isGameRunning = true;
+            messageBox.textContent = '';
+            // Ensure ball moves immediately after start
+            if (ball.speedX === 0 && ball.speedY === 0) {
+                // Initial launch: send ball down (positive Y)
+                ball.speedY = BALL_START_SPEED;
+            }
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+
+    // Keyboard controls for Player 1 (A/D or Arrows for Left/Right)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') { // A or Left Arrow
+            userControls.left = true;
+        } else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') { // D or Right Arrow
+            userControls.right = true;
+        } else if (e.key === ' ') {
+            e.preventDefault(); // Prevent page scroll
+            startGame();
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+            userControls.left = false;
+        } else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+            userControls.right = false;
+        }
+    });
+
+    // Touch controls for mobile responsiveness (Horizontal mapping)
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touchX = e.touches[0].clientX;
+        const rect = canvas.getBoundingClientRect();
+        const relativeX = touchX - rect.left;
+
+        // Map touch position to Left/Right
+        if (relativeX < rect.width / 2) {
+            userControls.left = true;
+            userControls.right = false;
+        } else {
+            userControls.left = false;
+            userControls.right = true;
+        }
+        startGame(); // Start game on first touch
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touchX = e.touches[0].clientX;
+        const rect = canvas.getBoundingClientRect();
+        const relativeX = touchX - rect.left;
+
+        if (relativeX < rect.width / 2) {
+            userControls.left = true;
+            userControls.right = false;
+        } else {
+            userControls.left = false;
+            userControls.right = true;
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        userControls.left = false;
+        userControls.right = false;
+    });
+
+    // --- INITIALIZATION ---
+    window.onload = function () {
+        // Initial drawing
+        drawGame();
+        // Start the game loop
+        gameLoop();
+    };
+
+    // Ensure the ball starts paused
+    ball.speedX = 0;
+    ball.speedY = 0;
+
+</script>
+
+</body>
+</html>
