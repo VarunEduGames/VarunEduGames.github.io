@@ -1,0 +1,597 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Solver Quiz</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Import Inter font and apply to body */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Rainbow Gradient Background */
+            background: linear-gradient(120deg, #ff7e5f, #feb47b, #ffda7f, #c7ff8b, #84dcc6, #80e8e6, #8ee0f5, #9ecbff);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        /* Keyframe animation for the rainbow background */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Game-like card effect */
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        /* Consistent message box styling */
+        .result-box {
+            min-height: 4rem; /* Ensure consistent height for messages */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Custom styling for Primary button (Next Question) */
+        .btn-primary {
+            background-image: linear-gradient(145deg, #4f46e5, #6366f1);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover:not([disabled]) {
+            background-image: linear-gradient(145deg, #6366f1, #4f46e5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        /* Custom styling for Secondary (Mode Toggle / Check Answer) button */
+        .btn-secondary {
+            background-color: #9ca3af;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #6b7280;
+            transform: translateY(-1px);
+        }
+        /* Custom styling for Auto Mode Toggle (to make it stand out) button */
+        .btn-auto-mode {
+            background-color: #ec4899; /* Pink */
+            transition: all 0.2s;
+        }
+        .btn-auto-mode:hover {
+            background-color: #db2777; /* Darker Pink */
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        /* Custom styling for level/timing buttons */
+        .btn-level {
+            background-color: #22c55e; /* Green */
+            transition: all 0.2s;
+        }
+        .btn-level:hover {
+            background-color: #16a34a;
+            transform: scale(1.02);
+        }
+        .btn-timing { /* Specific style for timing buttons */
+            background-color: #6d28d9; /* Violet-700 */
+        }
+        .btn-timing:hover {
+            background-color: #5b21aa; /* Violet-800 */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <!-- Main Container for Views -->
+    <div id="app" class="w-full max-w-lg bg-white p-6 sm:p-8 rounded-xl card border border-gray-200">
+
+        <!-- LEVEL SELECTION VIEW -->
+        <div id="levelView">
+            <h1 class="text-3xl font-extrabold text-center mb-8 text-gray-800">Select Your Table Practice Level</h1>
+            <div class="space-y-4">
+                <!-- UPDATED LEVEL DESCRIPTION: Tables 1-10 -->
+                <button onclick="selectLevel('primary')" class="btn-level w-full text-white font-bold py-4 px-6 rounded-xl shadow-lg flex flex-col items-center">
+                    <span class="text-2xl">Easy Tables</span>
+                    <span class="text-sm font-light opacity-80 mt-1">Multiplication from **Tables 1-10** (25 Questions)</span>
+                </button>
+                <!-- UPDATED LEVEL DESCRIPTION: Tables 3-20 -->
+                <button onclick="selectLevel('middle')" class="btn-level w-full text-white font-bold py-4 px-6 rounded-xl shadow-lg flex flex-col items-center" style="background-color: #f97316;">
+                    <span class="text-2xl">Medium Tables</span>
+                    <span class="text-sm font-light opacity-80 mt-1">Multiplication from **Tables 3-20** (25 Questions)</span>
+                </button>
+                <!-- UPDATED LEVEL DESCRIPTION: Tables 11-99 -->
+                <button onclick="selectLevel('high')" class="btn-level w-full text-white font-bold py-4 px-6 rounded-xl shadow-lg flex flex-col items-center" style="background-color: #ef4444;">
+                    <span class="text-2xl">Hard Tables</span>
+                    <span class="text-sm font-light opacity-80 mt-1">Multiplication from **Tables 11-99** (25 Questions)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MATH SOLVER VIEW (Quiz/Summary) -->
+        <div id="solverView" class="hidden">
+            <h1 id="mainTitle" class="text-3xl font-extrabold text-center mb-2 text-gray-800">Tables Quiz</h1>
+            <p id="currentLevelDisplay" class="text-center mb-6 text-sm text-gray-500 font-medium"></p>
+
+            <!-- Quiz Controls -->
+            <div id="quizArea">
+                <!-- Navigation Back to Levels -->
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="showView('levelView')" class="text-xs text-indigo-500 hover:text-indigo-700 transition duration-150">
+                        &#x25C0; Change Level
+                    </button>
+                    <button id="modeToggleBtn" onclick="toggleMode()" class="btn-secondary text-white font-semibold py-2 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-sm">
+                        Switch to Auto Mode
+                    </button>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <p id="questionNumber" class="text-lg font-semibold text-gray-600">Question 1 / 25</p>
+                </div>
+                
+                <!-- Problem Display -->
+                <div class="text-center mb-6">
+                    <p id="problemDisplay" class="text-4xl sm:text-5xl font-extrabold text-indigo-700 select-none">
+                        Start the Quiz
+                    </p>
+                </div>
+                
+                <!-- DYNAMIC CONTROL AREA -->
+                <div id="dynamicControls">
+                    <!-- Manual Mode Input -->
+                    <div id="manualInput" class="flex flex-col items-center gap-4 mb-6">
+                        <input type="number" id="answerInput" placeholder="Type your answer"
+                               class="w-full max-w-xs text-center text-3xl p-3 border-4 border-indigo-300 rounded-xl font-bold focus:border-indigo-500 transition duration-150">
+                        <button id="checkAnswerBtn" onclick="checkAnswerManual()"
+                                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-xl disabled:opacity-50 transition duration-150">
+                            Check Answer
+                        </button>
+                    </div>
+
+                    <!-- Auto Mode Timer/Selector -->
+                    <div id="autoModeControls" class="hidden text-center mb-6">
+                        <p class="text-lg font-semibold text-gray-600 mb-2">Select Pace (Seconds per question)</p>
+                        <div id="timerSelector" class="flex justify-center space-x-3 mb-6">
+                            <button class="btn-level btn-timing text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150" onclick="selectTiming(10)">10s</button>
+                            <button class="btn-level btn-timing text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150" onclick="selectTiming(15)">15s</button>
+                            <button class="btn-level btn-timing text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150" onclick="selectTiming(20)">20s</button>
+                            <button class="btn-level btn-timing text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-150" onclick="selectTiming(25)">25s</button>
+                        </div>
+
+                        <!-- Timer Display -->
+                        <p id="timerDisplay" class="text-5xl font-extrabold text-red-500 my-4 hidden">--:--</p>
+                    </div>
+                </div>
+
+                <!-- Result Message Box -->
+                <div id="resultMessage" class="result-box text-center text-xl font-semibold mb-6 rounded-lg text-indigo-700 bg-indigo-100 p-2">
+                    Enter your answer or select an Auto-Mode pace.
+                </div>
+
+                <!-- Control Buttons: Next Question (Used only in Manual Mode) -->
+                <div class="flex justify-center">
+                    <button id="nextQuestionBtn" onclick="goToNextQuestion()" disabled
+                        class="btn-primary text-white font-bold py-3 px-8 rounded-lg shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next Question
+                    </button>
+                </div>
+
+                <!-- Score Board (In-Quiz Progress) -->
+                <div class="flex justify-between text-center mt-6 pt-4 border-t border-gray-200">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Correct</p>
+                        <p id="scoreCorrect" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Answered</p>
+                        <p id="scoreTotal" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Remaining</p>
+                        <p id="scoreRemaining" class="text-2xl font-bold text-red-600">25</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Summary View (Hidden Initially) -->
+            <div id="summaryView" class="hidden text-center">
+                <h2 class="text-4xl font-extrabold text-indigo-700 mb-4">Quiz Complete!</h2>
+                <div class="space-y-4 mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <p class="text-xl font-semibold text-gray-700">Level: <span id="summaryLevel" class="text-indigo-600"></span></p>
+                    <p class="text-xl font-semibold text-gray-700">Questions Answered: <span id="summaryTotal" class="text-gray-800">25</span></p>
+                    <p class="text-xl font-semibold text-gray-700">Correct Answers: <span id="summaryCorrect" class="text-green-600 text-3xl font-bold"></span></p>
+                    <p class="text-xl font-semibold text-gray-700">Final Accuracy: <span id="summaryAccuracy" class="text-blue-600 text-3xl font-bold"></span></p>
+                </div>
+                 <button onclick="showView('levelView')"
+                    class="btn-primary text-white font-bold py-3 px-8 rounded-lg shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    Start a New Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
+            Developed by **Surendar nath** (G7A)
+        </footer>
+    </div>
+
+    <script type="module">
+        // Dummy Firebase setup variables
+        const __app_id = 'default-app-id';
+        const __firebase_config = null; 
+        const __initial_auth_token = null; 
+
+        // Global Quiz State
+        const QUIZ_LENGTH = 25;
+        let problemSet = [];
+        let currentQuestionIndex = 0;
+        let score = { correct: 0, totalAnswered: 0 };
+        let isAutoMode = false;
+        let currentLevel = null;
+        let quizInProgress = false;
+        let timerInterval;
+        let selectedTiming = 10;
+        let quizStarted = false;
+
+        // Dummy Firebase Initialization
+        async function initializeFirebase() {
+            console.log("Firebase initialization skipped for standalone code.");
+        }
+
+        // --- View and Level Control ---
+
+        const levelMap = {
+            'primary': 'Easy Tables (1-10)',
+            'middle': 'Medium Tables (3-20)',
+            'high': 'Hard Tables (11-99)'
+        };
+
+        // ************************************************************
+        // Export functions to the global scope for HTML onclick
+        // ************************************************************
+
+        window.showView = function(viewId) {
+            document.getElementById('levelView').classList.add('hidden');
+            document.getElementById('solverView').classList.add('hidden');
+            document.getElementById('quizArea').classList.add('hidden');
+            document.getElementById('summaryView').classList.add('hidden');
+            
+            if (viewId !== 'solverView' || document.getElementById('summaryView').classList.contains('hidden')) {
+                stopTimer();
+                quizStarted = false;
+            }
+
+            document.getElementById(viewId).classList.remove('hidden');
+
+            if (viewId === 'solverView') {
+                document.getElementById('quizArea').classList.remove('hidden');
+            }
+        }
+
+        window.selectLevel = function(level) {
+            currentLevel = level;
+            score = { correct: 0, totalAnswered: 0 };
+            currentQuestionIndex = 0;
+            quizInProgress = true;
+            quizStarted = false;
+
+            generateQuiz(level);
+
+            document.getElementById('currentLevelDisplay').textContent = `Level: ${levelMap[currentLevel]}`;
+            updateScoreDisplay();
+            displayQuestion();
+            showView('solverView');
+        }
+
+        // --- Core Quiz Logic (Multiplication Focused) ---
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateDistractors(correctAnswer, level) {
+            const distractors = new Set();
+            let base = correctAnswer;
+            
+            distractors.add(base + 1);
+            distractors.add(base - 1);
+            distractors.add(base + 10);
+            distractors.add(base - 10);
+
+            while (distractors.size < 4) {
+                let offset = getRandomInt(2, 50); 
+                let distractor = base + (Math.random() > 0.5 ? offset : -offset);
+                if (distractor !== correctAnswer && distractor >= 0) {
+                    distractors.add(distractor);
+                }
+            }
+            
+            const uniqueDistractors = Array.from(distractors).filter(d => d !== correctAnswer).slice(0, 3);
+            return uniqueDistractors;
+        }
+
+        /**
+         * Generates a multiplication problem based on the selected level using the new ranges.
+         * Easy (primary): 1-10 x 1-10
+         * Medium (middle): 3-20 x 3-20
+         * Hard (high): 11-99 x 11-99
+         */
+        function generateProblemForLevel(level) {
+            let num1, num2, problemText, answer;
+
+            switch (level) {
+                case 'primary': // Easy: Tables 1-10
+                    num1 = getRandomInt(1, 10);
+                    num2 = getRandomInt(1, 10);
+                    break;
+                case 'middle': // Medium: Tables 3-20
+                    num1 = getRandomInt(3, 20);
+                    num2 = getRandomInt(3, 20);
+                    break;
+                case 'high': // Hard: Tables 11-99
+                    num1 = getRandomInt(11, 99);
+                    num2 = getRandomInt(11, 99);
+                    break;
+            }
+            
+            answer = num1 * num2;
+            problemText = `${num1} \u00d7 ${num2}`; 
+
+            const distractors = generateDistractors(answer, level);
+            const choices = [answer, ...distractors];
+
+            return { problemText, answer, choices, answered: false, correct: false, isScored: false };
+        }
+
+        function generateQuiz(level) {
+            problemSet = [];
+            for (let i = 0; i < QUIZ_LENGTH; i++) {
+                problemSet.push(generateProblemForLevel(level));
+            }
+        }
+
+        // --- Core UI Functions ---
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= QUIZ_LENGTH) {
+                showSummary();
+                return;
+            }
+            if (!quizInProgress) {
+                document.getElementById('problemDisplay').textContent = 'Please select a level to start.';
+                return;
+            }
+
+            const problem = problemSet[currentQuestionIndex];
+            const resultElement = document.getElementById('resultMessage');
+            const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+            const manualInputDiv = document.getElementById('manualInput');
+            const autoModeControlsDiv = document.getElementById('autoModeControls');
+            const answerInput = document.getElementById('answerInput');
+            const checkAnswerBtn = document.getElementById('checkAnswerBtn');
+            const timerSelector = document.getElementById('timerSelector');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestionIndex + 1} / ${QUIZ_LENGTH}`;
+            document.getElementById('problemDisplay').textContent = `${problem.problemText} = ?`;
+            timerDisplay.classList.remove('text-green-600', 'text-5xl', 'hidden'); 
+            timerDisplay.classList.add('text-red-500');
+
+
+            if (isAutoMode) {
+                manualInputDiv.classList.add('hidden');
+                autoModeControlsDiv.classList.remove('hidden');
+                nextQuestionBtn.classList.add('hidden'); 
+
+                if (quizStarted) {
+                    timerSelector.classList.add('hidden'); 
+                    timerDisplay.classList.remove('hidden');
+                    startTimer(); 
+
+                    resultElement.textContent = `Mode: Auto. You have ${selectedTiming} seconds to recall the answer.`;
+                    resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-pink-700 bg-pink-100 p-2';
+                } else {
+                    timerSelector.classList.remove('hidden');
+                    timerDisplay.classList.add('hidden');
+                    resultElement.textContent = 'Select your desired pace to begin the Auto Quiz.';
+                    resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-indigo-700 bg-indigo-100 p-2';
+                }
+            } else { // Manual Mode
+                stopTimer();
+                manualInputDiv.classList.remove('hidden');
+                autoModeControlsDiv.classList.add('hidden');
+                nextQuestionBtn.classList.remove('hidden');
+
+                answerInput.value = '';
+                answerInput.disabled = false;
+                checkAnswerBtn.disabled = false;
+                nextQuestionBtn.disabled = true; 
+                
+                resultElement.textContent = 'Enter your answer above and click "Check Answer".';
+                resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-indigo-700 bg-indigo-100 p-2';
+            }
+        }
+
+        window.checkAnswerManual = function() {
+            if (isAutoMode || !quizInProgress) return;
+
+            const inputField = document.getElementById('answerInput');
+            const userAnswer = parseInt(inputField.value.trim());
+            const problem = problemSet[currentQuestionIndex];
+            const resultElement = document.getElementById('resultMessage');
+            const nextBtn = document.getElementById('nextQuestionBtn');
+            
+            if (isNaN(userAnswer)) {
+                resultElement.textContent = "Please enter a valid number.";
+                resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-yellow-700 bg-yellow-100 p-2';
+                return;
+            }
+
+            if (!problem.isScored) {
+                score.totalAnswered++;
+                problem.isScored = true;
+            }
+
+            if (userAnswer === problem.answer) {
+                problem.correct = true;
+                score.correct = score.correct + 1;
+
+                resultElement.textContent = '✅ Correct! Click "Next Question" to continue.';
+                resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-green-700 bg-green-100 p-2';
+            } else {
+                problem.correct = false;
+
+                resultElement.textContent = `❌ Incorrect. The correct answer was ${problem.answer}. Click "Next Question" to continue.`;
+                resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-red-700 bg-red-100 p-2';
+            }
+            
+            inputField.disabled = true;
+            document.getElementById('checkAnswerBtn').disabled = true;
+            nextBtn.disabled = false;
+            updateScoreDisplay();
+        }
+
+        window.goToNextQuestion = function() {
+            const actionBtn = document.getElementById('nextQuestionBtn');
+            actionBtn.classList.remove('btn-secondary');
+            actionBtn.classList.add('btn-primary');
+
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('scoreCorrect').textContent = score.correct;
+            document.getElementById('scoreTotal').textContent = score.totalAnswered;
+            document.getElementById('scoreRemaining').textContent = QUIZ_LENGTH - score.totalAnswered;
+        }
+
+        function showSummary() {
+            quizInProgress = false;
+            stopTimer(); 
+            const accuracy = score.totalAnswered === 0 ? 0 : Math.round((score.correct / score.totalAnswered) * 100);
+
+            document.getElementById('summaryLevel').textContent = levelMap[currentLevel];
+            document.getElementById('summaryTotal').textContent = QUIZ_LENGTH;
+            document.getElementById('summaryCorrect').textContent = score.correct;
+            document.getElementById('summaryAccuracy').textContent = `${accuracy}%`;
+
+            document.getElementById('quizArea').classList.add('hidden');
+            document.getElementById('summaryView').classList.remove('hidden');
+        }
+
+        window.toggleMode = function() {
+            isAutoMode = !isAutoMode;
+            const modeToggleBtn = document.getElementById('modeToggleBtn');
+            
+            quizStarted = false; 
+            stopTimer(); 
+            currentQuestionIndex = 0; 
+            score = { correct: 0, totalAnswered: 0 };
+            updateScoreDisplay();
+
+            if (isAutoMode) {
+                modeToggleBtn.textContent = 'Switch to Manual Mode';
+                modeToggleBtn.classList.remove('btn-secondary');
+                modeToggleBtn.classList.add('btn-auto-mode');
+            } else {
+                modeToggleBtn.textContent = 'Switch to Auto Mode';
+                modeToggleBtn.classList.add('btn-secondary');
+                modeToggleBtn.classList.remove('btn-auto-mode');
+            }
+
+            if (currentLevel) {
+                generateQuiz(currentLevel); 
+                quizInProgress = true;
+            } else {
+                showView('levelView'); 
+                return;
+            }
+
+            displayQuestion();
+        }
+
+        // --- AUTO MODE LOGIC ---
+
+        window.selectTiming = function(time) {
+            selectedTiming = time;
+            
+            const selectorDiv = document.getElementById('timerSelector');
+            selectorDiv.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('border-4', 'border-indigo-700');
+                if (parseInt(btn.textContent) === selectedTiming) {
+                     btn.classList.add('border-4', 'border-indigo-700'); 
+                }
+            });
+
+            if (!quizStarted && currentLevel) {
+                quizStarted = true;
+                displayQuestion(); 
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function startTimer() {
+            stopTimer(); 
+            let timeRemaining = selectedTiming;
+            const timerDisplay = document.getElementById('timerDisplay');
+            const resultElement = document.getElementById('resultMessage');
+            
+            timerDisplay.textContent = timeRemaining;
+            resultElement.textContent = `Time to recall... ${timeRemaining} seconds!`;
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.textContent = timeRemaining;
+
+                if (timeRemaining <= 0) {
+                    stopTimer();
+                    showAutoAnswer();
+                }
+            }, 1000);
+        }
+
+        function showAutoAnswer() {
+            const problem = problemSet[currentQuestionIndex];
+            const timerDisplay = document.getElementById('timerDisplay');
+            const resultElement = document.getElementById('resultMessage');
+
+            if (!problem.isScored) {
+                score.totalAnswered++;
+                problem.isScored = true;
+            }
+            updateScoreDisplay();
+
+            document.getElementById('problemDisplay').textContent = `${problem.problemText} = ${problem.answer}`;
+            timerDisplay.classList.add('hidden'); 
+
+            resultElement.textContent = 'Time\'s up! Answer was revealed. Next question in 4 seconds...';
+            resultElement.className = 'result-box text-center text-xl font-semibold mb-6 rounded-lg text-yellow-700 bg-yellow-100 p-2';
+
+            setTimeout(() => {
+                goToNextQuestion();
+            }, 4000); 
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            initializeFirebase();
+            // Set default styling for timing buttons
+            document.querySelectorAll('.btn-timing').forEach(btn => {
+                if (parseInt(btn.textContent) === selectedTiming) {
+                     btn.classList.add('border-4', 'border-indigo-700');
+                }
+            });
+            showView('levelView');
+        };
+    </script>
+</body>
+</html>
