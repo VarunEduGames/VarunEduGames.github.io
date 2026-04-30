@@ -1,0 +1,623 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Directional Word Search - Dark Theme (IT Focus)</title>
+
+    <style>
+        /* --- CSS STYLES --- */
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #121212; /* Deep Dark Background */
+            color: #ffffff; /* White text for contrast */
+            padding: 20px;
+        }
+        h1 {
+            color: #00e676; /* Bright Green Accent */
+            margin-bottom: 10px; /* Reduced margin to fit score */
+            font-weight: 800;
+        }
+        /* New style for score display */
+        #score-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #69f0ae; /* Light Green */
+            margin-bottom: 20px;
+        }
+        /* --- SOFT UI CONTAINER STYLING --- */
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            background-color: #1e1e1e; /* Dark Gray Container */
+            padding: 20px 40px;
+            border-radius: 20px; /* Slightly larger radius for softness */
+            /* Modern, soft shadow effect */
+            box-shadow: 
+                8px 8px 16px #0d0d0d, /* Dark shadow for lift */
+                -8px -8px 16px #343434; /* Light shadow for contrast */
+        }
+        @media (min-width: 768px) {
+             #game-container {
+                flex-direction: row;
+                gap: 60px;
+            }
+        }
+        /* --- RECESSED GRID STYLING --- */
+        #word-grid {
+            display: grid;
+            border-radius: 12px;
+            overflow: hidden;
+            user-select: none;
+            max-width: 100%;
+            touch-action: none;
+            /* Inner shadow to make the grid area feel deeply recessed */
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #323232;
+            padding: 2px;
+        }
+        .grid-cell {
+            width: 35px; 
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none; /* Removed harsh border */
+            background-color: #242424; /* Slightly darker than container background */
+            color: #ccc; /* Softer text color */
+            transition: background-color 0.2s, color 0.2s, transform 0.1s;
+        }
+        /* Mobile adjustment for smaller screens */
+        @media (max-width: 450px) {
+            .grid-cell {
+                width: 25px;
+                height: 25px;
+                font-size: 12px;
+            }
+        }
+        /* Soft press effect on click/touch start */
+        .grid-cell:active {
+            transform: scale(0.95);
+        }
+        /* Selection and Found Word Styles */
+        .highlight {
+            background-color: #ffb300; /* More vibrant highlight color */
+            color: #121212; /* Dark text on bright highlight */
+            font-weight: 800;
+            /* Slight glow on selection */
+            box-shadow: 0 0 8px rgba(255, 179, 0, 0.7); 
+            transform: scale(1.05); /* Subtle scale effect on highlight */
+        }
+        .found-word {
+            background-color: #00e676 !important; /* Brighter success green */
+            color: #121212; /* Dark text on bright green */
+            font-weight: bold;
+            border-radius: 4px; /* Slight rounding for found cells */
+            /* Add depth to found words */
+            box-shadow: 0 4px 8px rgba(0, 230, 118, 0.5); 
+            animation: pulse 0.5s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        /* Word List Styles */
+        #word-list {
+            padding: 10px;
+            min-width: 200px;
+        }
+        #word-list h2 {
+            margin-top: 0;
+            color: #00e676; /* Bright Green Accent */
+            font-size: 1.5rem;
+            border-bottom: 2px solid #3a3a3a;
+            padding-bottom: 8px;
+        }
+        /* New style for set titles */
+        #word-list-ul h3 {
+            color: #69f0ae; /* Light Green */
+            margin: 15px 0 5px 0;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 3px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        #word-list-ul {
+            list-style: none;
+            padding: 0;
+            font-size: 16px;
+        }
+        .word-list-item {
+            margin: 6px 0;
+            transition: color 0.3s, text-decoration 0.3s;
+            color: #ffffff; /* Default word color */
+            break-inside: avoid;
+        }
+        .word-list-item.found {
+            text-decoration: line-through;
+            color: #69f0ae; /* Lightest Green when found */
+            font-style: italic;
+        }
+        #message {
+            margin-top: 25px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff3d00; /* Red-Orange for errors/status */
+        }
+
+        /* --- EMOJI RAIN STYLES --- */
+        #emoji-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none; /* Allows clicks to pass through to the game */
+            z-index: 1000;
+        }
+
+        .falling-emoji {
+            position: absolute;
+            font-size: 24px;
+            top: -50px; /* Start above the screen */
+            opacity: 0;
+            animation: emoji-fall linear forwards;
+        }
+
+        @keyframes emoji-fall {
+            0% { 
+                transform: translate(0, 0) rotate(0deg); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(var(--x-drift), 105vh) rotate(var(--r-drift)); 
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>IT Fundamentals Word Search !!</h1>
+    
+    <!-- EMOJI RAIN CONTAINER -->
+    <div id="emoji-rain"></div>
+
+    <!-- SCORE DISPLAY ADDED HERE -->
+    <div id="score-display"></div>
+
+    <div id="game-container">
+        <!-- Game Grid Area -->
+        <div id="word-grid"></div>
+
+        <!-- Word List Area -->
+        <div id="word-list">
+            <h2>Words to Find:</h2>
+            <ul id="word-list-ul"></ul>
+        </div>
+    </div>
+    
+    <div id="message">Find all the words!</div>
+
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+        
+        // Words are now grouped into 4 sets of 2 words each
+        const WORD_GROUPS = {
+            "Coding & Logic (Set 1)": ["CODE", "LOOP"],
+            "Hardware & Components (Set 2)": ["CHIP", "FIBER"],
+            "Networking & Web (Set 3)": ["LINK", "HOST"],
+            "Security & Storage (Set 4)": ["SAVE", "VIRUS"]
+        };
+        
+        // Emojis for the celebration effect
+        const IT_EMOJIS = ["💻", "💾", "🌐", "⚙️", "✅", "🔑", "⚡️"];
+
+        // Flatten the groups into the main WORDS array for game placement and checking
+        const WORDS = [].concat(...Object.values(WORD_GROUPS));
+        const GRID_SIZE = 12; // Reduced grid size to 12x12
+        const MAX_ATTEMPTS = 100; 
+        
+        const gridElement = document.getElementById('word-grid');
+        const wordListUl = document.getElementById('word-list-ul');
+        const messageElement = document.getElementById('message');
+        const scoreDisplayElement = document.getElementById('score-display');
+        const emojiRainElement = document.getElementById('emoji-rain'); 
+        
+        let grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(''));
+        let isSelecting = false;
+        let selectionStart = null;
+        let foundWords = new Set();
+        let highlightedCellsCache = []; 
+
+        // --- Audio Initialization and Functions ---
+        let audioContext = null;
+        let isAudioInitialized = false;
+
+        function initializeAudioContext() {
+            if (isAudioInitialized) return;
+            try {
+                // Initialize AudioContext on first user interaction
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioInitialized = true;
+            } catch (e) {
+                console.error('Web Audio API not supported or initialization failed:', e);
+            }
+        }
+
+        function playErrorBuzz() {
+            if (!audioContext) return; // Audio not initialized or supported
+
+            const frequency = 80; 
+            const duration = 0.05; 
+            const gain = 0.2; 
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+                // Quick fade-out volume envelope
+                gainNode.gain.setValueAtTime(gain, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.warn("Failed to play audio buzz:", e);
+            }
+        }
+        // --- End Audio Functions ---
+
+        // --- Utility Functions ---
+
+        function updateScoreDisplay() {
+            scoreDisplayElement.textContent = `Score: ${foundWords.size} / ${WORDS.length}`;
+        }
+        
+        function createFallingEmojis() {
+            const count = 30; // Number of emojis to drop
+            for (let i = 0; i < count; i++) {
+                const emoji = document.createElement('div');
+                emoji.classList.add('falling-emoji');
+                
+                // Randomly select an emoji
+                emoji.textContent = IT_EMOJIS[Math.floor(Math.random() * IT_EMOJIS.length)];
+                
+                // Set random starting position (x-axis)
+                const startX = Math.random() * 100;
+                emoji.style.left = `${startX}vw`;
+                
+                // Set random animation properties for variety
+                const duration = 2 + Math.random() * 3; // 2s to 5s duration
+                const delay = Math.random() * 0.5; // 0s to 0.5s delay
+                const xDrift = (Math.random() - 0.5) * 200; // -100px to +100px horizontal drift
+                const rDrift = (Math.random() - 0.5) * 720; // -360deg to +360deg rotation
+
+                emoji.style.animationDuration = `${duration}s`;
+                emoji.style.animationDelay = `${delay}s`;
+                emoji.style.setProperty('--x-drift', `${xDrift}px`);
+                emoji.style.setProperty('--r-drift', `${rDrift}deg`);
+
+                emojiRainElement.appendChild(emoji);
+
+                // Remove the emoji element after animation finishes
+                setTimeout(() => {
+                    emoji.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+
+
+        // --- Word Placement Directions ---
+        
+        // All 8 possible directions (dr = change in row, dc = change in column)
+        const DIRECTIONS = [
+            { dr: 0, dc: 1, name: "E" },    // Horizontal Right
+            { dr: 0, dc: -1, name: "W" },   // Horizontal Left
+            { dr: 1, dc: 0, name: "S" },    // Vertical Down
+            { dr: -1, dc: 0, name: "N" },   // Vertical Up
+            { dr: 1, dc: 1, name: "SE" },   // Diagonal Down-Right
+            { dr: 1, dc: -1, name: "SW" },  // Diagonal Down-Left
+            { dr: -1, dc: 1, name: "NE" },  // Diagonal Up-Right
+            { dr: -1, dc: -1, name: "NW" }  // Diagonal Up-Left
+        ];
+
+        // Utility to get a random letter
+        function getRandomLetter() {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+
+        // Check if a word can be placed at (r, c) in a given direction
+        function canPlaceWord(word, r, c, dr, dc) {
+            for (let i = 0; i < word.length; i++) {
+                const row = r + i * dr;
+                const col = c + i * dc;
+
+                // Check boundaries
+                if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+                    return false;
+                }
+                
+                // Check for conflicts
+                const currentCell = grid[row][col];
+                if (currentCell !== '' && currentCell !== word[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Place the word
+        function placeWord(word, r, c, dr, dc) {
+            let path = [];
+            for (let i = 0; i < word.length; i++) {
+                const row = r + i * dr;
+                const col = c + i * dc;
+                grid[row][col] = word[i];
+                path.push({r: row, c: col});
+            }
+            return path;
+        }
+
+        // --- Core Grid Initialization ---
+        
+        function initializeGrid() {
+            let placements = [];
+            
+            // Try to place words from longest to shortest
+            const placementWords = [...WORDS].sort((a, b) => b.length - a.length); 
+            
+            placementWords.forEach(word => {
+                let placed = false;
+                let attempts = 0;
+                
+                while (!placed && attempts < MAX_ATTEMPTS) {
+                    attempts++;
+                    
+                    // Pick random start (r, c) and random direction
+                    const startR = Math.floor(Math.random() * GRID_SIZE);
+                    const startC = Math.floor(Math.random() * GRID_SIZE);
+                    const direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+                    const { dr, dc } = direction;
+
+                    if (canPlaceWord(word, startR, startC, dr, dc)) {
+                        const path = placeWord(word, startR, startC, dr, dc);
+                        placements.push({word: word, path: path});
+                        placed = true;
+                    }
+                }
+            });
+
+            // Fill empty spots with random letters
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    if (grid[i][j] === '') {
+                        grid[i][j] = getRandomLetter();
+                    }
+                }
+            }
+
+            // Render the grid and attach events
+            gridElement.style.gridTemplateColumns = `repeat(${GRID_SIZE}, auto)`;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell');
+                    cell.textContent = grid[r][c];
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    // Attach mouse and touch events for selection
+                    cell.addEventListener('mousedown', (e) => startSelection(e, cell));
+                    cell.addEventListener('mouseover', (e) => moveSelection(e, cell));
+                    
+                    cell.addEventListener('touchstart', (e) => startSelection(e, cell, true));
+                    cell.addEventListener('touchmove', (e) => moveSelection(e, getTouchTargetCell(e), true));
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+            
+            // Global listeners for ending selection
+            document.addEventListener('mouseup', endSelection);
+            document.addEventListener('touchend', endSelection);
+
+            // Render the word list grouped by sets
+            for (const [groupName, groupWords] of Object.entries(WORD_GROUPS)) {
+                const groupTitle = document.createElement('h3');
+                groupTitle.textContent = groupName;
+                wordListUl.appendChild(groupTitle);
+
+                groupWords.forEach(word => {
+                    const li = document.createElement('li');
+                    li.textContent = word;
+                    li.classList.add('word-list-item');
+                    li.dataset.word = word;
+                    wordListUl.appendChild(li);
+                });
+            }
+            
+            // Initialize score display
+            updateScoreDisplay();
+        }
+
+        initializeGrid();
+
+        // Helper to get the element being touched on touchmove
+        function getTouchTargetCell(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            return target && target.classList.contains('grid-cell') ? target : null;
+        }
+
+        // --- Interaction Logic ---
+
+        function startSelection(event, cell, isTouch = false) {
+            // Initialize audio context on the first user interaction
+            if (!isAudioInitialized) {
+                initializeAudioContext();
+            }
+            
+            if (isTouch) event.preventDefault(); 
+            
+            // Ignore right-click/middle-click
+            if (event.button && event.button !== 0) return; 
+
+            isSelecting = true;
+            selectionStart = {
+                r: parseInt(cell.dataset.row), 
+                c: parseInt(cell.dataset.col)
+            };
+            highlightCells(selectionStart, selectionStart);
+        }
+
+        function moveSelection(event, cell, isTouch = false) {
+            if (!isSelecting) return;
+            if (isTouch && !cell) return;
+            
+            const targetCell = isTouch ? cell : event.target;
+            if (!targetCell || !targetCell.classList.contains('grid-cell')) return;
+
+            const selectionEnd = {
+                r: parseInt(targetCell.dataset.row), 
+                c: parseInt(targetCell.dataset.col)
+            };
+            highlightCells(selectionStart, selectionEnd);
+        }
+
+        function endSelection() {
+            if (!isSelecting) return;
+            isSelecting = false;
+            
+            const highlightedCells = highlightedCellsCache;
+            highlightedCellsCache = []; 
+            
+            if (highlightedCells.length === 0) return;
+
+            const selectedWord = Array.from(highlightedCells).map(c => c.textContent).join('');
+            
+            checkWord(selectedWord, highlightedCells);
+
+            // Clear highlight immediately after checking
+            highlightedCells.forEach(c => c.classList.remove('highlight'));
+        }
+
+        function highlightCells(start, end) {
+            // Clear previous highlights
+            highlightedCellsCache.forEach(c => c.classList.remove('highlight'));
+            highlightedCellsCache = [];
+
+            const dr = end.r - start.r;
+            const dc = end.c - start.c;
+            
+            // Calculate slope to check for straight line
+            const absDr = Math.abs(dr);
+            const absDc = Math.abs(dc);
+            
+            // Check for straight line: horizontal (absDr=0), vertical (absDc=0), or diagonal (absDr=absDc)
+            if (absDr !== 0 && absDc !== 0 && absDr !== absDc) return;
+            
+            const numSteps = Math.max(absDr, absDc);
+            if (numSteps === 0) {
+                // Single cell click
+                const cell = getCell(start.r, start.c);
+                if (cell) {
+                    cell.classList.add('highlight');
+                    highlightedCellsCache.push(cell);
+                }
+                return;
+            }
+
+            // Determine direction vector (step of 1 or -1)
+            const stepR = dr !== 0 ? dr / absDr : 0;
+            const stepC = dc !== 0 ? dc / absDc : 0;
+
+            for (let i = 0; i <= numSteps; i++) {
+                const r = start.r + i * stepR;
+                const c = start.c + i * stepC;
+                const cell = getCell(r, c);
+                if (cell) {
+                    cell.classList.add('highlight');
+                    highlightedCellsCache.push(cell);
+                }
+            }
+        }
+
+        function getCell(r, c) {
+            return document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+        }
+
+        function checkWord(selectedWord, cells) {
+            let found = false;
+            let wordKey = null;
+
+            // 1. Check forward and backward for a match in the original WORDS list
+            const wordCheck = [selectedWord, selectedWord.split('').reverse().join('')];
+
+            for (const check of wordCheck) {
+                if (WORDS.includes(check) && !foundWords.has(check)) {
+                    found = true;
+                    wordKey = check;
+                    break;
+                }
+            }
+
+            if (found) {
+                foundWords.add(wordKey);
+                messageElement.textContent = `Word Found: ${wordKey}!`;
+                messageElement.style.color = "#00e676"; /* Success color */
+                
+                // *** CELEBRATION EFFECT ***
+                createFallingEmojis(); 
+                
+                // Mark cells as found
+                cells.forEach(c => c.classList.add('found-word'));
+                
+                // Update the score display immediately
+                updateScoreDisplay();
+
+                // Update word list (Find the list item that matches the word key)
+                document.querySelector(`.word-list-item[data-word="${wordKey}"]`).classList.add('found');
+                
+                // Check win condition
+                if (foundWords.size === WORDS.length) {
+                    messageElement.textContent = "You Win! All words have been found!";
+                    messageElement.style.color = "#00c853";
+                }
+            } else {
+                 // *** ERROR BUZZ EFFECT ***
+                 playErrorBuzz();
+                 
+                 messageElement.textContent = "Selection is not a word. Try again.";
+                 messageElement.style.color = "#ff3d00"; /* Error color */
+            }
+            setTimeout(() => { 
+                if (foundWords.size !== WORDS.length) {
+                    messageElement.textContent = 'Find all the words!';
+                    messageElement.style.color = '#ffffff'; /* Reset to white text */
+                }
+            }, 1500); 
+        }
+    </script>
+</body>
+</html>
