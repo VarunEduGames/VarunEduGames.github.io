@@ -1,0 +1,1156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stick Man Runner: Multi-Level (Red/Blue)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+                /* Custom styles for a green, nature-themed game aesthetic */
+        body {
+            background-color: #1f3d3d; /* Dark Teal/Green theme background */
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll */
+        }
+        .game-container {
+            width: 90vw;
+            max-width: 900px;
+            background-color: #2b5a5a; /* Medium Teal/Green for the container */
+            border: 4px solid #4CAF50; /* Vibrant Green Highlight border */
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.5);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* Needed for positioning virtual controls */
+        }
+        #gameCanvas {
+            width: 100%;
+            height: auto;
+            max-height: 60vh;
+            background-color: #38761D; /* Dark Forest Green canvas background */
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            touch-action: none; /* Disables browser default touch behavior */
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+            color: #f7f7f7;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+                /* Lives Display specific style */
+        #livesDisplay {
+            color: #EF4444; /* Tailwind red-500 equivalent */
+            margin-left: 1rem;
+        }
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.95);
+            border: 2px solid #8BC34A; /* Light Green border */
+            border-radius: 10px;
+            padding: 2rem 3rem;
+            text-align: center;
+            color: #f7f7f7;
+            box-shadow: 0 0 20px rgba(139, 195, 74, 0.5);
+            z-index: 10;
+            width: 90%;
+            max-width: 600px;
+        }
+        .message-box h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #8BC34A; /* Light Green title */
+            margin-bottom: 0.5rem;
+        }
+        .message-box p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        /* Avatar Button Styling */
+        .avatar-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background-color: #16213e;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 0.25rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            width: 45%; /* Adjusted for 2 avatars */
+            min-width: 100px;
+            height: 120px;
+        }
+        @media (max-width: 480px) {
+             .avatar-button {
+                min-width: 45%;
+             }
+        }
+
+        .avatar-button:hover {
+            background-color: #6AA84F;
+            border-color: #8BC34A;
+            transform: scale(1.05);
+        }
+        .avatar-preview-canvas {
+            width: 100%;
+            height: 80px;
+        }
+        .avatar-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #ccc;
+            margin-top: 0.25rem;
+            line-height: 1.2;
+        }
+        /* Styles for dynamic quiz buttons (answerButtons) */
+        .quiz-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            text-align: center;
+            width: 100%;
+        }
+        .quiz-button:hover {
+            background-color: #38761D;
+        }
+                /* Default style for the Start/Play Again button */
+        .start-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            transition: all 0.2s;
+            box-shadow: 0 4px #38761D;
+            margin-top: 1.5rem;
+        }
+        .start-button:hover {
+            background-color: #38761D;
+            box-shadow: 0 2px #295015;
+            transform: translateY(2px);
+        }
+                /* Adjust the hint area for the new control scheme */
+        #controlsHint {
+            font-size: 0.9rem;
+            text-align: right;
+            margin-top: 5px;
+        }
+                /* Style for the level selection buttons */
+        .level-button-container {
+             display: flex;
+             flex-wrap: wrap;
+             gap: 10px;
+             justify-content: center;
+             width: 100%;
+        }
+        /* --- VIRTUAL D-PAD STYLES --- */
+        #virtualControls {
+            position: absolute;
+            right: 1rem;
+            bottom: 1rem;
+            display: block;
+            z-index: 5;
+            opacity: 1;
+            pointer-events: auto;
+        }
+                .d-pad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px; /* Spacing between buttons */
+            width: 190px; /* Adjusted size for 4 buttons */
+                        /* Define a 3x2 area for the D-pad */
+            grid-template-areas:
+                ". up ."
+                "left down right";
+        }
+                /* Map buttons to grid areas */
+        #upButton { grid-area: up; }
+        #leftButton { grid-area: left; }
+        #downButton { grid-area: down; }
+        #rightButton { grid-area: right; }
+        
+        .control-button {
+            background-color: rgba(76, 175, 80, 0.7); /* Green, transparent */
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: 900;
+            box-shadow: 0 4px rgba(56, 118, 29, 0.7);
+            user-select: none;
+            transition: background-color 0.1s, transform 0.1s, box-shadow 0.1s;
+            border: none;
+        }
+        .control-button:active {
+            background-color: rgba(56, 118, 29, 0.9);
+            box-shadow: 0 2px rgba(41, 80, 21, 0.7);
+            transform: translateY(2px);
+        }
+                /* Make left/right slightly smaller to fit the width neatly */
+        #leftButton, #rightButton {
+             width: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-info">
+            <div class="flex items-center space-x-4">
+                 <div id="scoreDisplay" class="text-xl font-bold">Score: 0</div>
+                 <div id="livesDisplay" class="text-xl font-bold">Lives: 5</div>
+            </div>
+                        <div id="controlsHint" class="text-sm text-gray-400">
+                Controls: **UP/W/SPACE** Jump/Boost | **DOWN/S** Crouch/Glide | **RIGHT/D** Dash | **LEFT/A** Brake
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+                <div id="virtualControls">
+             <div class="d-pad-grid">
+                <button id="upButton" class="control-button">▲</button>
+                <button id="leftButton" class="control-button">◀</button>
+                <button id="downButton" class="control-button">▼</button>
+                <button id="rightButton" class="control-button">▶</button>
+            </div>
+        </div>
+    </div>
+    <div id="messageBox" class="message-box">
+        <h2 id="messageTitle">Stick Man Runner</h2>
+        <p id="messageText">Pick your runner to begin the endless run!</p>
+        <div id="selectionContainer" class="flex justify-center flex-wrap gap-2 mt-4 w-full">
+            </div>
+    </div>
+
+    <script type="module">
+        // --- Firebase Configuration & Initialization ---
+        const injectedAppId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const injectedFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        const injectedAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db, auth;
+        try {
+            const firebaseConfig = JSON.parse(injectedFirebaseConfig);
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            setLogLevel('debug');
+
+            if (injectedAuthToken) {
+                signInWithCustomToken(auth, injectedAuthToken)
+                    .then(() => console.log("Signed in with custom token."))
+                    .catch(error => console.error("Error signing in with custom token:", error));
+            } else {
+                signInAnonymously(auth)
+                    .then(() => console.log("Signed in anonymously."))
+                    .catch(error => console.error("Error signing in anonymously:", error));
+            }
+
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+        }
+        // -----------------------------------------------
+
+        // --- Quiz Data ---
+        const quizData = [
+            {
+                question: "What is the primary gas found in the air we breathe?",
+                options: ["Carbon Dioxide", "Oxygen", "Nitrogen", "Argon"],
+                correctIndex: 2
+             },
+            {
+                question: "What unit measures electrical resistance?",
+                options: ["Volt", "Ohm", "Watt", "Ampere"],
+                correctIndex: 1
+             },
+            {
+                question: "What planet is known as the 'Red Planet'?",
+                options: ["Jupiter", "Mars", "Venus", "Saturn"],
+                correctIndex: 1
+             },
+            {
+                question: "What is the chemical symbol for table salt?",
+                options: ["H2O", "CO2", "NaCl", "C6H12O6"],
+                correctIndex: 2
+             },
+            {
+                            question: "Which term describes a push or a pull on an object?",
+                options: ["Inertia", "Velocity", "Force", "Momentum"],
+                correctIndex: 2
+             }
+        ];
+
+        // --- Avatar Data (MODIFIED TO RED AND BLUE ONLY) ---
+        const AVATAR_CONFIGS = [
+            { id: 0, name: "Red Runner", color: '#FF0000', lineThickness: 4, headShape: 'circle', pose: 'standard' }, 
+            { id: 1, name: "Blue Streak", color: '#0000FF', lineThickness: 4, headShape: 'square', pose: 'standard' }
+        ];
+
+        // --- Obstacle Definitions per Level (Virtual Units) ---
+
+        // Easy Level: Ground Animals
+        const GROUND_ANIMAL_TYPES = [
+            { icon: '🦍', widthV: 35, heightV: 50, color: '#9012AA' }, 
+            { icon: '🐅', widthV: 45, heightV: 40, color: '#FF9900' }, 
+            { icon: '🦁', widthV: 35, heightV: 40, color: '#E0C700' }, 
+            { icon: '🐍', widthV: 55, heightV: 15, color: '#00B050' }
+        ];
+
+        // Medium Level: Birds (now with varied high/low elevation)
+        const BIRD_TYPES = [
+            { icon: '🦅', widthV: 40, heightV: 30, color: '#33A0FF' },
+            { icon: '🦉', widthV: 35, heightV: 35, color: '#8B4513' },
+            { icon: '🦆', widthV: 30, heightV: 25, color: '#008080' }
+        ];
+
+        // Impossible Level: Falling Rocks
+        const ROCK_TYPES = [
+            { icon: '☄️', widthV: 25, heightV: 25, color: '#808080', fallSpeedV: 2.5 },
+            { icon: '🧱', widthV: 30, heightV: 30, color: '#A04000', fallSpeedV: 3.5 },
+            { icon: '🌑', widthV: 20, heightV: 20, color: '#404040', fallSpeedV: 1.8 }
+        ];
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const livesDisplay = document.getElementById('livesDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const messageTitle = document.getElementById('messageTitle');
+        const messageText = document.getElementById('messageText');
+        const selectionContainer = document.getElementById('selectionContainer');
+
+        // Button references (All 4 D-pad buttons)
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
+
+        // Game Constants (based on a virtual 800x400 area)
+        const VIRTUAL_WIDTH = 800;
+        const VIRTUAL_HEIGHT = 400;
+        const GROUND_LEVEL_VIRTUAL = VIRTUAL_HEIGHT - 40;
+        const GRAVITY = 1.1;
+        const SKY_GRAVITY = 0.3;
+        const FPS = 60; // Target FPS for speed adjustment (not strict, but for calculation)
+
+        // Global state for keys
+        const KEYS = {
+            UP: false,
+            DOWN: false,
+            LEFT: false,
+            RIGHT: false
+        };
+
+        // Game State
+        let game = {
+            isRunning: false,
+            isQuizActive: false,
+            collidingObstacleIndex: -1,
+            currentQuestion: null,
+            score: 0,
+            lives: 5,
+            frame: 0,
+            level: 'easy',
+            groundLevel: 0,
+            scaleX: 1,
+            scaleY: 1,
+            obstacleGenerationFrameRate: 150,
+            baseSpeed: 5,
+            currentSpeed: 5, // Dynamic speed
+            player: null,
+            obstacles: [],
+            animationFrameId: null,
+            selectedAvatarConfig: AVATAR_CONFIGS[0]
+        };
+
+        // Resizing function to make the canvas responsive
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = canvas.width / 2;
+
+            game.scaleX = canvas.width / VIRTUAL_WIDTH;
+            game.scaleY = canvas.height / VIRTUAL_HEIGHT;
+            game.groundLevel = (GROUND_LEVEL_VIRTUAL * game.scaleY);
+
+            if (game.player) {
+                game.player.updateScale();
+            }
+        }
+
+        /**
+         * Draws a stick man in a specific pose on a given canvas context. (Used for selection screen)
+         */
+        function drawStickManPose(ctx, config, pose, width, height) {
+            const V_W = 60;
+            const V_H = 80;
+            const scale = Math.min(width / V_W, height / V_H);
+            const centerX = width / 2;
+            const groundY = height - 10 * scale;
+
+            ctx.save();
+            ctx.strokeStyle = config.color;
+            ctx.lineWidth = config.lineThickness * scale * 0.5;
+            ctx.lineCap = 'round';
+
+            const headRadius = 5 * scale;
+            const bodyLength = 30 * scale;
+
+            let neckY = groundY - bodyLength - headRadius * 2;
+            let bodyBaseY = neckY + bodyLength;
+            let headX = centerX;
+
+            // Simplified pose logic for selection screen
+            if (pose === 'sneak') {
+                 neckY = groundY - 20 * scale;
+                 bodyBaseY = groundY - 10 * scale;
+                 ctx.beginPath();
+                 ctx.moveTo(headX, neckY);
+                 ctx.lineTo(headX + 5 * scale, bodyBaseY);
+                 ctx.stroke();
+            } else {
+                 ctx.beginPath();
+                 ctx.moveTo(headX, neckY);
+                 ctx.lineTo(headX, bodyBaseY);
+                 ctx.stroke();
+            }
+
+            // Head
+            ctx.beginPath();
+            if (config.headShape === 'circle') {
+                ctx.arc(headX, neckY - headRadius, headRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (config.headShape === 'square') {
+                ctx.strokeRect(headX - headRadius, neckY - headRadius * 2, headRadius * 2, headRadius * 2);
+            }
+
+            ctx.restore();
+        }
+
+        // --- StickMan Class (Handles different physics based on game.level) ---
+        class StickMan {
+            constructor(config) {
+                this.config = config;
+                this.widthV = 20;
+                this.originalHeightV = 40;
+                this.originalYV = GROUND_LEVEL_VIRTUAL - this.originalHeightV;
+
+                this.heightV = this.originalHeightV;
+                this.yV = this.originalYV;
+                this.xV = 50;
+                this.yVelV = 0;
+                this.isGrounded = true;
+                this.isCrouching = false;
+                this.jumpPower = -18;
+
+                this.x = 0;
+                this.y = 0;
+                this.width = 0;
+                this.height = 0;
+                this.updateScale();
+            }
+            updateScale() {
+                this.width = this.widthV * game.scaleX;
+                this.height = this.heightV * game.scaleY;
+                this.x = this.xV * game.scaleX;
+                this.y = this.yV * game.scaleY;
+            }
+            jump() {
+                if (game.isQuizActive) return;
+
+                if (game.level === 'medium') {
+                    // MEDIUM Level: Jump button triggers an upward boost
+                    this.yVelV = this.jumpPower * 0.7;
+                    return;
+                }
+
+                // EASY/IMPOSSIBLE: Standard jump
+                if (this.isGrounded && !this.isCrouching) {
+                     this.isGrounded = false;
+                    this.yVelV = this.jumpPower;
+                }
+            }
+            startCrouchOrGlide(direction) {
+                if (game.level !== 'medium' && this.isGrounded) {
+                    this.isCrouching = true;
+                    this.heightV = this.originalHeightV * 0.6; // Crouch half height
+                    this.yV = GROUND_LEVEL_VIRTUAL - this.heightV; // Move down
+                }
+                // For medium level, gliding influence is handled continuously in the update loop
+            }
+            stopCrouchOrGlide() {
+                if (game.level !== 'medium' && this.isGrounded) {
+                    this.isCrouching = false;
+                    this.heightV = this.originalHeightV;
+                    this.yV = GROUND_LEVEL_VIRTUAL - this.heightV;
+                }
+                // For medium, KEY UP simply stops the influence of KEYS.DOWN in update()
+            }
+            update() {
+                if (game.level === 'medium') {
+                    // Sky Runner physics
+                    let effectiveGravity = SKY_GRAVITY;
+
+                    // Continuous Glide Down (DOWN/S key held)
+                    if (KEYS.DOWN) {
+                        effectiveGravity += 1; // Increase gravity for faster fall/glide
+                    }
+
+                    // Continuous Boost Up (UP/W key held - for sustained flight)
+                    if (KEYS.UP) {
+                        this.yVelV -= 0.5; // Apply a gentle negative acceleration
+                    }
+
+                    this.yVelV += effectiveGravity;
+                    this.yV += this.yVelV;
+
+                    // Flight Path Constraints (Stay between 20% and 60% of vertical screen space)
+                    const minYV = VIRTUAL_HEIGHT * 0.2;
+                    const maxYV = VIRTUAL_HEIGHT * 0.6;
+
+                    // Ceiling constraint
+                    if (this.yV < minYV) {
+                        this.yV = minYV;
+                        this.yVelV = Math.max(0, this.yVelV);
+                     }
+
+                    // Floor constraint (low sky level)
+                    if (this.yV > maxYV) {
+                        this.yV = maxYV;
+                        this.yVelV = Math.min(0, this.yVelV);
+                     }
+
+                    this.isGrounded = true;
+                 } else {
+                    // Easy/Impossible Level: Ground running physics
+
+                    // If grounded, but not crouching, ensure player is at full height
+                    if (this.isGrounded && !this.isCrouching && this.heightV !== this.originalHeightV) {
+                         this.heightV = this.originalHeightV;
+                         this.yV = GROUND_LEVEL_VIRTUAL - this.heightV;
+                    }
+
+                    if (!this.isGrounded) {
+                        this.yVelV += GRAVITY;
+                        this.yV += this.yVelV;
+                    }
+
+                    const groundYV = GROUND_LEVEL_VIRTUAL - this.heightV;
+                    if (this.yV >= groundYV) {
+                        this.yV = groundYV;
+                        this.yVelV = 0;
+                        this.isGrounded = true;
+                    }
+                }
+                this.y = this.yV * game.scaleY;
+
+                // Also update width/height scale as they might have changed due to crouching
+                this.width = this.widthV * game.scaleX;
+                this.height = this.heightV * game.scaleY;
+            }
+            draw() {
+                ctx.save();
+                ctx.strokeStyle = this.config.color;
+                ctx.lineWidth = this.config.lineThickness * game.scaleX;
+                ctx.lineCap = 'round';
+
+                const headRadius = 5 * game.scaleX;
+
+                // Adjust drawing position/size based on crouching state
+                const bodyLength = this.height - headRadius * 3;
+                let neckY = this.y + headRadius * 2;
+
+                // If crouching, shorten the body/legs and keep the head position near the top of 'this.y'
+                if (this.isCrouching) {
+                     neckY = this.y + headRadius * 1.5;
+                }
+
+                const bodyBaseY = neckY + bodyLength;
+                const armLength = bodyLength / 2.5;
+
+                const isMoving = game.level === 'medium' || !this.isGrounded;
+                const armAngle = isMoving ? Math.sin(game.frame * 0.1) * 0.5 : 0;
+                const legSwing = isMoving ? Math.sin(game.frame * 0.1) * 0.8 : 0.2;
+                const legLength = bodyLength / 2;
+                const centerX = this.x + this.width / 2;
+
+                // Head
+                ctx.beginPath();
+                if (this.config.headShape === 'circle') {
+                    ctx.arc(centerX, this.y + headRadius, headRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (this.config.headShape === 'square') {
+                    ctx.strokeRect(centerX - headRadius, this.y, headRadius * 2, headRadius * 2);
+                }
+
+                // Body
+                ctx.beginPath();
+                ctx.moveTo(centerX, neckY);
+                ctx.lineTo(centerX, bodyBaseY);
+                ctx.stroke();
+
+                // Arms
+                ctx.beginPath(); // Front Arm
+                ctx.moveTo(centerX, neckY + 5 * game.scaleY);
+                ctx.lineTo(centerX + armLength * Math.cos(armAngle), neckY + 5 * game.scaleY + armLength * Math.sin(armAngle));
+                ctx.stroke();
+
+                ctx.beginPath(); // Back Arm
+                ctx.moveTo(centerX, neckY + 5 * game.scaleY);
+                ctx.lineTo(centerX - armLength * Math.cos(armAngle), neckY + 5 * game.scaleY - armLength * Math.sin(armAngle));
+                ctx.stroke();
+
+                // Legs
+                ctx.beginPath(); // Front Leg
+                ctx.moveTo(centerX, bodyBaseY);
+                ctx.lineTo(centerX + 5 * game.scaleX * legSwing, bodyBaseY + legLength);
+                ctx.stroke();
+
+                ctx.beginPath(); // Back Leg
+                ctx.moveTo(centerX, bodyBaseY);
+                ctx.lineTo(centerX - 5 * game.scaleX * legSwing, bodyBaseY + legLength);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+        // --- Obstacle Classes (Same as before) ---
+
+        class GroundAnimalObstacle {
+            constructor() {
+                const typeData = GROUND_ANIMAL_TYPES[Math.floor(Math.random() * GROUND_ANIMAL_TYPES.length)];
+                this.icon = typeData.icon;
+                this.widthV = typeData.widthV;
+                this.heightV = typeData.heightV;
+                this.color = typeData.color;
+                this.xV = VIRTUAL_WIDTH;
+                this.yV = GROUND_LEVEL_VIRTUAL - this.heightV;
+                this.updateScale();
+            }
+            updateScale() {
+                this.x = this.xV * game.scaleX;
+                this.y = this.yV * game.scaleY;
+                this.width = this.widthV * game.scaleX;
+                this.height = this.heightV * game.scaleY;
+            }
+            update() {
+                this.xV -= game.currentSpeed;
+                this.updateScale();
+            }
+            draw() {
+                ctx.save();
+                const fontSize = this.height * 1.5;
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(this.icon, this.x + this.width / 2, this.y + this.height);
+                ctx.restore();
+            }
+        }
+        class BirdObstacle {
+            constructor() {
+                const typeData = BIRD_TYPES[Math.floor(Math.random() * BIRD_TYPES.length)];
+                this.icon = typeData.icon;
+                this.widthV = typeData.widthV;
+                this.heightV = typeData.heightV;
+                this.color = typeData.color;
+
+                this.xV = VIRTUAL_WIDTH;
+                // --- MODIFICATION HERE: WIDER VERTICAL RANGE FOR SKY RUNNER ---
+                // Player's vertical range is between 20% (80V) and 60% (240V).
+                // We'll spawn obstacles between 25% (100V) and 65% (260V)
+                const minYV = VIRTUAL_HEIGHT * 0.25;
+                const maxYV = VIRTUAL_HEIGHT * 0.65;
+                this.yV = minYV + Math.random() * (maxYV - minYV);
+                // ----------------------------------------------------------------
+                this.updateScale();
+            }
+            updateScale() {
+                this.x = this.xV * game.scaleX;
+                this.y = this.yV * game.scaleY;
+                this.width = this.widthV * game.scaleX;
+                this.height = this.heightV * game.scaleY;
+            }
+            update() {
+                this.xV -= game.currentSpeed;
+                this.updateScale();
+            }
+            draw() {
+                ctx.save();
+                const fontSize = this.height * 1.5;
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(this.icon, this.x + this.width / 2, this.y + this.height);
+                ctx.restore();
+            }
+        }
+        class RockObstacle {
+            constructor() {
+                const typeData = ROCK_TYPES[Math.floor(Math.random() * ROCK_TYPES.length)];
+                this.icon = typeData.icon;
+                this.widthV = typeData.widthV;
+                this.heightV = typeData.heightV;
+                this.color = typeData.color;
+                this.fallSpeedV = typeData.fallSpeedV;
+
+                this.xV = VIRTUAL_WIDTH;
+                this.yV = -50;
+                this.maxYV = GROUND_LEVEL_VIRTUAL - this.heightV;
+                this.updateScale();
+            }
+            updateScale() {
+                this.x = this.xV * game.scaleX;
+                this.y = this.yV * game.scaleY;
+                this.width = this.widthV * game.scaleX;
+                this.height = this.heightV * game.scaleY;
+            }
+            update() {
+                this.xV -= game.currentSpeed;
+
+                if (this.yV < this.maxYV) {
+                    this.yV += this.fallSpeedV * (game.currentSpeed / game.baseSpeed);
+                 }
+
+                if (this.yV > this.maxYV) {
+                    this.yV = this.maxYV;
+                }
+                this.updateScale();
+            }
+            draw() {
+                ctx.save();
+                const fontSize = this.height * 1.5;
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(this.icon, this.x + this.width / 2, this.y + this.height);
+                ctx.restore();
+            }
+        }
+
+        // --- Game Logic Functions ---
+
+        /**
+         * Updates the score and lives display elements.
+         */
+        function updateDisplays() {
+            // Show current speed relative to base speed
+            let speedIndicator = game.currentSpeed.toFixed(1);
+            if (game.currentSpeed > game.baseSpeed + 0.5) speedIndicator += ' (DASH!)';
+            if (game.currentSpeed < game.baseSpeed - 0.5) speedIndicator += ' (BRAKE)';
+
+            scoreDisplay.textContent = `Score: ${game.score} | Level: ${game.level.toUpperCase()} | Speed: ${speedIndicator}`;
+            livesDisplay.innerHTML = `Lives: ${Array(Math.max(0, game.lives)).fill('❤️').join('')} (${game.lives})`;
+        }
+
+        function checkCollision(player, obstacle) {
+            // Simplified bounding box collision
+            return player.x < obstacle.x + obstacle.width &&
+                   player.x + player.width > obstacle.x &&
+                   player.y < obstacle.y + obstacle.height &&
+                   player.y + player.height > obstacle.y;
+        }
+
+        function handleCollision(obstacleIndex) {
+            if (game.isQuizActive) return; // Ignore collisions during quiz
+
+            game.lives--;
+            updateDisplays();
+
+            if (game.lives <= 0) {
+                gameOver();
+                return;
+            }
+
+            // Enter quiz mode
+            game.isRunning = false;
+            game.isQuizActive = true;
+            game.collidingObstacleIndex = obstacleIndex;
+            showQuizScreen();
+        }
+
+        function showQuizScreen() {
+            const questionIndex = Math.floor(Math.random() * quizData.length);
+            game.currentQuestion = quizData[questionIndex];
+
+            messageTitle.textContent = "Quiz Time!";
+            messageText.textContent = game.currentQuestion.question;
+            selectionContainer.className = 'grid grid-cols-2 gap-4 mt-6';
+            selectionContainer.innerHTML = '';
+
+            game.currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'quiz-button';
+                button.textContent = option;
+                button.onclick = () => answerQuiz(index);
+                selectionContainer.appendChild(button);
+            });
+
+            messageBox.style.display = 'block';
+        }
+
+        function answerQuiz(selectedIndex) {
+            game.isQuizActive = false;
+            const obstacle = game.obstacles[game.collidingObstacleIndex];
+
+            if (selectedIndex === game.currentQuestion.correctIndex) {
+                // Correct answer: Obstacle removed, game resumes with penalty
+                messageTitle.textContent = "Correct!";
+                messageText.textContent = "The obstacle vanished! Returning to the run with a slight speed penalty.";
+                game.currentSpeed = Math.max(game.baseSpeed * 0.5, game.currentSpeed - 2); // Speed penalty
+                game.obstacles.splice(game.collidingObstacleIndex, 1);
+            } else {
+                // Incorrect answer: Lost another life, obstacle remains for next collision (if player survives)
+                game.lives--;
+                updateDisplays();
+                messageTitle.textContent = "Incorrect!";
+                messageText.textContent = `The correct answer was: ${game.currentQuestion.options[game.currentQuestion.correctIndex]}. You lose another life.`;
+                if (game.lives <= 0) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Temporary message, then resume
+            selectionContainer.innerHTML = '<button id="resumeButton" class="start-button">Resume Run</button>';
+            document.getElementById('resumeButton').onclick = () => {
+                messageBox.style.display = 'none';
+                game.isRunning = true;
+                gameLoop();
+            };
+        }
+
+        function drawGround() {
+            // Draw dark ground color
+            ctx.fillStyle = '#1D5A18'; // Darker ground color
+            ctx.fillRect(0, game.groundLevel, canvas.width, canvas.height - game.groundLevel);
+
+            // Draw ground line
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, game.groundLevel);
+            ctx.lineTo(canvas.width, game.groundLevel);
+            ctx.stroke();
+        }
+
+        function drawSkyBackground() {
+            // Draw a lighter sky background for the 'medium' level
+            ctx.fillStyle = '#79A6D9'; // Light Blue Sky
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the lower boundary of the flight path
+            ctx.strokeStyle = '#004D99';
+            ctx.lineWidth = 2;
+
+            // Draw lower cloud line (60% of vertical space)
+            const lowerCloudY = VIRTUAL_HEIGHT * 0.6 * game.scaleY;
+            ctx.beginPath();
+            ctx.moveTo(0, lowerCloudY);
+            ctx.lineTo(canvas.width, lowerCloudY);
+            ctx.stroke();
+        }
+
+        function generateObstacle() {
+            let ObstacleClass;
+            switch (game.level) {
+                case 'easy':
+                    ObstacleClass = GroundAnimalObstacle;
+                    break;
+                case 'medium':
+                    ObstacleClass = BirdObstacle;
+                    break;
+                case 'impossible':
+                    ObstacleClass = RockObstacle;
+                    break;
+                default:
+                    return;
+            }
+            game.obstacles.push(new ObstacleClass());
+
+            // Increase difficulty (speed and frequency)
+            game.baseSpeed = Math.min(game.baseSpeed + 0.1, 15);
+            game.obstacleGenerationFrameRate = Math.max(70, game.obstacleGenerationFrameRate - 1);
+
+            // Switch level every 1000 score (or equivalent frames)
+            if (game.score % 1000 < 5) {
+                const levels = ['easy', 'medium', 'impossible'];
+                const currentIndex = levels.indexOf(game.level);
+                const nextIndex = (currentIndex + 1) % levels.length;
+                game.level = levels[nextIndex];
+            }
+        }
+
+
+        function startGame(selectedLevel) {
+            game.score = 0;
+            game.lives = 5;
+            game.frame = 0;
+            game.level = selectedLevel || 'easy';
+            game.currentSpeed = game.baseSpeed = 5;
+            game.obstacles = [];
+            game.isRunning = true;
+            game.isQuizActive = false;
+            game.player = new StickMan(game.selectedAvatarConfig);
+
+            messageBox.style.display = 'none';
+            resizeCanvas(); // Ensure canvas size and player scale are correct
+            document.getElementById('virtualControls').style.display = 'block';
+            gameLoop();
+        }
+
+        function gameOver() {
+            game.isRunning = false;
+            document.getElementById('virtualControls').style.display = 'none';
+
+            messageTitle.textContent = "Game Over! 💀";
+            messageText.textContent = `You survived until Level ${game.level.toUpperCase()} and scored ${game.score} points! Can you beat it?`;
+            selectionContainer.className = 'level-button-container';
+            selectionContainer.innerHTML = '';
+            showLevelSelection();
+            messageBox.style.display = 'block';
+        }
+
+        function showLevelSelection() {
+            selectionContainer.innerHTML = '';
+            ['Easy', 'Medium', 'Impossible'].forEach(level => {
+                const button = document.createElement('button');
+                button.className = 'start-button';
+                button.textContent = `Start ${level} Run`;
+                button.onclick = () => startGame(level.toLowerCase());
+                selectionContainer.appendChild(button);
+            });
+        }
+
+        function showAvatarSelection() {
+            messageTitle.textContent = "Pick Your Runner";
+            messageText.textContent = "Select a stick man avatar to begin the game.";
+            selectionContainer.className = 'flex justify-center flex-wrap gap-4 mt-4 w-full';
+            selectionContainer.innerHTML = '';
+
+            AVATAR_CONFIGS.forEach(config => {
+                const button = document.createElement('div');
+                button.className = 'avatar-button';
+                button.onclick = () => {
+                    game.selectedAvatarConfig = config;
+                    showLevelSelection();
+                };
+
+                // Create a small canvas for the avatar preview
+                const previewCanvas = document.createElement('canvas');
+                previewCanvas.width = 60;
+                previewCanvas.height = 80;
+                previewCanvas.className = 'avatar-preview-canvas';
+                const previewCtx = previewCanvas.getContext('2d');
+                drawStickManPose(previewCtx, config, config.pose, previewCanvas.width, previewCanvas.height);
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'avatar-name';
+                nameDiv.textContent = config.name;
+
+                button.appendChild(previewCanvas);
+                button.appendChild(nameDiv);
+                selectionContainer.appendChild(button);
+            });
+
+            messageBox.style.display = 'block';
+        }
+
+        // --- Event Listeners ---
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Keyboard Controls
+        const keyMap = {
+            'w': 'UP', 'W': 'UP', 'ArrowUp': 'UP', ' ': 'UP', // Jump/Boost
+            's': 'DOWN', 'S': 'DOWN', 'ArrowDown': 'DOWN', // Crouch/Glide
+            'd': 'RIGHT', 'D': 'RIGHT', 'ArrowRight': 'RIGHT', // Dash/Accelerate
+            'a': 'LEFT', 'A': 'LEFT', 'ArrowLeft': 'LEFT' // Brake/Slow Down
+        };
+
+        window.addEventListener('keydown', (e) => {
+            const key = keyMap[e.key];
+            if (key) {
+                e.preventDefault();
+                if (game.isRunning) {
+                    KEYS[key] = true;
+                    if (key === 'UP' && game.player) game.player.jump();
+                    if (key === 'DOWN' && game.player) game.player.startCrouchOrGlide();
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = keyMap[e.key];
+            if (key) {
+                if (game.isRunning) {
+                    KEYS[key] = false;
+                    if (key === 'DOWN' && game.player) game.player.stopCrouchOrGlide();
+                }
+            }
+        });
+
+        // Virtual D-Pad Controls (Touch/Mouse)
+        const touchEvents = ['touchstart', 'mousedown'];
+        const releaseEvents = ['touchend', 'mouseup', 'touchcancel'];
+
+        const virtualControlMap = [
+            { element: upButton, key: 'UP' },
+            { element: downButton, key: 'DOWN' },
+            { element: leftButton, key: 'LEFT' },
+            { element: rightButton, key: 'RIGHT' }
+        ];
+
+        virtualControlMap.forEach(({ element, key }) => {
+            touchEvents.forEach(eventType => {
+                element.addEventListener(eventType, (e) => {
+                    e.preventDefault();
+                    if (game.isRunning) {
+                        KEYS[key] = true;
+                        if (key === 'UP' && game.player) game.player.jump();
+                        if (key === 'DOWN' && game.player) game.player.startCrouchOrGlide();
+                    }
+                });
+            });
+
+            releaseEvents.forEach(eventType => {
+                element.addEventListener(eventType, (e) => {
+                    e.preventDefault();
+                    if (game.isRunning) {
+                        KEYS[key] = false;
+                        if (key === 'DOWN' && game.player) game.player.stopCrouchOrGlide();
+                    }
+                });
+            });
+        });
+
+
+        // Initialization
+        window.onload = () => {
+            resizeCanvas();
+            showAvatarSelection();
+            document.getElementById('virtualControls').style.display = 'none';
+        };
+
+        // --- Game Loop (COMPLETED) ---
+
+        function gameLoop() {
+            if (!game.isRunning) {
+                cancelAnimationFrame(game.animationFrameId);
+                return;
+            }
+
+            game.animationFrameId = requestAnimationFrame(gameLoop);
+            game.frame++;
+
+            // --- 1. Speed Control Logic ---
+            if (KEYS.RIGHT) {
+                // Dash/Accelerate (Max speed is 2x base speed)
+                game.currentSpeed = Math.min(game.baseSpeed * 2, game.currentSpeed + 0.2);
+            } else if (KEYS.LEFT) {
+                // Brake/Slow Down (Min speed is 0.5x base speed)
+                game.currentSpeed = Math.max(game.baseSpeed * 0.5, game.currentSpeed - 0.2);
+            } else {
+                // Gradually return to base speed when no key is held
+                if (game.currentSpeed > game.baseSpeed + 0.1) {
+                    game.currentSpeed = Math.max(game.baseSpeed, game.currentSpeed - 0.05);
+                } else if (game.currentSpeed < game.baseSpeed - 0.1) {
+                    game.currentSpeed = Math.min(game.baseSpeed, game.currentSpeed + 0.05);
+                } else {
+                    game.currentSpeed = game.baseSpeed;
+                }
+            }
+
+            // --- 2. Update Game State ---
+            game.player.update();
+            game.score = Math.floor(game.frame * game.currentSpeed / 10);
+            updateDisplays();
+
+            // Update obstacles and check for collision
+            let collisionOccurred = false;
+            for (let i = 0; i < game.obstacles.length; i++) {
+                const obstacle = game.obstacles[i];
+                obstacle.update();
+
+                if (checkCollision(game.player, obstacle)) {
+                    // Check for crouch exception: Ground Runner only
+                    if (game.level !== 'medium' && game.player.isCrouching && obstacle.heightV > game.player.originalHeightV * 0.8) {
+                        // High obstacles (like Gorilla) cannot be crouched under
+                        collisionOccurred = true;
+                        handleCollision(i);
+                        break;
+                    } else if (game.level !== 'medium' && game.player.isCrouching && obstacle.heightV < game.player.originalHeightV * 0.8) {
+                        // Low obstacles (like Snake) can be crouched over/avoided
+                        continue;
+                    } else {
+                        // Standard collision (jump or bird hit)
+                        collisionOccurred = true;
+                        handleCollision(i);
+                        break;
+                    }
+                }
+            }
+
+            // Remove off-screen obstacles (only if no quiz is active)
+            if (!game.isQuizActive) {
+                game.obstacles = game.obstacles.filter(o => o.xV + o.widthV > 0);
+
+                // --- 3. Obstacle Generation ---
+                if (game.frame % Math.floor(game.obstacleGenerationFrameRate / (game.currentSpeed / game.baseSpeed)) === 0) {
+                    generateObstacle();
+                }
+            }
+
+            // --- 4. Drawing ---
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the frame
+
+            if (game.level === 'medium') {
+                drawSkyBackground();
+            } else {
+                drawGround();
+            }
+
+            // Draw player and obstacles
+            game.obstacles.forEach(obstacle => obstacle.draw());
+            game.player.draw();
+
+            // Draw collision visual if quiz is active and obstacle index is valid
+            if (game.isQuizActive && game.collidingObstacleIndex !== -1) {
+                 const obs = game.obstacles[game.collidingObstacleIndex];
+                 ctx.save();
+                 ctx.strokeStyle = 'red';
+                 ctx.lineWidth = 5;
+                 ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+                 ctx.restore();
+            }
+        }
+    </script>
+</body>
+</html>
