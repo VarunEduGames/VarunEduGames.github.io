@@ -1,0 +1,690 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>The Spectrum Solver Color Mixer</title>
+
+    <!-- Load Tailwind CSS -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+
+        tailwind.config = {
+
+            theme: {
+
+                extend: {
+
+                    fontFamily: {
+
+                        sans: ['Inter', 'sans-serif'],
+
+                    },
+
+                }
+
+            }
+
+        }
+
+    </script>
+
+    <style>
+
+        /* Custom styles for visual polish */
+
+        body {
+
+            background-color: #121212;
+
+            color: #e0e0e0;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+        }
+
+        .color-box {
+
+            /* Reduced height from 150px to 120px */
+
+            width: 100%;
+
+            height: 120px; 
+
+            border: 4px solid rgba(255, 255, 255, 0.2);
+
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+
+            transition: background-color 0.5s ease-in-out;
+
+            background-color: #333; /* Default dark color for unstarted state */
+
+        }
+
+        .control-button {
+
+            transition: all 0.1s;
+
+            transform-origin: center;
+
+        }
+
+        .control-button:active:not(:disabled) {
+
+            transform: scale(0.95);
+
+        }
+
+        .control-panel {
+
+            background-color: #1e1e1e;
+
+            /* Reduced padding for smaller footprint */
+
+            padding: 1rem; 
+
+            border-radius: 12px;
+
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+
+        }
+
+    </style>
+
+</head>
+
+<body class="font-sans p-4">
+
+    <div id="game-container" class="w-full max-w-4xl control-panel">
+
+        <!-- Title and Description -->
+
+        <h1 class="text-3xl font-extrabold text-white text-center mb-2">The Spectrum Solver</h1>
+
+        <p class="text-center text-gray-400 mb-4 text-sm">Match the **Target Color** by mixing Red, Green, and Blue components. The lower the "Difference Score," the closer you are!</p>
+
+        <!-- Color Display Section -->
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+
+            <!-- Target Color -->
+
+            <div class="flex flex-col items-center">
+
+                <h2 class="text-xl font-semibold mb-1 text-red-400">Target Color</h2>
+
+                <div id="target-color-box" class="color-box rounded-lg"></div>
+
+                <!-- This display remains permanently hidden -->
+
+                <p id="target-rgb" class="mt-2 text-sm font-mono text-gray-300 hidden"></p>
+
+            </div>
+
+            <!-- Mixed Color -->
+
+            <div class="flex flex-col items-center">
+
+                <h2 class="text-xl font-semibold mb-1 text-green-400">Your Mix</h2>
+
+                <div id="mixed-color-box" class="color-box rounded-lg"></div>
+
+                <p id="mixed-rgb" class="mt-2 text-sm font-mono text-gray-300">RGB(0, 0, 0)</p>
+
+            </div>
+
+        </div>
+
+        <!-- Score and Message -->
+
+        <div class="text-center mb-4 p-3 bg-gray-800 rounded-xl flex justify-between items-center">
+
+            <!-- Score Display -->
+
+            <h2 class="text-xl font-bold">Score: <span id="difference-score" class="text-gray-400">Ready</span></h2>
+
+            
+
+            <!-- Moves Display -->
+
+            <h2 class="text-xl font-bold">Moves: <span id="move-count" class="text-yellow-400">0</span></h2>
+
+        </div>
+
+        
+
+        <!-- Game Message -->
+
+        <div class="text-center mb-4">
+
+             <p id="game-message" class="text-base mt-1"></p>
+
+        </div>
+
+        
+
+        <!-- START GAME Button -->
+
+        <div class="mb-6 flex justify-center">
+
+             <button id="start-new-round-button" onclick="newTarget()" class="control-button px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-xl shadow-xl transition duration-150">
+
+                Start Game
+
+            </button>
+
+        </div>
+
+        <!-- Controls Section -->
+
+        <div id="controls-section" class="space-y-2">
+
+            <!-- Red Controls -->
+
+            <div class="flex items-center space-x-3 bg-red-900/20 p-2 rounded-lg border border-red-800">
+
+                <span class="w-12 text-xl font-bold text-red-500">R:</span>
+
+                <button class="control-button px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md" onclick="changeColor('r', -15)" disabled>-15</button>
+
+                <button class="control-button px-3 py-1 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg shadow-md" onclick="changeColor('r', -1)" disabled>-1</button>
+
+                <span id="current-r" class="text-2xl font-mono w-12 text-center text-red-400">0</span>
+
+                <button class="control-button px-3 py-1 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg shadow-md" onclick="changeColor('r', 1)" disabled>+1</button>
+
+                <button class="control-button px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md" onclick="changeColor('r', 15)" disabled>+15</button>
+
+                <button id="reset-r" onclick="resetComponent('r')" class="control-button ml-auto px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-white rounded-lg" disabled>Reset</button>
+
+            </div>
+
+            <!-- Green Controls -->
+
+            <div class="flex items-center space-x-3 bg-green-900/20 p-2 rounded-lg border border-green-800">
+
+                <span class="w-12 text-xl font-bold text-green-500">G:</span>
+
+                <button class="control-button px-3 py-1 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md" onclick="changeColor('g', -15)" disabled>-15</button>
+
+                <button class="control-button px-3 py-1 bg-green-700 hover:bg-green-800 text-white font-bold rounded-lg shadow-md" onclick="changeColor('g', -1)" disabled>-1</button>
+
+                <span id="current-g" class="text-2xl font-mono w-12 text-center text-green-400">0</span>
+
+                <button class="control-button px-3 py-1 bg-green-700 hover:bg-green-800 text-white font-bold rounded-lg shadow-md" onclick="changeColor('g', 1)" disabled>+1</button>
+
+                <button class="control-button px-3 py-1 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md" onclick="changeColor('g', 15)" disabled>+15</button>
+
+                <button id="reset-g" onclick="resetComponent('g')" class="control-button ml-auto px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-white rounded-lg" disabled>Reset</button>
+
+            </div>
+
+            <!-- Blue Controls -->
+
+            <div class="flex items-center space-x-3 bg-blue-900/20 p-2 rounded-lg border border-blue-800">
+
+                <span class="w-12 text-xl font-bold text-blue-500">B:</span>
+
+                <button class="control-button px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md" onclick="changeColor('b', -15)" disabled>-15</button>
+
+                <button class="control-button px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg shadow-md" onclick="changeColor('b', -1)" disabled>-1</button>
+
+                <span id="current-b" class="text-2xl font-mono w-12 text-center text-blue-400">0</span>
+
+                <button class="control-button px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg shadow-md" onclick="changeColor('b', 1)" disabled>+1</button>
+
+                <button class="control-button px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md" onclick="changeColor('b', 15)" disabled>+15</button>
+
+                <button id="reset-b" onclick="resetComponent('b')" class="control-button ml-auto px-2 py-1 bg-gray-700 hover:bg-gray-600 text-xs text-white rounded-lg" disabled>Reset</button>
+
+            </div>
+
+        </div>
+
+        <!-- Action Buttons (Only Reset Mix remains) -->
+
+        <div class="mt-4 flex justify-center space-x-4">
+
+            <button id="reset-mix-button" onclick="resetMix()" class="control-button px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl shadow-lg transition duration-150" disabled>
+
+                Reset Mix
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        // Game State
+
+        let targetColor = { r: 0, g: 0, b: 0 };
+
+        let mixedColor = { r: 0, g: 0, b: 0 };
+
+        let moveCount = 0; // NEW: Move counter
+
+        const MAX_RGB = 255;
+
+        const MIN_RGB = 0;
+
+        // DOM Elements
+
+        const targetColorBox = document.getElementById('target-color-box');
+
+        const mixedColorBox = document.getElementById('mixed-color-box');
+
+        const differenceScoreDisplay = document.getElementById('difference-score');
+
+        const gameMessage = document.getElementById('game-message');
+
+        const startNewRoundButton = document.getElementById('start-new-round-button');
+
+        const resetMixButton = document.getElementById('reset-mix-button');
+
+        const controlsSection = document.getElementById('controls-section');
+
+        const moveCountDisplay = document.getElementById('move-count'); // NEW: Move counter display
+
+        const currentR = document.getElementById('current-r');
+
+        const currentG = document.getElementById('current-g');
+
+        const currentB = document.getElementById('current-b');
+
+        // --- Utility Functions ---
+
+        /**
+
+         * Enables or disables all color mixing buttons.
+
+         * @param {boolean} enable - True to enable, false to disable.
+
+         */
+
+        function toggleControls(enable) {
+
+            const buttons = controlsSection.querySelectorAll('button');
+
+            buttons.forEach(button => {
+
+                button.disabled = !enable;
+
+                // Add a visual cue for disabled state
+
+                if (enable) {
+
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                } else {
+
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+
+                }
+
+            });
+
+            resetMixButton.disabled = !enable;
+
+            if (enable) {
+
+                resetMixButton.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            } else {
+
+                resetMixButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            }
+
+        }
+
+        // --- Core Functions ---
+
+        /**
+
+         * Generates a random RGB color, ensuring a minimum saturation to avoid pure black/white/gray.
+
+         */
+
+        function generateRandomColor() {
+
+            // Generates a random number between min and max (inclusive)
+
+            const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+            // Target saturation: Ensure at least one component is > 150 to make it vibrant/distinct
+
+            let r, g, b;
+
+            do {
+
+                r = randomInt(50, MAX_RGB);
+
+                g = randomInt(50, MAX_RGB);
+
+                b = randomInt(50, MAX_RGB);
+
+            } while (r < 150 && g < 150 && b < 150); // Reroll if all components are too dark
+
+            return { r, g, b };
+
+        }
+
+        /**
+
+         * Calculates the difference score using Manhattan Distance (sum of absolute differences).
+
+         */
+
+        function calculateDifference() {
+
+            const rDiff = Math.abs(targetColor.r - mixedColor.r);
+
+            const gDiff = Math.abs(targetColor.g - mixedColor.g);
+
+            const bDiff = Math.abs(targetColor.b - mixedColor.b);
+
+            const score = rDiff + gDiff + bDiff;
+
+            updateScoreDisplay(score);
+
+            return score;
+
+        }
+
+        /**
+
+         * Updates the score display and provides feedback to the player.
+
+         * @param {number} score - The calculated difference score.
+
+         */
+
+        function updateScoreDisplay(score) {
+
+            if (startNewRoundButton.textContent === "Start Game") {
+
+                differenceScoreDisplay.textContent = "Ready";
+
+                return;
+
+            }
+
+            differenceScoreDisplay.textContent = score;
+
+            // Change color based on score proximity (Max possible score: 255*3 = 765)
+
+            if (score === 0) {
+
+                // Game Won!
+
+                differenceScoreDisplay.classList.remove('text-yellow-400', 'text-red-400', 'text-orange-400');
+
+                differenceScoreDisplay.classList.add('text-lime-400');
+
+                
+
+                gameMessage.textContent = `PERFECT MATCH in ${moveCount} moves! Nicely done!`;
+
+                gameMessage.classList.add('text-lime-400', 'font-bold');
+
+                
+
+                // Change button to start new game
+
+                startNewRoundButton.textContent = "Start Next Round";
+
+                startNewRoundButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+
+                startNewRoundButton.classList.add('bg-lime-600', 'hover:bg-lime-700');
+
+                // Disable controls
+
+                toggleControls(false);
+
+            } else if (score < 50) {
+
+                differenceScoreDisplay.classList.remove('text-red-400', 'text-yellow-400', 'text-lime-400');
+
+                differenceScoreDisplay.classList.add('text-orange-400');
+
+                gameMessage.textContent = "So close! Just a few adjustments left.";
+
+                gameMessage.classList.remove('text-lime-400', 'font-bold');
+
+            } else if (score < 200) {
+
+                differenceScoreDisplay.classList.remove('text-red-400', 'text-lime-400', 'text-orange-400');
+
+                differenceScoreDisplay.classList.add('text-yellow-400');
+
+                gameMessage.textContent = "Getting there. Keep fine-tuning!";
+
+                gameMessage.classList.remove('text-lime-400', 'font-bold');
+
+            } else {
+
+                differenceScoreDisplay.classList.remove('text-yellow-400', 'text-lime-400', 'text-orange-400');
+
+                differenceScoreDisplay.classList.add('text-red-400');
+
+                gameMessage.textContent = "";
+
+            }
+
+        }
+
+        /**
+
+         * Renders the current state of both colors and their RGB values.
+
+         */
+
+        function renderColors() {
+
+            const mixedRgbString = `RGB(${mixedColor.r}, ${mixedColor.g}, ${mixedColor.b})`;
+
+            mixedColorBox.style.backgroundColor = mixedRgbString;
+
+            // No need to display mixedRgbDisplay text, as the values are shown next to the sliders.
+
+            // mixedRgbDisplay.textContent = mixedRgbString; 
+
+            currentR.textContent = mixedColor.r;
+
+            currentG.textContent = mixedColor.g;
+
+            currentB.textContent = mixedColor.b;
+
+            moveCountDisplay.textContent = moveCount; // Update move count display
+
+        }
+
+        // --- Game Actions ---
+
+        /**
+
+         * Starts a new round by generating a new target color and resetting the mix.
+
+         * This function is called by the "Start Game" button.
+
+         */
+
+        function newTarget() {
+
+            targetColor = generateRandomColor();
+
+            
+
+            // Reset state
+
+            moveCount = 0; // Reset moves
+
+            resetMix(false); // Reset mix without recalculating score yet
+
+            const targetRgbString = `RGB(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`;
+
+            targetColorBox.style.backgroundColor = targetRgbString;
+
+            
+
+            // Set the button for next round
+
+            startNewRoundButton.textContent = "New Target Color";
+
+            startNewRoundButton.classList.remove('bg-lime-600', 'hover:bg-lime-700');
+
+            startNewRoundButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+
+            
+
+            // Enable controls for the new round
+
+            toggleControls(true);
+
+            // Calculate initial score 
+
+            calculateDifference();
+
+            gameMessage.textContent = "";
+
+            gameMessage.classList.remove('text-lime-400', 'font-bold');
+
+        }
+
+        /**
+
+         * Resets the mixed color to black (0, 0, 0).
+
+         */
+
+        function resetMix(recalculate = true) {
+
+            mixedColor = { r: 0, g: 0, b: 0 };
+
+            renderColors();
+
+            if (recalculate) {
+
+                // Resetting the mix counts as one action (or a free reset, let's keep it simple)
+
+                // We won't increment moveCount here unless it's a specific user request.
+
+                calculateDifference();
+
+            }
+
+        }
+
+        /**
+
+         * Resets a single color component to 0.
+
+         * @param {string} component - 'r', 'g', or 'b'.
+
+         */
+
+        function resetComponent(component) {
+
+            // No move increment for component resets, as they are a utility function
+
+            mixedColor[component] = 0;
+
+            renderColors();
+
+            calculateDifference();
+
+        }
+
+        /**
+
+         * Changes a specific color component by a given amount.
+
+         * @param {string} component - 'r', 'g', or 'b'.
+
+         * @param {number} amount - The value to add or subtract.
+
+         */
+
+        function changeColor(component, amount) {
+
+            let newValue = mixedColor[component] + amount;
+
+            // Clamp the value between MIN_RGB and MAX_RGB
+
+            newValue = Math.min(MAX_RGB, Math.max(MIN_RGB, newValue));
+
+            if (mixedColor[component] !== newValue) {
+
+                mixedColor[component] = newValue;
+
+                moveCount++; // NEW: Increment move counter
+
+                renderColors();
+
+                calculateDifference();
+
+            }
+
+        }
+
+        /**
+
+         * Initial setup when the page loads.
+
+         */
+
+        function initialSetup() {
+
+            // Set initial colors to neutral/dark state
+
+            targetColorBox.style.backgroundColor = '#333';
+
+            mixedColorBox.style.backgroundColor = '#333';
+
+            
+
+            // Set initial display values
+
+            moveCountDisplay.textContent = 0;
+
+            currentR.textContent = 0;
+
+            currentG.textContent = 0;
+
+            currentB.textContent = 0;
+
+
+
+            // Disable all interactive controls until the game starts
+
+            toggleControls(false); 
+
+        }
+
+        // --- Initialization ---
+
+        // Setup the initial state on window load, waiting for the user to press "Start Game"
+
+        window.onload = initialSetup;
+
+    </script>
+
+</body>
+</htm/>
+
