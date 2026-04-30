@@ -1,0 +1,754 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stickman Obby</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game environment */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent body scrolling */
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Wrapper for the canvas to correctly position the modal and floating button overlay */
+        .canvas-wrapper { 
+            position: relative;
+            width: 800px; /* Match canvas width */
+            height: 400px; /* Match canvas height */
+            border-radius: 12px;
+            overflow: hidden; /* Keep children contained */
+        }
+
+        #gameCanvas {
+            border: 4px solid #f97316; /* Orange border */
+            background-color: #d1d5db; /* Light gray background for the level */
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            touch-action: none; /* Prevent browser scrolling on touch */
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui-panel {
+            background-color: #374151; /* Slightly lighter dark gray */
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #f3f4f6;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px; /* Added spacing */
+        }
+
+        .control-button {
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            box-shadow: 0 4px #9ca3af; /* Darker shadow */
+            background-color: #4b5563; /* Medium gray */
+            color: #f3f4f6;
+        }
+
+        .control-button:active {
+            box-shadow: 0 2px #9ca3af;
+            transform: translateY(2px);
+        }
+
+        /* Specific button colors */
+        .jump-button {
+            background-color: #10b981; /* Green */
+            box-shadow: 0 4px #059669;
+        }
+        .jump-button:active {
+            box-shadow: 0 2px #059669;
+        }
+
+        .move-button {
+            background-color: #3b82f6; /* Blue */
+            box-shadow: 0 4px #2563eb;
+            width: 70px; /* Wider for better touch target */
+        }
+        .move-button:active {
+            box-shadow: 0 2px #2563eb;
+        }
+        
+        /* Power button color when on cooldown - used in JS */
+        .cooldown-button {
+            background-color: #dc2626; /* Red for Cooldown */
+            box-shadow: 0 4px #b91c1c;
+        }
+        .cooldown-button:active {
+            box-shadow: 0 2px #b91c1c;
+        }
+
+        /* Message box styling */
+        #messageBox {
+            margin-bottom: 10px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            min-height: 1.25em; /* Reserve space to prevent CLS */
+            color: #f97316;
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 640px) {
+            .game-container {
+                padding: 10px;
+            }
+            .ui-panel {
+                padding: 10px;
+            }
+            .canvas-wrapper {
+                 width: 100%; 
+                 height: 300px; /* Adjust height for mobile visibility */
+            }
+            .control-buttons {
+                gap: 10px;
+                justify-content: space-around;
+                width: 100%;
+            }
+            .control-button {
+                padding: 8px 15px;
+                font-size: 1rem;
+            }
+            .move-button {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1 class="text-3xl font-bold mb-4 text-white">Stickman Obby Challenge</h1>
+        <div id="messageBox">Choose a power-up to begin!</div>
+        
+        <!-- Canvas Wrapper for positioning the modal and floating button overlay -->
+        <div class="canvas-wrapper"> 
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+            <!-- Power Selection Modal Overlay -->
+            <div id="powerSelectionModal" class="absolute inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center p-8 z-10">
+                <h2 class="text-3xl font-bold text-white mb-6">Choose Your Power-up!</h2>
+                <div id="powerOptions" class="flex flex-col sm:flex-row gap-4">
+                    <button data-power="DoubleJump" class="power-option-button bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg shadow-lg transition duration-150">Double Jump</button>
+                    <button data-power="SuperSpeed" class="power-option-button bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg shadow-lg transition duration-150">Super Speed</button>
+                    <button data-power="Flight" class="power-option-button bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg shadow-lg transition duration-150">Flight (Short)</button>
+                </div>
+                <p class="text-sm text-gray-300 mt-4 text-center">Your chosen power will have a 10-second cooldown after each use.</p>
+            </div>
+
+            <!-- Floating Power Button Overlay (Circular, bottom-right) -->
+            <button id="powerButton" 
+                class="absolute bottom-4 right-4 z-20 
+                       w-20 h-20 rounded-full 
+                       text-xs font-bold text-white shadow-xl 
+                       transition duration-150 transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed
+                       bg-gray-500" 
+                disabled>
+                <div class="flex flex-col items-center justify-center h-full p-1">
+                    <span id="powerNameFloating" class="text-[0.6rem] leading-none mb-0.5 uppercase">POWER</span>
+                    <span id="cooldownTimer" class="text-lg leading-tight">Select</span>
+                </div>
+            </button>
+        </div>
+        
+        <div class="ui-panel">
+            <!-- Display current power name outside the canvas -->
+            <div id="powerNameDisplay" class="text-lg font-semibold text-yellow-300 mb-2">Power: <span id="currentPower">None</span></div>
+
+            <div class="text-lg font-semibold mt-4 mb-2">Movement Controls:</div>
+            <p class="text-sm mb-4">Keyboard: **Q Power**, **← Left**, **→ Right**, **↑ / Space Jump**</p>
+            
+            <div class="control-buttons">
+                <button id="leftButton" class="control-button move-button">LEFT</button>
+                <button id="jumpButton" class="control-button jump-button">JUMP</button>
+                <button id="rightButton" class="control-button move-button">RIGHT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for Firebase access (Mandatory inclusion)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const messageBox = document.getElementById('messageBox');
+        
+        // Define canvas dimensions for camera calculations
+        const CANVAS_WIDTH = 800; 
+        const CANVAS_HEIGHT = 400;
+
+        // Game Constants
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = -10;
+        const MOVE_SPEED = 5;
+        const TILE_SIZE = 40; // Size for drawing the stickman head/body scale
+        const LEVEL_WIDTH = 3000; // Total width of the level, increased to 3000
+        let cameraX = 0; // Camera offset for scrolling
+
+        // Power Constants and State
+        const COOLDOWN_DURATION = 10000; // 10 seconds in milliseconds
+        const SUPER_SPEED_MULTIPLIER = 2.5;
+        const FLIGHT_DURATION = 2000; // 2 seconds of flight
+
+        let selectedPower = null;
+        let isPowerActive = false;
+        let powerStartTime = 0;
+        let powerCooldownEndTime = 0;
+        let doubleJumpUsed = false;
+        let gameStatus = 'powerSelect'; // 'powerSelect', 'running', 'gameOver'
+
+
+        // Stickman State
+        let player = {
+            x: 50,
+            y: CANVAS_HEIGHT - TILE_SIZE,
+            width: 15,
+            height: TILE_SIZE,
+            velY: 0,
+            isJumping: false,
+            onGround: true,
+            isDead: false,
+            movingLeft: false,
+            movingRight: false,
+            direction: 1 
+        };
+
+        // --- LONG OBBY LEVEL DATA (Extending to 3000) ---
+        // Obstacle/Level Data (Obby) - Level width is 3000
+        const level = [
+            // --- Start Zone (0-300) ---
+            // Start platform: y=380 is 20px up from canvas bottom (400)
+            {x: 0, y: 380, w: 100, h: 20, type: 'platform'},
+            {x: 180, y: 380, w: 100, h: 20, type: 'platform'},
+            {x: 300, y: 380, w: 50, h: 20, type: 'hazard'}, // Short hazard
+            
+            // --- Vertical Challenge (400-600) ---
+            {x: 450, y: 340, w: 50, h: 20, type: 'platform'}, // Step 1
+            {x: 550, y: 300, w: 50, h: 20, type: 'platform'}, // Step 2
+            
+            // --- Long Jump Challenge (700-1000) ---
+            // Requires Super Speed or Double Jump to clear the big gap/hazard (740 to 960)
+            {x: 680, y: 380, w: 60, h: 20, type: 'platform'}, // Takeoff
+            {x: 740, y: 380, w: 220, h: 20, type: 'hazard'}, // Huge gap/hazard pit
+            {x: 960, y: 380, w: 100, h: 20, type: 'platform'}, // Landing platform
+            
+            // --- Floating Platforms (1100-1400) ---
+            // Flight power useful here
+            {x: 1150, y: 340, w: 40, h: 20, type: 'platform'},
+            {x: 1250, y: 280, w: 40, h: 20, type: 'platform'},
+            {x: 1350, y: 220, w: 40, h: 20, type: 'platform'},
+            
+            // --- Tricky Landing (1500-1800) ---
+            {x: 1450, y: 380, w: 100, h: 20, type: 'platform'}, 
+            {x: 1600, y: 380, w: 50, h: 20, type: 'hazard'}, // Hazard on the ground
+            {x: 1700, y: 380, w: 100, h: 20, type: 'platform'},
+            
+            // --- Slanted Gap Jumps (1950 - 2200) ---
+            {x: 1950, y: 380, w: 80, h: 20, type: 'platform'},
+            {x: 2100, y: 340, w: 60, h: 20, type: 'platform'},
+            {x: 2200, y: 300, w: 40, h: 20, type: 'platform'},
+
+            // --- Low Ceiling/Hazard (2300 - 2500) ---
+            // Requires precise flight or timing
+            {x: 2350, y: 380, w: 150, h: 20, type: 'platform'}, 
+            {x: 2350, y: 300, w: 150, h: 20, type: 'hazard'}, // Low hazard ceiling above the platform
+            
+            // --- Final Run and Mega Jump (2600 - 2800) ---
+            {x: 2600, y: 380, w: 200, h: 20, type: 'platform'}, 
+            {x: 2850, y: 380, w: 50, h: 20, type: 'hazard'}, // Final big jump hazard
+            
+            // --- Ultimate Goal (3000) ---
+            {x: LEVEL_WIDTH - 150, y: 300, w: 100, h: 20, type: 'platform'},
+            {x: LEVEL_WIDTH - 60, y: 300 - TILE_SIZE, w: 20, h: 40, type: 'goal'}
+        ];
+        
+        // UI Elements for Power
+        const powerModal = document.getElementById('powerSelectionModal');
+        const powerOptionsContainer = document.getElementById('powerOptions');
+        const currentPowerDisplay = document.getElementById('currentPower'); // Panel display
+        const powerButton = document.getElementById('powerButton'); // Floating button
+        const cooldownTimerSpan = document.getElementById('cooldownTimer'); // Floating button timer
+        const powerNameFloating = document.getElementById('powerNameFloating'); // Floating button power name
+
+        // --- Drawing Functions ---
+
+        function drawStickman(p) {
+            ctx.strokeStyle = p.isDead ? 'red' : '#000000'; // Black stickman
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            
+            // Calculate drawing position using camera offset
+            const drawX = p.x - cameraX;
+
+            // Head (Circle)
+            const headRadius = p.width / 2;
+            const headX = drawX + p.width / 2;
+            const headY = p.y + headRadius;
+            ctx.beginPath();
+            ctx.arc(headX, headY, headRadius, 0, Math.PI * 2, true);
+            ctx.stroke();
+
+            // Body (Line)
+            const bodyEnd = p.y + p.height - (p.height / 4);
+            ctx.beginPath();
+            ctx.moveTo(headX, headY + headRadius);
+            ctx.lineTo(headX, bodyEnd);
+            ctx.stroke();
+
+            // Arms (Simple static pose or slight movement)
+            const armY = p.y + p.height * 0.4;
+            // Left arm
+            ctx.beginPath();
+            ctx.moveTo(headX, armY);
+            ctx.lineTo(headX - p.width * 0.8, armY + 10);
+            ctx.stroke();
+            // Right arm
+            ctx.beginPath();
+            ctx.moveTo(headX, armY);
+            ctx.lineTo(headX + p.width * 0.8, armY + 10);
+            ctx.stroke();
+            
+            // Legs (Simple static pose, slightly bent when jumping)
+            const legStart = bodyEnd;
+            const legBend = p.isJumping ? -3 : 0;
+            
+            // Left Leg
+            ctx.beginPath();
+            ctx.moveTo(headX, legStart);
+            ctx.lineTo(headX - p.width * 0.5, legStart + p.height * 0.2 + legBend);
+            ctx.stroke();
+
+            // Right Leg
+            ctx.beginPath();
+            ctx.moveTo(headX, legStart);
+            ctx.lineTo(headX + p.width * 0.5, legStart + p.height * 0.2 + legBend);
+            ctx.stroke();
+        }
+
+        function drawLevel() {
+            level.forEach(obj => {
+                // Draw the object using the camera offset
+                const drawX = obj.x - cameraX;
+                
+                ctx.beginPath();
+                ctx.rect(drawX, obj.y, obj.w, obj.h);
+                
+                if (obj.type === 'platform') {
+                    ctx.fillStyle = '#6b7280'; // Dark gray platform
+                } else if (obj.type === 'hazard') {
+                    ctx.fillStyle = '#ef4444'; // Red hazard (lava/spikes)
+                } else if (obj.type === 'goal') {
+                    ctx.fillStyle = '#f97316'; // Orange goal
+                }
+                ctx.fill();
+                
+                // Draw platform borders for clarity
+                ctx.strokeStyle = '#1f2937';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            drawLevel();
+            drawStickman(player);
+        }
+
+        // --- Game Logic Functions ---
+
+        function update() {
+            if (player.isDead || gameStatus !== 'running') return;
+
+            const currentTime = Date.now();
+
+            // 0a. Check if active power duration has expired (Flight/Speed power)
+            if (isPowerActive && (selectedPower === 'Flight' || selectedPower === 'SuperSpeed') && currentTime > powerStartTime + FLIGHT_DURATION) {
+                deactivatePower();
+            }
+            
+            // 0b. Check if cooldown is over and update UI
+            if (!isPowerActive && selectedPower && currentTime >= powerCooldownEndTime) {
+                powerButton.disabled = false;
+                cooldownTimerSpan.textContent = "Ready";
+                // Ready state style: Yellow
+                powerButton.classList.remove('cooldown-button', 'bg-red-700', 'bg-gray-500');
+                powerButton.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+            } else if (currentTime < powerCooldownEndTime) {
+                // Update cooldown timer display
+                const remainingTime = Math.ceil((powerCooldownEndTime - currentTime) / 1000);
+                cooldownTimerSpan.textContent = `${remainingTime}s`;
+            }
+
+            // 1. Apply Gravity / Flight Override
+            if (isPowerActive && selectedPower === 'Flight') {
+                player.velY = -1.5; // Constant slow upward movement for flight
+            } else {
+                player.velY += GRAVITY;
+            }
+
+            // 2. Apply Movement (Super Speed)
+            let currentSpeed = MOVE_SPEED;
+            if (isPowerActive && selectedPower === 'SuperSpeed') {
+                currentSpeed *= SUPER_SPEED_MULTIPLIER;
+            }
+            
+            if (player.movingLeft) {
+                player.x -= currentSpeed;
+                player.direction = -1;
+            }
+            if (player.movingRight) {
+                player.x += currentSpeed;
+                player.direction = 1;
+            }
+            
+            // 3. Apply Vertical Velocity
+            player.y += player.velY;
+            player.onGround = false; 
+
+            // 4. Boundary checks
+            if (player.x < 0) player.x = 0;
+            // Prevent player from moving past the end of the level
+            if (player.x + player.width > LEVEL_WIDTH) player.x = LEVEL_WIDTH - player.width;
+            
+            // 5. Update Camera Position (Camera Scrolling Logic)
+            const cameraTargetX = player.x - (CANVAS_WIDTH / 2) + (player.width / 2);
+            // Simple camera follow (no smoothing, directly follows player)
+            cameraX = cameraTargetX; 
+            
+            // Clamp cameraX to level boundaries
+            if (cameraX < 0) cameraX = 0;
+            const maxCameraX = LEVEL_WIDTH - CANVAS_WIDTH;
+            if (cameraX > maxCameraX) cameraX = maxCameraX;
+
+
+            // 6. Collision Detection (Logic uses absolute player.x/y, so no change here)
+            for (const obj of level) {
+                // AABB Collision check
+                if (player.x < obj.x + obj.w &&
+                    player.x + player.width > obj.x &&
+                    player.y < obj.y + obj.h &&
+                    player.y + player.height > obj.y) {
+                    
+                    if (obj.type === 'hazard') {
+                        player.isDead = true;
+                        messageBox.textContent = "CRUNCH! You hit the hazard. Press JUMP or UP/Space to try again.";
+                        gameStatus = 'gameOver';
+                        deactivatePower(); // Ensure power stops on death
+                        return;
+                    }
+                    
+                    if (obj.type === 'goal') {
+                        messageBox.textContent = "OBBY COMPLETE! You reached the goal! Press JUMP or UP/Space to play again.";
+                        gameStatus = 'gameOver';
+                        deactivatePower(); // Ensure power stops on win
+                        return;
+                    }
+
+                    if (obj.type === 'platform') {
+                        if (player.velY > 0) { // Player is moving down
+                            const previousY = player.y - player.velY;
+                            if (previousY + player.height <= obj.y) {
+                                // Landed on top of the platform
+                                player.y = obj.y - player.height;
+                                player.velY = 0;
+                                player.isJumping = false;
+                                player.onGround = true;
+                                doubleJumpUsed = false; // Reset double jump on landing
+                                break; 
+                            }
+                        } else if (player.velY < 0) {
+                            // Hitting platform from below (stop upward movement)
+                             const previousY = player.y - player.velY;
+                             if (previousY >= obj.y + obj.h) {
+                                player.y = obj.y + obj.h;
+                                player.velY = 0;
+                             }
+                        }
+                    }
+                }
+            }
+
+            // Fall off the bottom of the world
+            if (player.y > CANVAS_HEIGHT + 10) {
+                 player.isDead = true;
+                 messageBox.textContent = "You fell out of the world! Press JUMP or UP/Space to try again.";
+                 gameStatus = 'gameOver';
+                 deactivatePower(); // Ensure power stops on fall
+            }
+        }
+        
+        // --- Power Handling Functions ---
+
+        function selectPower(power) {
+            selectedPower = power;
+            currentPowerDisplay.textContent = power; // Update external display
+            powerNameFloating.textContent = power; // Update floating button text
+            powerModal.classList.add('hidden');
+            gameStatus = 'running';
+            messageBox.textContent = `Power: ${power}. Use Q or the floating button strategically!`;
+            powerButton.disabled = false;
+            
+            // Ready state style: Yellow
+            powerButton.classList.remove('bg-gray-500', 'hover:bg-gray-500', 'cooldown-button', 'bg-red-700');
+            powerButton.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+            cooldownTimerSpan.textContent = "Ready";
+        }
+
+        function activatePower() {
+            if (isPowerActive || Date.now() < powerCooldownEndTime || !selectedPower || gameStatus !== 'running') return;
+
+            isPowerActive = true;
+            powerStartTime = Date.now();
+            powerButton.disabled = true;
+            cooldownTimerSpan.textContent = "Active";
+
+            // Indicate active power with bright green
+            powerButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700', 'bg-red-700');
+            powerButton.classList.add('bg-green-500', 'hover:bg-green-500'); 
+
+            // Specific activation logic
+            if (selectedPower === 'Flight' || selectedPower === 'SuperSpeed') {
+                player.velY = 0; // Stop current vertical movement for Flight/Prep for Speed
+                // For SuperSpeed and Flight, timer will call deactivatePower
+            } else if (selectedPower === 'DoubleJump') {
+                // Double Jump power is passively active for one use until cooldown
+                doubleJumpUsed = false;
+                deactivatePower(); // Immediately start cooldown for Double Jump (it's a one-time use ability per cooldown)
+            }
+        }
+
+        function deactivatePower() {
+            // Only deactivate Flight and SuperSpeed based on time
+            if (!isPowerActive && selectedPower !== 'DoubleJump') {
+                return;
+            }
+
+            isPowerActive = false;
+            
+            // Initiate cooldown 
+            powerCooldownEndTime = Date.now() + COOLDOWN_DURATION;
+            
+            // Update UI for cooldown (Red/Gray for Cooldown)
+            powerButton.disabled = true;
+            powerButton.classList.remove('bg-green-500', 'hover:bg-green-500', 'bg-yellow-600', 'hover:bg-yellow-700');
+            powerButton.classList.add('cooldown-button', 'bg-red-700');
+            cooldownTimerSpan.textContent = "10s"; // Initial timer text
+        }
+        
+        // --- Input Handling ---
+
+        function jump() {
+            // Check for game reset (after death or win)
+            if (gameStatus === 'gameOver') {
+                resetGame();
+                return;
+            }
+            
+            if (gameStatus !== 'running') return;
+
+            // Normal jump (on ground)
+            if (player.onGround) {
+                player.velY = JUMP_FORCE;
+                player.isJumping = true;
+                player.onGround = false;
+            } 
+            // Double Jump Power check
+            else if (selectedPower === 'DoubleJump' && !doubleJumpUsed && Date.now() < powerCooldownEndTime) {
+                 // The power is considered "usable" if it's on cooldown for DoubleJump
+                player.velY = JUMP_FORCE * 0.8; // Slightly weaker second jump
+                doubleJumpUsed = true;
+            }
+        }
+
+        function resetGame() {
+            // Reset player position and state
+            player.x = 50;
+            // The first platform is at y=380 (400-20). Stickman height is 40. Start Y is 380-40=340
+            player.y = 340; 
+            player.velY = 0;
+            player.isJumping = false;
+            player.onGround = true;
+            player.isDead = false;
+            player.movingLeft = false;
+            player.movingRight = false;
+            
+            // Reset camera
+            cameraX = 0;
+
+            // Reset power state
+            isPowerActive = false;
+            powerStartTime = 0;
+            powerCooldownEndTime = 0;
+            doubleJumpUsed = false;
+            
+            // Show power select screen if no power has been chosen yet, or if game is over
+            if (selectedPower === null || gameStatus === 'gameOver') {
+                gameStatus = 'powerSelect';
+                powerModal.classList.remove('hidden');
+                messageBox.textContent = "Choose a power-up to begin!";
+                powerButton.disabled = true;
+                currentPowerDisplay.textContent = "None";
+                cooldownTimerSpan.textContent = "Select";
+                powerNameFloating.textContent = "POWER"; 
+
+                // Reset button style
+                powerButton.classList.remove('cooldown-button', 'bg-yellow-600', 'hover:bg-yellow-700', 'bg-red-700', 'bg-green-500');
+                powerButton.classList.add('bg-gray-500');
+            } else {
+                 gameStatus = 'running';
+                 powerModal.classList.add('hidden');
+                 messageBox.textContent = `Power: ${selectedPower}. Use Q or the floating button strategically!`;
+                 
+                 // Set floating text
+                 powerNameFloating.textContent = selectedPower; 
+
+                 // Update power button state based on current cooldown
+                 if (Date.now() < powerCooldownEndTime) {
+                    powerButton.disabled = true;
+                    powerButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700', 'bg-green-500');
+                    powerButton.classList.add('cooldown-button', 'bg-red-700');
+                 } else {
+                    powerButton.disabled = false;
+                    powerButton.classList.remove('cooldown-button', 'bg-red-700', 'bg-green-500');
+                    powerButton.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+                    cooldownTimerSpan.textContent = "Ready";
+                 }
+            }
+        }
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault(); 
+                player.movingLeft = true;
+            }
+            if (e.key === 'ArrowRight') {
+                e.preventDefault(); 
+                player.movingRight = true;
+            }
+            if (e.key === 'ArrowUp' || e.key === ' ') {
+                e.preventDefault(); 
+                jump();
+            }
+            if (e.key.toUpperCase() === 'Q') {
+                e.preventDefault(); 
+                powerButton.click(); // Activate power with 'Q'
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') player.movingLeft = false;
+            if (e.key === 'ArrowRight') player.movingRight = false;
+            // Down arrow is ignored as it has no defined action in this simple Obby
+        });
+
+        // Touch/Button events (for mobile and mouse clicks)
+        const leftBtn = document.getElementById('leftButton');
+        const rightBtn = document.getElementById('rightButton');
+        const jumpBtn = document.getElementById('jumpButton');
+
+        jumpBtn.addEventListener('click', jump);
+        jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); }, { passive: false });
+
+        const startMove = (direction) => {
+            if (direction === 'left') player.movingLeft = true;
+            if (direction === 'right') player.movingRight = true;
+        };
+
+        const stopMove = (direction) => {
+            if (direction === 'left') player.movingLeft = false;
+            if (direction === 'right') player.movingRight = false;
+        };
+
+        leftBtn.addEventListener('mousedown', () => startMove('left'));
+        leftBtn.addEventListener('mouseup', () => stopMove('left'));
+        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startMove('left'); }, { passive: false });
+        leftBtn.addEventListener('touchend', () => stopMove('left'));
+        leftBtn.addEventListener('touchcancel', () => stopMove('left')); 
+
+        rightBtn.addEventListener('mousedown', () => startMove('right'));
+        rightBtn.addEventListener('mouseup', () => stopMove('right'));
+        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startMove('right'); }, { passive: false });
+        rightBtn.addEventListener('touchend', () => stopMove('right'));
+        rightBtn.addEventListener('touchcancel', () => stopMove('right'));
+
+        // Power Option Buttons Listener (Modal)
+        powerOptionsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('power-option-button')) {
+                selectPower(e.target.dataset.power);
+            }
+        });
+
+        // Power Activation Button Listener (Floating button)
+        powerButton.addEventListener('click', () => {
+             // Activate the power first
+            activatePower();
+            
+            // Super Speed and Flight are time-limited and must deactivate after duration
+            if (selectedPower === 'Flight' || selectedPower === 'SuperSpeed') {
+                setTimeout(deactivatePower, FLIGHT_DURATION);
+            }
+            // DoubleJump deactivates immediately inside activatePower() to start cooldown
+        });
+
+
+        // --- Main Game Loop ---
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            if (canvas && ctx) {
+                 // Start in the selection phase
+                 resetGame(); 
+                 gameLoop();
+            }
+        };
+
+    </script>
+</body>
+</html>
