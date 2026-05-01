@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher's Homework Tool</title>
+    <style>
+        :root { --whatsapp: #25D366; --dark-green: #075E54; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: var(--dark-green); text-align: center; margin-bottom: 20px; margin-top: 0; }
+        .input-group { margin-bottom: 15px; }
+        label { font-weight: 600; display: block; margin-bottom: 5px; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        .error-border { border: 2px solid #ff4d4d !important; }
+
+        .subject-block { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--whatsapp); position: relative; }
+        .subject-block input { margin-bottom: 8px; }
+        
+        .btn-remove { position: absolute; top: 8px; right: 8px; background: #ffebee; border: none; color: #ff4d4d; cursor: pointer; font-size: 18px; border-radius: 50%; width: 24px; height: 24px; line-height: 20px; text-align: center; font-weight: bold; }
+        
+        .btn { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; width: 100%; transition: 0.2s; outline: none; }
+        .btn-add { background: #e8f5e9; color: var(--dark-green); padding: 10px; margin-bottom: 20px; border: 1px dashed var(--dark-green); }
+        .btn-add:hover { background: #c8e6c9; }
+        .btn-generate { background: var(--whatsapp); color: white; padding: 15px; font-size: 16px; margin-top: 10px; }
+        .btn-generate:hover { background: #128C7E; }
+        
+        #output-section { margin-top: 25px; display: none; }
+        #preview { background: #e3f2fd; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-size: 15px; border: 1px solid #bbdefb; color: #333; line-height: 1.5; }
+        .btn-copy { background: #007bff; color: white; padding: 12px; margin-top: 10px; }
+        .btn-copy:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🏫 Homework Generator</h2>
+    
+    <div class="input-group">
+        <label>Select Class</label>
+        <select id="className">
+            <option value="">--Select Class--</option>
+            <option value="Class 1">Class 1</option>
+            <option value="Class 2">Class 2</option>
+            <option value="Class 3">Class 3</option>
+            <option value="Class 4">Class 4</option>
+            <option value="Class 5">Class 5</option>
+            <option value="Class 6">Class 6</option>
+            <option value="Class 7">Class 7</option>
+            <option value="Class 8">Class 8</option>
+            <option value="Class 9">Class 9</option>
+            <option value="Class 10">Class 10</option>
+            <option value="Class 11 (Sci)">Class 11 (Sci)</option>
+            <option value="Class 11 (Commerce)">Class 11 (Commerce)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>Date</label>
+        <input type="date" id="hwDate">
+    </div>
+
+    <div id="subjectList">
+        <label>Subjects & Tasks</label>
+        <div class="subject-block">
+            <input type="text" class="sub-name" placeholder="Subject (e.g. Science)">
+            <input type="text" class="sub-task" placeholder="Task (e.g. Written Q1 or Revise Ch 2)">
+        </div>
+    </div>
+
+    <button class="btn btn-add" onclick="addSubjectRow()">+ Add Another Subject</button>
+    <button class="btn btn-generate" onclick="buildMessage()">Generate WhatsApp Message</button>
+
+    <div id="output-section">
+        <label>Preview & Copy:</label>
+        <div id="preview"></div>
+        <button class="btn btn-copy" onclick="copyContent()">📋 Copy to Clipboard</button>
+    </div>
+</div>
+
+<script>
+    // Set current date on initial load
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('hwDate').value = `${yyyy}-${mm}-${dd}`;
+
+    const numEmojis = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
+
+    const educationQuotes = [
+        "Education is the most powerful weapon which you can use to change the world.",
+        "The mind is not a vessel to be filled, but a fire to be kindled.",
+        "An investment in knowledge pays the best interest.",
+        "The roots of education are bitter, but the fruit is sweet.",
+        "Education is not preparation for life; education is life itself.",
+        "The beautiful thing about learning is that no one can take it away from you.",
+        "Knowledge is power.",
+        "Live as if you were to die tomorrow. Learn as if you were to live forever.",
+        "Education is the passport to the future.",
+        "The purpose of education is to replace an empty mind with an open one.",
+        "Intelligence plus character - that is the goal of true education.",
+        "Teachers open the door, but you must enter by yourself.",
+        "Education's purpose is to turn mirrors into windows.",
+        "He who opens a school door, closes a prison.",
+        "Learning is a treasure that will follow its owner everywhere.",
+        "The aim of education is the knowledge, not of facts, but of values.",
+        "The goal of education is the advancement of knowledge and the dissemination of truth.",
+        "Every student can learn, just not on the same day, or the same way.",
+        "Change is the end result of all true learning.",
+        "The beautiful thing about learning is that no one can take it away from you.",
+        "Education is the movement from darkness to light.",
+        "The foundation of every state is the education of its youth.",
+        "Upon the education of the people of this country the fate of this country depends.",
+        "Wisdom is not a product of schooling but of the lifelong attempt to acquire it.",
+        "The only person who is educated is the one who has learned how to learn and change.",
+        "The function of education is to teach one to think intensively and to think critically.",
+        "Don't let schooling interfere with your education.",
+        "Learning is a continuous process. There is no end to it.",
+        "A person who won't read has no advantage over one who can't read.",
+        "Instruction ends in the schoolroom, but education ends only with life.",
+        "Education is what remains after one has forgotten what one has learned in school.",
+        "Real learning comes about when the competitive spirit has ceased.",
+        "The capacity to learn is a gift; the ability to learn is a skill; the willingness to learn is a choice.",
+        "One child, one teacher, one book, one pen can change the world.",
+        "Self-education is, I firmly believe, the only kind of education there is.",
+        "Education is the ability to listen to almost anything without losing your temper or your self-confidence.",
+        "The direction in which education starts a man will determine his future in life.",
+        "The secret of education lies in respecting the pupil.",
+        "To education, we owe the excellence of our minds.",
+        "Whatever the cost of our libraries, the price is cheap compared to that of an ignorant nation.",
+        "Cultivation to the mind is as necessary as food to the body.",
+        "Genius without education is like silver in the mine.",
+        "Formal education will make you a living; self-education will make you a fortune.",
+        "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+        "Develop a passion for learning. If you do, you will never cease to grow.",
+        "Education is the best friend. An educated person is respected everywhere.",
+        "The expert in anything was once a beginner.",
+        "Aim for success, not perfection.",
+        "Knowledge will bring you the opportunity to make a difference.",
+        "Always walk through life as if you have something new to learn and you will.",
+        "Be a student as long as you still have something to learn, and this will mean all your life.",
+        "The classroom remains the most radical space of possibility in the academy.",
+        "Education is the manifestation of perfection already in man.",
+        "Arise, awake, and stop not till the goal is reached.",
+        "Knowledge is the only treasure that increases when shared.",
+        "Take the attitude of a student, never be too big to ask questions.",
+        "Books are the quietest and most constant of friends.",
+        "Ninety percent of success is showing up.",
+        "Motivation is what gets you started. Habit is what keeps you going.",
+        "Study the past if you would divine the future.",
+        "Education is simply the soul of a society as it passes from one generation to another.",
+        "I have no special talent. I am only passionately curious.",
+        "The student who is afraid of asking is ashamed of learning.",
+        "Everything is a learning process: any time you fall over, it's just teaching you to stand up.",
+        "If you think education is expensive, try ignorance.",
+        "The high prize of life is to be born with a bias to some pursuit.",
+        "Education is the key to unlock the golden door of freedom.",
+        "The only source of knowledge is experience.",
+        "Learning is not attained by chance, it must be sought for with ardor.",
+        "There is no end to education.",
+        "The more you know, the more you realize you don't know.",
+        "Recipe for success: Study while others are sleeping.",
+        "Every artist was first an amateur.",
+        "Whatever you are, be a good one.",
+        "Learning is like rowing upstream; not to advance is to drop back.",
+        "Education is the discovery of our own ignorance.",
+        "Success is walking from failure to failure with no loss of enthusiasm.",
+        "Curiosity is the wick in the candle of learning.",
+        "Knowledge exists to be imparted.",
+        "Wisdom is learning what to overlook.",
+        "To learn is to live.",
+        "He who learns but does not think, is lost!",
+        "Learning is the only thing the mind never exhausts, never fears, and never regrets.",
+        "The library is the temple of learning.",
+        "The whole purpose of education is to turn mirrors into windows.",
+        "An educated man is one who can entertain a new idea.",
+        "I like a teacher who gives you something to take home to think about besides homework.",
+        "Education is a better safeguard of liberty than a standing army.",
+        "A child without education is like a bird without wings.",
+        "You are always a student, never a master. You have to keep moving forward.",
+        "The teacher is the one who gets the most out of any lessons.",
+        "The philosophy of the school room in one generation will be the philosophy of government in the next.",
+        "A well-educated mind will always have more questions than answers.",
+        "The illiterate of the 21st century will not be those who cannot read and write, but those who cannot learn.",
+        "Intelligence is the ability to adapt to change.",
+        "Your library is your paradise.",
+        "Procrastination is the thief of time.",
+        "Education is the transmission of civilization.",
+        "Knowledge is the eye of desire and can become the pilot of the soul.",
+        "All our dreams can come true, if we have the courage to pursue them."
+    ];
+
+    function addSubjectRow() {
+        const container = document.getElementById('subjectList');
+        const div = document.createElement('div');
+        div.className = 'subject-block';
+        div.innerHTML = `
+            <button class="btn-remove" title="Remove" onclick="this.parentElement.remove()">×</button>
+            <input type="text" class="sub-name" placeholder="Subject">
+            <input type="text" class="sub-task" placeholder="Enter homework details...">
+        `;
+        container.appendChild(div);
+    }
+
+    function formatDateDisplay(dateString) {
+        if (!dateString) return "";
+        const parts = dateString.split('-');
+        const year = parts[0];
+        const monthIndex = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+                          "July", "August", "September", "October", "November", "December"];
+        
+        return `${day} ${monthNames[monthIndex]} ${year}`;
+    }
+
+    function formatSubject(text) {
+        const cleanText = text.trim();
+        if (cleanText.toLowerCase() === 'evs') return 'EVS';
+        return cleanText.charAt(0).toUpperCase() + cleanText.slice(1).toLowerCase();
+    }
+
+    function buildMessage() {
+        const classDropdown = document.getElementById('className');
+        const className = classDropdown.value;
+        const dateInput = document.getElementById('hwDate').value;
+        const subNames = document.getElementsByClassName('sub-name');
+        const subTasks = document.getElementsByClassName('sub-task');
+        
+        if (className === "") {
+            alert("⚠️ Please select a Class before generating the message.");
+            classDropdown.classList.add('error-border');
+            classDropdown.focus();
+            return;
+        } else {
+            classDropdown.classList.remove('error-border');
+        }
+
+        const formattedDate = formatDateDisplay(dateInput);
+
+        let msg = `*Today's Homework*\n`;
+        msg += `*--------------------------*\n`;
+        msg += `*Class:* ${className}\n`;
+        msg += `📅 *Date:* ${formattedDate}\n`;
+        msg += `*--------------------------*\n\n`;
+
+        let taskCount = 0;
+        for (let i = 0; i < subNames.length; i++) {
+            let name = subNames[i].value.trim();
+            let task = subTasks[i].value.trim();
+            if (name !== "" && task !== "") {
+                const emoji = numEmojis[taskCount + 1] || "📖";
+                msg += `${emoji} *${formatSubject(name)}*: ${task}\n\n`;
+                taskCount++;
+            }
+        }
+
+        if (taskCount === 0) {
+            msg += `✨ No specific homework today. Enjoy your evening!\n\n`;
+        }
+
+        const dateObj = new Date(dateInput);
+        const start = new Date(dateObj.getFullYear(), 0, 0);
+        const diff = dateObj - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        const dayOfYear = Math.floor(diff / oneDay);
+        const dailyQuote = educationQuotes[dayOfYear % 100];
+
+        // Added daily quote directly without subheading or closing note
+        msg += `_"${dailyQuote}"_`;
+
+        document.getElementById('preview').innerText = msg;
+        document.getElementById('output-section').style.display = 'block';
+        
+        setTimeout(() => {
+            document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    }
+
+    function copyContent() {
+        const text = document.getElementById('preview').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Copied! Now open WhatsApp and paste it into your group.");
+        });
+    }
+</script>
+
+</body>
+</html>
