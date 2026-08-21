@@ -1,7 +1,10 @@
 // ============================================================
 // MORSE CODE CHALLENGE
-// Add new messages to the MESSAGES array at the bottom of this file.
-// Only the English text is required. Morse code is generated automatically.
+// ============================================================
+// IMPORTANT:
+// Messages are shuffled and used WITHOUT repetition.
+// When all messages have been used, the game reshuffles them
+// automatically and starts a new cycle.
 // ============================================================
 
 const MESSAGES = [
@@ -1016,12 +1019,13 @@ const screens = {
 const homeBtn = document.getElementById("homeBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 const subtitle = document.getElementById("subtitle");
-
 const modeLabel = document.getElementById("modeLabel");
 const messageNumber = document.getElementById("messageNumber");
 const morseDisplay = document.getElementById("morseDisplay");
 const answerBox = document.getElementById("answerBox");
 const answerText = document.getElementById("answerText");
+const answerMorse = document.getElementById("answerMorse");
+const answerMorseSection = document.getElementById("answerMorseSection");
 const answerBtn = document.getElementById("answerBtn");
 const nextBtn = document.getElementById("nextBtn");
 const playBtn = document.getElementById("playBtn");
@@ -1032,87 +1036,137 @@ const signalLight = document.getElementById("signalLight");
 const lightStatus = document.getElementById("lightStatus");
 const speedSelect = document.getElementById("speedSelect");
 const volumeSlider = document.getElementById("volumeSlider");
+const lightPanel = document.getElementById("lightPanel");
 
 let mode = "message";
 let currentIndex = 0;
 let answerShown = false;
 let isPlaying = false;
 let audioContext = null;
+let shuffleBag = [];
+
+// ------------------------------------------------------------
+// MORSE ENCODING
+// ------------------------------------------------------------
 
 function encodeMorse(text) {
   return text
     .toUpperCase()
-    .split(" ")
-    .map(word => [...word].map(char => MORSE[char] || "").filter(Boolean).join(" "))
+    .split(/\s+/)
+    .map(word =>
+      [...word]
+        .map(char => MORSE[char] || "")
+        .filter(Boolean)
+        .join(" ")
+    )
     .join(" / ");
 }
 
-function showScreen(name) {
-  Object.values(screens).forEach(s => s.classList.remove("active"));
-  screens[name].classList.add("active");
-  homeBtn.classList.toggle("hidden", name === "home");
-  subtitle.textContent =
-    name === "home" ? "Decode the message. Beat the signal." :
-    name === "help" ? "Quick Morse code reference." :
-    "Decode the message. Beat the signal.";
+// ------------------------------------------------------------
+// RANDOM NO-REPEAT MESSAGE SYSTEM
+// ------------------------------------------------------------
+
+function refillShuffleBag() {
+  shuffleBag = Array.from({ length: MESSAGES.length }, (_, i) => i);
+
+  // Fisher-Yates shuffle
+  for (let i = shuffleBag.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffleBag[i], shuffleBag[j]] = [shuffleBag[j], shuffleBag[i]];
+  }
 }
+
+function getNextMessageIndex() {
+  if (shuffleBag.length === 0) {
+    refillShuffleBag();
+  }
+
+  return shuffleBag.pop();
+}
+
+// ------------------------------------------------------------
+// SCREEN CONTROL
+// ------------------------------------------------------------
+
+function showScreen(name) {
+  Object.values(screens).forEach(screen => screen.classList.remove("active"));
+  screens[name].classList.add("active");
+
+  homeBtn.classList.toggle("hidden", name === "home");
+
+  subtitle.textContent =
+    name === "home"
+      ? "Decode the message. Beat the signal."
+      : name === "help"
+        ? "Quick Morse code reference."
+        : "Decode the message. Beat the signal.";
+}
+
+// ------------------------------------------------------------
+// START GAME
+// ------------------------------------------------------------
 
 function startGame(selectedMode) {
   mode = selectedMode;
-  currentIndex = randomIndex();
+  currentIndex = getNextMessageIndex();
   answerShown = false;
   renderGame();
   showScreen("game");
 }
 
-function randomIndex() {
-  if (MESSAGES.length <= 1) return 0;
-  let n;
-  do {
-    n = Math.floor(Math.random() * MESSAGES.length);
-  } while (n === currentIndex);
-  return n;
-}
-
 function renderGame() {
   stopSignal();
+
   const item = MESSAGES[currentIndex];
   const morse = encodeMorse(item.text);
 
   modeLabel.textContent =
-    mode === "message" ? "MESSAGE MODE" :
-    mode === "buzzer" ? "SIGNAL MODE • BUZZER" :
-    "SIGNAL MODE • LIGHT";
+    mode === "message"
+      ? "MESSAGE MODE"
+      : mode === "buzzer"
+        ? "SIGNAL MODE • BUZZER"
+        : "SIGNAL MODE • LIGHT";
 
-  messageNumber.textContent = `MESSAGE ${currentIndex + 1} OF ${MESSAGES.length}`;
+  messageNumber.textContent =
+    `MESSAGE ${currentIndex + 1} OF ${MESSAGES.length}`;
 
   morseDisplay.textContent = morse;
   answerText.textContent = item.text;
+  answerMorse.textContent = morse;
+
+  // In Signal Mode, the revealed answer contains BOTH the English
+  // message and its Morse code. In Message Mode, only the English
+  // answer is shown because the Morse is already visible above.
+  answerMorseSection.classList.toggle("hidden", mode === "message");
 
   answerBox.classList.add("hidden");
   answerBtn.textContent = "SHOW ANSWER";
   answerShown = false;
 
-  const isMessage = mode === "message";
-  messageArea.classList.toggle("hidden", !isMessage);
-  signalArea.classList.toggle("hidden", isMessage);
-  playBtn.classList.toggle("hidden", isMessage);
+  const isMessageMode = mode === "message";
+
+  messageArea.classList.toggle("hidden", !isMessageMode);
+  signalArea.classList.toggle("hidden", isMessageMode);
+  playBtn.classList.toggle("hidden", isMessageMode);
 
   if (mode === "buzzer") {
-    signalInstruction.textContent = "Press PLAY SIGNAL and decode what you hear.";
+    signalInstruction.textContent =
+      "Press PLAY SIGNAL and decode what you hear.";
+    lightPanel.style.display = "none";
     lightStatus.textContent = "BUZZER READY";
-    lightPanelVisible(false);
-  } else if (mode === "light") {
-    signalInstruction.textContent = "Press PLAY SIGNAL and decode the blinking light.";
+  }
+
+  if (mode === "light") {
+    signalInstruction.textContent =
+      "Press PLAY SIGNAL and decode the blinking light.";
+    lightPanel.style.display = "flex";
     lightStatus.textContent = "LIGHT READY";
-    lightPanelVisible(true);
   }
 }
 
-function lightPanelVisible(show) {
-  document.getElementById("lightPanel").style.display = show ? "flex" : "none";
-  document.querySelector(".controls").style.display = show ? "flex" : "flex";
-}
+// ------------------------------------------------------------
+// ANSWER
+// ------------------------------------------------------------
 
 function toggleAnswer() {
   answerShown = !answerShown;
@@ -1120,10 +1174,18 @@ function toggleAnswer() {
   answerBtn.textContent = answerShown ? "HIDE ANSWER" : "SHOW ANSWER";
 }
 
+// ------------------------------------------------------------
+// NEXT MESSAGE
+// ------------------------------------------------------------
+
 function nextMessage() {
-  currentIndex = randomIndex();
+  currentIndex = getNextMessageIndex();
   renderGame();
 }
+
+// ------------------------------------------------------------
+// TIMING
+// ------------------------------------------------------------
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -1133,14 +1195,20 @@ function getTiming() {
   return Number(speedSelect.value) * 1000;
 }
 
-function getMorseSequence(text) {
-  return encodeMorse(text);
-}
+// ------------------------------------------------------------
+// SIGNAL CONTROL
+// ------------------------------------------------------------
 
 function stopSignal() {
   isPlaying = false;
   signalLight.classList.remove("on");
-  lightStatus.textContent = mode === "light" ? "READY" : "BUZZER READY";
+  playBtn.textContent = "▶ PLAY SIGNAL";
+
+  if (mode === "light") {
+    lightStatus.textContent = "LIGHT READY";
+  } else if (mode === "buzzer") {
+    lightStatus.textContent = "BUZZER READY";
+  }
 }
 
 async function playSignal() {
@@ -1152,39 +1220,72 @@ async function playSignal() {
   isPlaying = true;
   playBtn.textContent = "■ STOP SIGNAL";
 
-  const sequence = getMorseSequence(MESSAGES[currentIndex].text);
+  const text = MESSAGES[currentIndex].text;
   const unit = getTiming();
 
   if (mode === "buzzer") {
-    await playBuzzer(sequence, unit);
+    await playBuzzer(text, unit);
   } else if (mode === "light") {
-    await playLight(sequence, unit);
+    await playLight(text, unit);
   }
 
   if (isPlaying) {
     isPlaying = false;
     playBtn.textContent = "▶ PLAY SIGNAL";
-    lightStatus.textContent = mode === "light" ? "SIGNAL COMPLETE" : "SIGNAL COMPLETE";
+    lightStatus.textContent = "SIGNAL COMPLETE";
   }
 }
 
-async function playBuzzer(sequence, unit) {
-  audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-  if (audioContext.state === "suspended") await audioContext.resume();
+// ------------------------------------------------------------
+// BUZZER MODE
+// ------------------------------------------------------------
 
-  for (const symbol of sequence) {
+async function playBuzzer(text, unit) {
+  audioContext =
+    audioContext ||
+    new (window.AudioContext || window.webkitAudioContext)();
+
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  const words = text.toUpperCase().trim().split(/\\s+/);
+
+  for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
     if (!isPlaying) break;
 
-    if (symbol === ".") {
-      beep(unit);
-      await sleep(unit);
-    } else if (symbol === "-") {
-      beep(unit * 3);
-      await sleep(unit * 3);
-    } else if (symbol === " ") {
-      await sleep(unit);
-    } else if (symbol === "/") {
-      await sleep(unit * 3);
+    const word = words[wordIndex];
+
+    for (let letterIndex = 0; letterIndex < word.length; letterIndex++) {
+      if (!isPlaying) break;
+
+      const code = MORSE[word[letterIndex]];
+      if (!code) continue;
+
+      for (let symbolIndex = 0; symbolIndex < code.length; symbolIndex++) {
+        if (!isPlaying) break;
+
+        const symbol = code[symbolIndex];
+        const duration = symbol === "." ? unit : unit * 3;
+
+        beep(duration);
+        await sleep(duration);
+
+        // 1 unit gap between dots/dashes within the same letter.
+        if (symbolIndex < code.length - 1) {
+          await sleep(unit);
+        }
+      }
+
+      // 3 unit gap between letters.
+      if (letterIndex < word.length - 1) {
+        await sleep(unit * 3);
+      }
+    }
+
+    // 7 unit gap between words.
+    if (wordIndex < words.length - 1) {
+      await sleep(unit * 7);
     }
   }
 }
@@ -1204,35 +1305,71 @@ function beep(duration) {
   oscillator.stop(audioContext.currentTime + duration / 1000);
 }
 
-async function playLight(sequence, unit) {
+// ------------------------------------------------------------
+// LIGHT MODE
+// ------------------------------------------------------------
+
+async function playLight(text, unit) {
   lightStatus.textContent = "SIGNAL PLAYING";
 
-  for (const symbol of sequence) {
+  const words = text.toUpperCase().trim().split(/\\s+/);
+
+  for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
     if (!isPlaying) break;
 
-    if (symbol === ".") {
-      flash(unit);
-      await sleep(unit);
-    } else if (symbol === "-") {
-      flash(unit * 3);
-      await sleep(unit * 3);
-    } else if (symbol === " ") {
-      await sleep(unit);
-    } else if (symbol === "/") {
-      await sleep(unit * 3);
+    const word = words[wordIndex];
+
+    for (let letterIndex = 0; letterIndex < word.length; letterIndex++) {
+      if (!isPlaying) break;
+
+      const code = MORSE[word[letterIndex]];
+      if (!code) continue;
+
+      for (let symbolIndex = 0; symbolIndex < code.length; symbolIndex++) {
+        if (!isPlaying) break;
+
+        const symbol = code[symbolIndex];
+        const duration = symbol === "." ? unit : unit * 3;
+
+        // The light stays ON for exactly the dot/dash duration.
+        await flash(duration);
+
+        // 1 unit OFF between dots/dashes in the same letter.
+        if (symbolIndex < code.length - 1) {
+          await sleep(unit);
+        }
+      }
+
+      // 3 unit OFF gap between letters.
+      if (letterIndex < word.length - 1) {
+        await sleep(unit * 3);
+      }
+    }
+
+    // 7 unit OFF gap between words.
+    if (wordIndex < words.length - 1) {
+      await sleep(unit * 7);
     }
   }
 
   signalLight.classList.remove("on");
 }
 
-function flash(duration) {
+async function flash(duration) {
+  if (!isPlaying) return;
+
   signalLight.classList.add("on");
-  setTimeout(() => signalLight.classList.remove("on"), duration);
+  await sleep(duration);
+  signalLight.classList.remove("on");
 }
+
+// ------------------------------------------------------------
+// MORSE REFERENCE
+// ------------------------------------------------------------
 
 function populateReference() {
   const container = document.getElementById("morseReference");
+
   Object.entries(MORSE).forEach(([letter, code]) => {
     const div = document.createElement("div");
     div.innerHTML = `<b>${letter}</b> ${code}`;
@@ -1240,10 +1377,26 @@ function populateReference() {
   });
 }
 
-document.getElementById("messageModeBtn").addEventListener("click", () => startGame("message"));
-document.getElementById("signalModeBtn").addEventListener("click", () => showScreen("signalMenu"));
-document.getElementById("buzzerModeBtn").addEventListener("click", () => startGame("buzzer"));
-document.getElementById("lightModeBtn").addEventListener("click", () => startGame("light"));
+// ------------------------------------------------------------
+// EVENTS
+// ------------------------------------------------------------
+
+document.getElementById("messageModeBtn").addEventListener("click", () => {
+  startGame("message");
+});
+
+document.getElementById("signalModeBtn").addEventListener("click", () => {
+  showScreen("signalMenu");
+});
+
+document.getElementById("buzzerModeBtn").addEventListener("click", () => {
+  startGame("buzzer");
+});
+
+document.getElementById("lightModeBtn").addEventListener("click", () => {
+  startGame("light");
+});
+
 answerBtn.addEventListener("click", toggleAnswer);
 nextBtn.addEventListener("click", nextMessage);
 playBtn.addEventListener("click", playSignal);
@@ -1260,7 +1413,7 @@ fullscreenBtn.addEventListener("click", async () => {
     } else {
       await document.exitFullscreen();
     }
-  } catch (e) {
+  } catch (error) {
     console.log("Fullscreen unavailable.");
   }
 });
@@ -1269,5 +1422,10 @@ document.getElementById("helpBtn").addEventListener("click", () => {
   showScreen("help");
 });
 
+// ------------------------------------------------------------
+// START
+// ------------------------------------------------------------
+
+refillShuffleBag();
 populateReference();
 showScreen("home");
