@@ -553,3 +553,11 @@ footer button {
     letter-spacing: 1px;
   }
 }
+
+.reference-toggle-row{display:flex;justify-content:center;margin-top:22px}
+.reference-btn{border:1px solid rgba(54,209,220,.45);background:rgba(54,209,220,.08);color:var(--accent);border-radius:11px;padding:10px 18px;font-weight:bold;cursor:pointer}
+.reference-btn:hover{background:rgba(54,209,220,.16)}
+.reference-panel{margin-top:16px;padding:12px;border-radius:16px;background:#050b13;border:1px solid var(--border)}
+.reference-panel-head{display:flex;justify-content:space-between;align-items:center;color:var(--accent);padding:4px 6px 12px;letter-spacing:1px}
+.close-reference{border:0;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer}
+.reference-panel img{display:block;width:100%;height:auto;border-radius:10px}
