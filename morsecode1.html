@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Morse Code Challenge</title>
-  <link rel="stylesheet" href="morsecodev1style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
@@ -130,6 +130,18 @@
           </div>
         </div>
 
+        <div class="reference-toggle-row">
+          <button id="referenceBtn" class="reference-btn">SHOW MORSE CODE</button>
+        </div>
+
+        <div id="referencePanel" class="reference-panel hidden">
+          <div class="reference-panel-head">
+            <strong>MORSE CODE REFERENCE</strong>
+            <button id="closeReferenceBtn" class="close-reference">✕</button>
+          </div>
+          <img src="morse_reference.svg" alt="Morse code reference chart for letters A to Z and numbers 0 to 9">
+        </div>
+
         <div class="button-row">
           <button id="playBtn" class="primary hidden">▶ PLAY SIGNAL</button>
           <button id="answerBtn" class="secondary">SHOW ANSWER</button>
@@ -153,6 +165,6 @@
     <button id="helpBtn">Morse Reference</button>
   </footer>
 
-  <script src="morsecodev1script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
