@@ -1,0 +1,555 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #06101e;
+  --panel: #101d31;
+  --panel2: #14253d;
+  --text: #f5f7fb;
+  --muted: #b5c2d3;
+  --accent: #25d6df;
+  --border: rgba(120, 170, 220, .28);
+  --shadow: 0 20px 60px rgba(0, 0, 0, .38);
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37,214,223,.09), transparent 32%),
+    radial-gradient(circle at 15% 85%, rgba(70,100,180,.10), transparent 35%),
+    var(--bg);
+  color: var(--text);
+}
+
+button, select, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  width: min(1200px, 94%);
+  min-height: calc(100vh - 58px);
+  margin: 0 auto;
+  padding: 22px 0 40px;
+}
+
+/* ============================================================
+   HEADER — deliberately separated from the menu card.
+   The previous version used a 3-column grid which caused the
+   title/tagline to become trapped in a narrow middle column.
+   ============================================================ */
+
+.topbar {
+  position: relative;
+  width: 100%;
+  min-height: 250px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  text-align: center;
+}
+
+.brand {
+  width: 100%;
+  max-width: 1100px;
+  padding: 0 70px;
+  text-align: center;
+}
+
+.brand h1 {
+  margin: 0;
+  padding: 0;
+  line-height: .95;
+  letter-spacing: 3px;
+  font-size: clamp(3rem, 7vw, 6.4rem);
+  font-weight: 900;
+  text-align: center;
+}
+
+.title-main,
+.title-accent {
+  display: block;
+  white-space: nowrap;
+}
+
+.title-main {
+  color: var(--text);
+}
+
+.title-accent {
+  color: var(--accent);
+  margin-top: 8px;
+}
+
+.top-morse {
+  margin: 4px 0 14px;
+  color: var(--accent);
+  font-family: "Courier New", monospace;
+  font-size: clamp(.9rem, 2vw, 1.3rem);
+  letter-spacing: 7px;
+}
+
+.title-divider {
+  width: 150px;
+  height: 2px;
+  margin: 22px auto 12px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  position: relative;
+}
+
+.title-divider span {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px rgba(37,214,223,.8);
+}
+
+.topbar p {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  line-height: 1.4;
+}
+
+.icon-btn {
+  position: absolute;
+  top: 2px;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  border-radius: 12px;
+  font-size: 1.45rem;
+  z-index: 2;
+}
+
+#homeBtn {
+  left: 0;
+}
+
+#fullscreenBtn {
+  right: 0;
+}
+
+.icon-btn:hover {
+  background: rgba(255,255,255,.11);
+  border-color: var(--accent);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.hero-card,
+.game-card {
+  background: rgba(16, 29, 49, .94);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: clamp(25px, 4vw, 48px);
+  text-align: center;
+}
+
+.hero-card.compact {
+  max-width: 950px;
+  margin: auto;
+}
+
+.hero-card h2 {
+  margin: 0;
+  font-size: clamp(1.7rem, 4vw, 2.7rem);
+  letter-spacing: 1px;
+}
+
+.hero-card > p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+/* ============================================================
+   HOME OPTIONS
+   ============================================================ */
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  max-width: 1000px;
+  margin: 34px auto 0;
+}
+
+.choice-card {
+  min-height: 320px;
+  border: 1px solid var(--border);
+  background: linear-gradient(145deg, #142741, #0d192c);
+  color: var(--text);
+  border-radius: 20px;
+  padding: 30px;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.choice-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 35px rgba(37,214,223,.14);
+}
+
+.choice-icon {
+  display: block;
+  font-size: 4rem;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.choice-card strong {
+  display: block;
+  font-size: 1.35rem;
+  letter-spacing: 1px;
+}
+
+.card-divider {
+  width: 70px;
+  height: 2px;
+  background: var(--accent);
+  margin: 14px auto;
+  position: relative;
+}
+
+.card-divider::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.choice-card small {
+  display: block;
+  color: var(--muted);
+  max-width: 310px;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.start-label {
+  display: inline-block;
+  margin-top: 22px;
+  padding: 11px 30px;
+  min-width: 150px;
+  border-radius: 30px;
+  background: var(--accent);
+  color: #06101e;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+/* ============================================================
+   GAME SCREEN
+   ============================================================ */
+
+.game-card {
+  max-width: 1050px;
+  margin: auto;
+}
+
+.game-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+
+.mode-label {
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.message-number {
+  color: var(--muted);
+  font-size: .9rem;
+  margin-top: 5px;
+}
+
+.instruction {
+  margin: 32px 0 15px !important;
+  color: var(--muted);
+}
+
+.morse-display {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  border-radius: 18px;
+  background: #050d18;
+  border: 1px solid var(--border);
+  color: #fff;
+  font-family: "Courier New", monospace;
+  font-size: clamp(1.2rem, 3.5vw, 2.1rem);
+  font-weight: bold;
+  line-height: 1.8;
+  letter-spacing: 3px;
+  overflow-wrap: anywhere;
+}
+
+.signal-area {
+  margin-top: 20px;
+}
+
+.light-panel {
+  min-height: 240px;
+  background: #050b13;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.signal-light {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #182438;
+  box-shadow: 0 0 0 rgba(255,255,255,0);
+}
+
+.signal-light.on {
+  background: #fff;
+  box-shadow: 0 0 55px 22px rgba(255,255,255,.82);
+}
+
+#lightStatus {
+  color: var(--muted);
+  font-family: monospace;
+  letter-spacing: 2px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25px;
+  margin: 18px 0 0;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+select {
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.volume-control input {
+  accent-color: var(--accent);
+}
+
+.answer-box {
+  margin: 25px 0 0;
+  padding: 22px;
+  border-radius: 16px;
+  background: rgba(37,214,223,.08);
+  border: 1px solid rgba(37,214,223,.35);
+}
+
+.answer-section + .answer-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.answer-box span {
+  display: block;
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.answer-box strong {
+  display: block;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+}
+
+.answer-morse {
+  font-family: "Courier New", monospace;
+  font-size: clamp(1.1rem, 3vw, 1.7rem) !important;
+  line-height: 1.7;
+  letter-spacing: 2px;
+  overflow-wrap: anywhere;
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.primary,
+.secondary {
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: bold;
+}
+
+.primary {
+  background: var(--accent);
+  color: #06101e;
+}
+
+.secondary {
+  background: #e8edf5;
+  color: #101827;
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+/* ============================================================
+   REFERENCE
+   ============================================================ */
+
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.reference-grid div {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.05);
+  font-family: monospace;
+}
+
+.reference-grid b {
+  font-family: Arial, sans-serif;
+  margin-right: 10px;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+footer {
+  min-height: 58px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  color: var(--muted);
+  padding: 10px;
+}
+
+footer button {
+  background: none;
+  color: var(--accent);
+  border: 0;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 700px) {
+  .app {
+    width: 94%;
+    padding-top: 15px;
+  }
+
+  .topbar {
+    min-height: 190px;
+  }
+
+  .brand {
+    padding: 0 42px;
+  }
+
+  .brand h1 {
+    font-size: clamp(2.4rem, 11vw, 4rem);
+    letter-spacing: 2px;
+  }
+
+  .top-morse {
+    letter-spacing: 3px;
+    font-size: .75rem;
+  }
+
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-card {
+    min-height: 260px;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .morse-display {
+    letter-spacing: 1px;
+  }
+}
