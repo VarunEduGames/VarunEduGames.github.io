@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morse Code Challenge</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+
+    <!-- HEADER -->
+    <header class="topbar">
+      <button id="homeBtn" class="icon-btn hidden" aria-label="Home" title="Home">⌂</button>
+
+      <div class="brand">
+        <div class="morse-decoration top-morse">-- --- .-. ... .</div>
+        <h1>
+          <span class="title-main">MORSE CODE</span>
+          <span class="title-accent">CHALLENGE</span>
+        </h1>
+        <div class="title-divider"><span></span></div>
+        <p id="subtitle">Decode the message. Beat the signal.</p>
+      </div>
+
+      <button id="fullscreenBtn" class="icon-btn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+    </header>
+
+    <!-- HOME -->
+    <section id="homeScreen" class="screen active">
+      <div class="hero-card">
+        <h2>CHOOSE YOUR CHALLENGE</h2>
+        <p>Can you crack the code before the answer is revealed?</p>
+
+        <div class="choice-grid">
+          <button class="choice-card" id="messageModeBtn">
+            <span class="choice-icon">💻</span>
+            <strong>MESSAGE MODE</strong>
+            <span class="card-divider"></span>
+            <small>Read the Morse code message displayed on the screen.</small>
+            <span class="start-label">START&nbsp; →</span>
+          </button>
+
+          <button class="choice-card" id="signalModeBtn">
+            <span class="choice-icon">⚡</span>
+            <strong>SIGNAL MODE</strong>
+            <span class="card-divider"></span>
+            <small>Decode the message using light or sound signals.</small>
+            <span class="start-label">START&nbsp; →</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIGNAL MENU -->
+    <section id="signalMenu" class="screen">
+      <div class="hero-card compact">
+        <h2>CHOOSE SIGNAL MODE</h2>
+        <p>How would you like to receive the Morse signal?</p>
+
+        <div class="choice-grid">
+          <button class="choice-card" id="buzzerModeBtn">
+            <span class="choice-icon">🔊</span>
+            <strong>BUZZER MODE</strong>
+            <span class="card-divider"></span>
+            <small>Listen to dots and dashes.</small>
+            <span class="start-label">START&nbsp; →</span>
+          </button>
+
+          <button class="choice-card" id="lightModeBtn">
+            <span class="choice-icon">💡</span>
+            <strong>LIGHT MODE</strong>
+            <span class="card-divider"></span>
+            <small>Watch the blinking signal.</small>
+            <span class="start-label">START&nbsp; →</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="gameScreen" class="screen">
+      <div class="game-card">
+        <div class="game-head">
+          <div>
+            <div id="modeLabel" class="mode-label">MESSAGE MODE</div>
+            <div id="messageNumber" class="message-number">MESSAGE 1</div>
+          </div>
+        </div>
+
+        <div id="messageArea">
+          <p class="instruction">Decode this Morse message:</p>
+          <div id="morseDisplay" class="morse-display"></div>
+        </div>
+
+        <div id="signalArea" class="signal-area hidden">
+          <p class="instruction" id="signalInstruction">Press PLAY SIGNAL and decode what you hear.</p>
+
+          <div id="lightPanel" class="light-panel">
+            <div id="signalLight" class="signal-light"></div>
+            <div id="lightStatus">READY</div>
+          </div>
+
+          <div class="controls">
+            <label>
+              Speed
+              <select id="speedSelect">
+                <option value="0.65">Slow</option>
+                <option value="0.45" selected>Normal</option>
+                <option value="0.28">Fast</option>
+              </select>
+            </label>
+
+            <label class="volume-control">
+              Volume
+              <input id="volumeSlider" type="range" min="0" max="1" step="0.05" value="0.6">
+            </label>
+          </div>
+        </div>
+
+        <div id="answerBox" class="answer-box hidden">
+          <div class="answer-section">
+            <span>ANSWER IN ENGLISH</span>
+            <strong id="answerText"></strong>
+          </div>
+
+          <div id="answerMorseSection" class="answer-section answer-morse-section hidden">
+            <span>MORSE CODE</span>
+            <strong id="answerMorse" class="answer-morse"></strong>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="playBtn" class="primary hidden">▶ PLAY SIGNAL</button>
+          <button id="answerBtn" class="secondary">SHOW ANSWER</button>
+          <button id="nextBtn" class="primary">NEXT MESSAGE →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HELP -->
+    <section id="helpScreen" class="screen">
+      <div class="hero-card compact">
+        <h2>MORSE CODE REFERENCE</h2>
+        <div id="morseReference" class="reference-grid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <span>Morse Code Challenge</span>
+    <button id="helpBtn">Morse Reference</button>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
