@@ -996,7 +996,18 @@ const MESSAGES = [
   { text: "CHECK EACH WORD" },
   { text: "CHECK EACH CLUE" },
   { text: "TRY A NEW IDEA" },
-  { text: "TRY A NEW STRATEGY" }
+  { text: "TRY A NEW STRATEGY" },
+  { text: "CLUE NUMBER 1" },
+  { text: "CLUE NUMBER 2" },
+  { text: "CLUE NUMBER 3" },
+  { text: "CLUE NUMBER 4" },
+  { text: "CLUE NUMBER 5" },
+  { text: "CLUE NUMBER 6" },
+  { text: "CLUE NUMBER 7" },
+  { text: "CLUE NUMBER 8" },
+  { text: "CLUE NUMBER 9" },
+  { text: "CLUE NUMBER 10" },
+  { text: "CLUE NUMBER 11" }
 ];
 
 const MORSE = {
@@ -1036,6 +1047,17 @@ const signalLight = document.getElementById("signalLight");
 const lightStatus = document.getElementById("lightStatus");
 const speedSelect = document.getElementById("speedSelect");
 const volumeSlider = document.getElementById("volumeSlider");
+const referenceBtn = document.getElementById("referenceBtn");
+const referencePanel = document.getElementById("referencePanel");
+const closeReferenceBtn = document.getElementById("closeReferenceBtn");
+
+function toggleReference(show) {
+  referencePanel.classList.toggle("hidden", !show);
+  referenceBtn.textContent = show ? "HIDE MORSE CODE" : "SHOW MORSE CODE";
+}
+referenceBtn.addEventListener("click", () => toggleReference(referencePanel.classList.contains("hidden")));
+closeReferenceBtn.addEventListener("click", () => toggleReference(false));
+
 const lightPanel = document.getElementById("lightPanel");
 
 let mode = "message";
@@ -1116,6 +1138,7 @@ function startGame(selectedMode) {
 
 function renderGame() {
   stopSignal();
+  toggleReference(false);
 
   const item = MESSAGES[currentIndex];
   const morse = encodeMorse(item.text);
