@@ -1,0 +1,392 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(
+        135deg,
+        #1a1a2e,
+        #16213e,
+        #0f3460
+    );
+    min-height: 100vh;
+    color: white;
+}
+
+
+/* -------------------------
+   GENERAL SCREEN
+------------------------- */
+
+.screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* -------------------------
+   START SCREEN
+------------------------- */
+
+.game-card {
+    width: 100%;
+    max-width: 850px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(12px);
+    border-radius: 30px;
+    padding: 50px 35px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.emoji {
+    font-size: 65px;
+    margin-bottom: 15px;
+}
+
+.game-card h1 {
+    font-size: clamp(42px, 7vw, 78px);
+    line-height: 0.95;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.tagline {
+    font-size: 24px;
+    margin-top: 18px;
+    margin-bottom: 50px;
+    opacity: 0.85;
+}
+
+.game-card h2 {
+    font-size: 25px;
+    margin-bottom: 25px;
+    letter-spacing: 2px;
+}
+
+
+/* -------------------------
+   TIME BUTTONS
+------------------------- */
+
+.time-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.time-btn {
+    border: none;
+    border-radius: 22px;
+    min-width: 190px;
+    min-height: 150px;
+    padding: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.15s ease,
+                box-shadow 0.15s ease;
+}
+
+.time-btn span {
+    display: block;
+    font-size: 60px;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.time-btn:hover {
+    transform: translateY(-7px) scale(1.03);
+}
+
+.time-btn:active {
+    transform: scale(0.96);
+}
+
+.ten {
+    background: #00a86b;
+}
+
+.fifteen {
+    background: #e5a000;
+}
+
+.twenty {
+    background: #d62828;
+}
+
+
+/* -------------------------
+   GAME SCREEN
+------------------------- */
+
+.game-container {
+    width: 100%;
+    max-width: 1200px;
+    text-align: center;
+}
+
+.top-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.game-title {
+    font-size: clamp(20px, 3vw, 32px);
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.home-btn {
+    border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.home-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+
+/* -------------------------
+   TIMER
+------------------------- */
+
+.timer-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 25px;
+}
+
+.timer {
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    background: white;
+    color: #16213e;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 105px;
+    font-weight: 900;
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,0.35);
+
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease;
+}
+
+.timer.warning {
+    transform: scale(1.05);
+}
+
+.timer.danger {
+    transform: scale(1.1);
+    background: #ffdddd;
+}
+
+
+/* -------------------------
+   QUESTION CARD
+------------------------- */
+
+.question-card {
+    background: white;
+    color: #172033;
+
+    border-radius: 25px;
+
+    min-height: 250px;
+
+    padding: 35px 40px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow:
+        0 15px 45px rgba(0,0,0,0.3);
+}
+
+.question-label {
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    opacity: 0.55;
+    margin-bottom: 25px;
+}
+
+.question {
+    font-size: clamp(30px, 5vw, 58px);
+    line-height: 1.15;
+    font-weight: 900;
+    max-width: 1000px;
+}
+
+
+/* -------------------------
+   TIME UP
+------------------------- */
+
+.time-up {
+    margin-top: 25px;
+
+    background: #d62828;
+
+    display: inline-block;
+
+    padding: 14px 30px;
+
+    border-radius: 15px;
+
+    font-size: 28px;
+    font-weight: 900;
+
+    animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+
+    0% {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+}
+
+
+/* -------------------------
+   NEXT BUTTON
+------------------------- */
+
+.next-btn {
+    margin-top: 25px;
+
+    border: none;
+
+    background: white;
+    color: #16213e;
+
+    padding: 18px 40px;
+
+    border-radius: 15px;
+
+    font-size: 21px;
+    font-weight: 900;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.next-btn:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,0.25);
+}
+
+.next-btn:active {
+    transform: scale(0.96);
+}
+
+
+/* -------------------------
+   ERROR SCREEN
+------------------------- */
+
+.retry-btn {
+    margin-top: 25px;
+
+    padding: 15px 30px;
+
+    border: none;
+    border-radius: 12px;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+
+/* -------------------------
+   MOBILE
+------------------------- */
+
+@media (max-width: 700px) {
+
+    .game-card {
+        padding: 35px 20px;
+    }
+
+    .tagline {
+        font-size: 19px;
+        margin-bottom: 35px;
+    }
+
+    .time-btn {
+        min-width: 140px;
+        min-height: 125px;
+    }
+
+    .time-btn span {
+        font-size: 48px;
+    }
+
+    .timer {
+        width: 145px;
+        height: 145px;
+        font-size: 80px;
+    }
+
+    .question-card {
+        min-height: 220px;
+        padding: 30px 20px;
+    }
+
+    .question {
+        font-size: 32px;
+    }
+
+    .top-bar {
+        align-items: flex-start;
+    }
+
+    .game-title {
+        text-align: left;
+    }
+
+}
