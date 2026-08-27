@@ -1,505 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>10-Second Challenge</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10-Second Challenge</title>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-    <!-- START SCREEN -->
-    <div id="startScreen" class="screen">
-
-        <div class="game-card">
-
-            <div class="emoji">⚡</div>
-
-            <h1>10-SECOND<br>CHALLENGE</h1>
-
-            <p class="tagline">Think Fast. Answer Faster!</p>
-
-            <h2>SELECT YOUR TIME</h2>
-
-            <div class="time-buttons">
-                <button class="time-btn ten" data-time="10">
-                    <span>10</span>
-                    SECONDS
-                </button>
-
-                <button class="time-btn fifteen" data-time="15">
-                    <span>15</span>
-                    SECONDS
-                </button>
-
-                <button class="time-btn twenty" data-time="20">
-                    <span>20</span>
-                    SECONDS
-                </button>
-            </div>
-
-        </div>
-
+<div id="startScreen" class="screen">
+  <main class="card start-card">
+    <div class="bolt">⚡</div>
+    <h1>10-SECOND<br>CHALLENGE</h1>
+    <p class="tagline">Think Fast. Answer Faster!</p>
+    <h2>CHOOSE YOUR LEVEL</h2>
+    <div class="level-buttons">
+      <button class="level-btn beginner" data-level="beginner">
+        <span>🌱</span><strong>BEGINNER</strong><small>Primary Level</small>
+      </button>
+      <button class="level-btn intermediate" data-level="intermediate">
+        <span>🚀</span><strong>INTERMEDIATE</strong><small>Upper Primary</small>
+      </button>
     </div>
+  </main>
+</div>
 
-
-    <!-- GAME SCREEN -->
-    <div id="gameScreen" class="screen hidden">
-
-        <div class="game-container">
-
-            <div class="top-bar">
-                <div class="game-title">
-                    ⚡ 10-SECOND CHALLENGE
-                </div>
-
-                <button id="homeButton" class="home-btn">
-                    ⌂ HOME
-                </button>
-            </div>
-
-
-            <div class="timer-container">
-
-                <div id="timer" class="timer">
-                    10
-                </div>
-
-            </div>
-
-
-            <div class="question-card">
-
-                <div class="question-label">
-                    YOUR CHALLENGE
-                </div>
-
-                <div id="question" class="question">
-                    Get ready!
-                </div>
-
-            </div>
-
-
-            <div id="timeUp" class="time-up hidden">
-                ⏰ TIME'S UP!
-            </div>
-
-
-            <button id="nextButton" class="next-btn">
-                NEXT CHALLENGE →
-            </button>
-
-        </div>
-
+<div id="timeScreen" class="screen hidden">
+  <main class="card start-card">
+    <div class="bolt">⏱️</div>
+    <h1>CHOOSE<br>YOUR TIME</h1>
+    <p id="levelLabel" class="tagline">Beginner</p>
+    <div class="time-buttons">
+      <button class="time-btn ten" data-time="10"><span>10</span>SECONDS</button>
+      <button class="time-btn fifteen" data-time="15"><span>15</span>SECONDS</button>
+      <button class="time-btn twenty" data-time="20"><span>20</span>SECONDS</button>
     </div>
-
-
-    <!-- ERROR MESSAGE -->
-    <div id="errorScreen" class="screen hidden">
-
-        <div class="game-card">
-
-            <div class="emoji">⚠️</div>
-
-            <h1>QUESTIONS NOT FOUND</h1>
-
-            <p>
-                Please make sure the file
-                <strong>10secchallenge.tsv</strong>
-                is in the same folder as this game.
-            </p>
-
-            <button onclick="location.reload()" class="retry-btn">
-                TRY AGAIN
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <script>
-
-        let challenges = [];
-        let selectedTime = 10;
-        let timeRemaining = 10;
-        let timerInterval = null;
-        let currentQuestion = "";
-        let availableQuestions = [];
-
-
-        const startScreen = document.getElementById("startScreen");
-        const gameScreen = document.getElementById("gameScreen");
-        const errorScreen = document.getElementById("errorScreen");
-
-        const timerElement = document.getElementById("timer");
-        const questionElement = document.getElementById("question");
-        const timeUpElement = document.getElementById("timeUp");
-
-        const nextButton = document.getElementById("nextButton");
-        const homeButton = document.getElementById("homeButton");
-
-
-        /*
-         * LOAD QUESTIONS FROM TSV
-         */
-
-        async function loadQuestions() {
-
-            try {
-
-                const response = await fetch("10secchallenge.tsv");
-
-                if (!response.ok) {
-                    throw new Error("TSV file could not be loaded.");
-                }
-
-                const text = await response.text();
-
-                parseTSV(text);
-
-            } catch (error) {
-
-                console.error(error);
-
-                startScreen.classList.add("hidden");
-                errorScreen.classList.remove("hidden");
-
-            }
-
-        }
-
-
-        /*
-         * READ TSV
-         *
-         * Expected format:
-         *
-         * Question
-         * Name 3 animals.
-         * Name 3 fruits.
-         * ...
-         */
-
-        function parseTSV(text) {
-
-            const lines = text
-                .split(/\r?\n/)
-                .map(line => line.trim())
-                .filter(line => line !== "");
-
-            challenges = [];
-
-            lines.forEach((line, index) => {
-
-                /*
-                 * Skip a header called "Question"
-                 */
-                if (
-                    index === 0 &&
-                    line.toLowerCase() === "question"
-                ) {
-                    return;
-                }
-
-                /*
-                 * TSV allows tabs.
-                 *
-                 * We take the first column as the question.
-                 */
-                const columns = line.split("\t");
-
-                const question = columns[0].trim();
-
-                if (question !== "") {
-                    challenges.push(question);
-                }
-
-            });
-
-
-            if (challenges.length === 0) {
-
-                startScreen.classList.add("hidden");
-                errorScreen.classList.remove("hidden");
-
-                return;
-
-            }
-
-            /*
-             * Create a separate shuffled question pool.
-             */
-            resetQuestionPool();
-
-            console.log(
-                challenges.length +
-                " questions loaded."
-            );
-
-        }
-
-
-        /*
-         * SHUFFLE QUESTIONS
-         *
-         * Fisher-Yates shuffle
-         */
-
-        function shuffle(array) {
-
-            const shuffled = [...array];
-
-            for (
-                let i = shuffled.length - 1;
-                i > 0;
-                i--
-            ) {
-
-                const j = Math.floor(
-                    Math.random() * (i + 1)
-                );
-
-                [
-                    shuffled[i],
-                    shuffled[j]
-                ] = [
-                    shuffled[j],
-                    shuffled[i]
-                ];
-
-            }
-
-            return shuffled;
-
-        }
-
-
-        /*
-         * CREATE NEW RANDOM QUESTION POOL
-         */
-
-        function resetQuestionPool() {
-
-            availableQuestions = shuffle(challenges);
-
-        }
-
-
-        /*
-         * GET NEXT QUESTION
-         *
-         * Questions are removed from the pool,
-         * so they won't repeat until the entire
-         * question bank has been used.
-         */
-
-        function getNextQuestion() {
-
-            if (availableQuestions.length === 0) {
-                resetQuestionPool();
-            }
-
-            return availableQuestions.pop();
-
-        }
-
-
-        /*
-         * TIME BUTTONS
-         */
-
-        document.querySelectorAll(".time-btn").forEach(button => {
-
-            button.addEventListener("click", function () {
-
-                selectedTime = parseInt(
-                    this.dataset.time
-                );
-
-                startGame();
-
-            });
-
-        });
-
-
-        /*
-         * START GAME
-         */
-
-        function startGame() {
-
-            startScreen.classList.add("hidden");
-            errorScreen.classList.add("hidden");
-
-            gameScreen.classList.remove("hidden");
-
-            loadNextChallenge();
-
-        }
-
-
-        /*
-         * LOAD NEXT CHALLENGE
-         */
-
-        function loadNextChallenge() {
-
-            stopTimer();
-
-            currentQuestion = getNextQuestion();
-
-            questionElement.textContent =
-                currentQuestion;
-
-            timeUpElement.classList.add("hidden");
-
-            nextButton.disabled = false;
-
-            timeRemaining = selectedTime;
-
-            updateTimerDisplay();
-
-            /*
-             * Small delay makes the question appear
-             * before the countdown begins.
-             */
-
-            setTimeout(() => {
-
-                startTimer();
-
-            }, 400);
-
-        }
-
-
-        /*
-         * START COUNTDOWN
-         */
-
-        function startTimer() {
-
-            stopTimer();
-
-            timerElement.classList.remove("warning");
-            timerElement.classList.remove("danger");
-
-            timerInterval = setInterval(() => {
-
-                timeRemaining--;
-
-                updateTimerDisplay();
-
-                if (timeRemaining <= 3) {
-
-                    timerElement.classList.add("danger");
-
-                } else if (timeRemaining <= 5) {
-
-                    timerElement.classList.add("warning");
-
-                }
-
-                if (timeRemaining <= 0) {
-
-                    timeIsUp();
-
-                }
-
-            }, 1000);
-
-        }
-
-
-        /*
-         * UPDATE TIMER
-         */
-
-        function updateTimerDisplay() {
-
-            timerElement.textContent =
-                timeRemaining;
-
-        }
-
-
-        /*
-         * TIME UP
-         */
-
-        function timeIsUp() {
-
-            stopTimer();
-
-            timerElement.textContent = "0";
-
-            timeUpElement.classList.remove("hidden");
-
-            /*
-             * Prevent accidental double clicks.
-             */
-
-            nextButton.disabled = false;
-
-        }
-
-
-        /*
-         * STOP TIMER
-         */
-
-        function stopTimer() {
-
-            if (timerInterval !== null) {
-
-                clearInterval(timerInterval);
-
-                timerInterval = null;
-
-            }
-
-        }
-
-
-        /*
-         * NEXT BUTTON
-         */
-
-        nextButton.addEventListener(
-            "click",
-            loadNextChallenge
-        );
-
-
-        /*
-         * HOME BUTTON
-         */
-
-        homeButton.addEventListener(
-            "click",
-            function () {
-
-                stopTimer();
-
-                gameScreen.classList.add("hidden");
-
-                startScreen.classList.remove("hidden");
-
-            }
-        );
-
-
-        /*
-         * LOAD QUESTIONS WHEN PAGE OPENS
-         */
-
-        loadQuestions();
-
-    </script>
-
+    <button id="backToLevels" class="secondary-btn">← BACK</button>
+  </main>
+</div>
+
+<div id="gameScreen" class="screen hidden">
+  <main class="game-container">
+    <header class="top-bar">
+      <div class="game-title">⚡ 10-SECOND CHALLENGE</div>
+      <div class="level-pill" id="gameLevel">BEGINNER</div>
+      <button id="homeButton" class="home-btn">⌂ HOME</button>
+    </header>
+    <section class="timer-container">
+      <div id="timer" class="timer">10</div>
+    </section>
+    <section class="question-card">
+      <div class="question-label">YOUR CHALLENGE</div>
+      <div id="question" class="question">Get ready!</div>
+    </section>
+    <div id="timeUp" class="time-up hidden">⏰ TIME'S UP!</div>
+    <button id="nextButton" class="next-btn">NEXT CHALLENGE →</button>
+  </main>
+</div>
+
+<div id="errorScreen" class="screen hidden">
+  <main class="card start-card">
+    <div class="bolt">⚠️</div>
+    <h1>QUESTIONS NOT FOUND</h1>
+    <p>Please make sure <strong>beginner.tsv</strong> and <strong>intermediate.tsv</strong> are in the same folder as the game.</p>
+    <button onclick="location.reload()" class="secondary-btn">TRY AGAIN</button>
+  </main>
+</div>
+
+<script>
+let questions = { beginner: [], intermediate: [] };
+let pools = { beginner: [], intermediate: [] };
+let selectedLevel = "beginner";
+let selectedTime = 10;
+let timeRemaining = 10;
+let timerInterval = null;
+
+const $ = id => document.getElementById(id);
+const startScreen = $("startScreen");
+const timeScreen = $("timeScreen");
+const gameScreen = $("gameScreen");
+const errorScreen = $("errorScreen");
+const timerEl = $("timer");
+const questionEl = $("question");
+const timeUpEl = $("timeUp");
+const nextBtn = $("nextButton");
+
+async function loadTSV(file) {
+  const response = await fetch(file);
+  if (!response.ok) throw new Error(file + " could not be loaded");
+  const text = await response.text();
+  return text.split(/\r?\n/)
+    .map(x => x.trim())
+    .filter(Boolean)
+    .filter((x, i) => !(i === 0 && x.toLowerCase() === "question"))
+    .map(x => x.split("\t")[0].trim())
+    .filter(Boolean);
+}
+
+async function loadQuestions() {
+  try {
+    questions.beginner = await loadTSV("beginner.tsv");
+    questions.intermediate = await loadTSV("intermediate.tsv");
+    pools.beginner = shuffle(questions.beginner);
+    pools.intermediate = shuffle(questions.intermediate);
+    if (questions.beginner.length < 500 || questions.intermediate.length < 500) {
+      console.warn("Question banks contain fewer than 500 questions.");
+    }
+  } catch (e) {
+    console.error(e);
+    startScreen.classList.add("hidden");
+    timeScreen.classList.add("hidden");
+    errorScreen.classList.remove("hidden");
+  }
+}
+
+function shuffle(array) {
+  const a = [...array];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function nextQuestion() {
+  if (pools[selectedLevel].length === 0) {
+    pools[selectedLevel] = shuffle(questions[selectedLevel]);
+  }
+  return pools[selectedLevel].pop();
+}
+
+function showScreen(screen) {
+  [startScreen, timeScreen, gameScreen, errorScreen].forEach(s => s.classList.add("hidden"));
+  screen.classList.remove("hidden");
+}
+
+document.querySelectorAll(".level-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    selectedLevel = btn.dataset.level;
+    $("levelLabel").textContent =
+      selectedLevel === "beginner" ? "Beginner • Primary Level" : "Intermediate • Upper Primary";
+    showScreen(timeScreen);
+  });
+});
+
+document.querySelectorAll(".time-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    selectedTime = Number(btn.dataset.time);
+    $("gameLevel").textContent = selectedLevel.toUpperCase();
+    showScreen(gameScreen);
+    loadNextChallenge();
+  });
+});
+
+$("backToLevels").addEventListener("click", () => showScreen(startScreen));
+
+$("homeButton").addEventListener("click", () => {
+  stopTimer();
+  showScreen(startScreen);
+});
+
+nextBtn.addEventListener("click", loadNextChallenge);
+
+function loadNextChallenge() {
+  stopTimer();
+  questionEl.textContent = nextQuestion();
+  timeUpEl.classList.add("hidden");
+  timerEl.classList.remove("warning", "danger");
+  nextBtn.disabled = false;
+  timeRemaining = selectedTime;
+  updateTimer();
+  setTimeout(startTimer, 350);
+}
+
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    timeRemaining--;
+    updateTimer();
+
+    if (timeRemaining <= 5) timerEl.classList.add("warning");
+    if (timeRemaining <= 3) timerEl.classList.add("danger");
+
+    if (timeRemaining <= 0) timeIsUp();
+  }, 1000);
+}
+
+function updateTimer() {
+  timerEl.textContent = timeRemaining;
+}
+
+function timeIsUp() {
+  stopTimer();
+  timeRemaining = 0;
+  updateTimer();
+  timeUpEl.classList.remove("hidden");
+}
+
+function stopTimer() {
+  if (timerInterval !== null) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+loadQuestions();
+</script>
 </body>
 </html>
