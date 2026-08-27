@@ -98,8 +98,8 @@ async function loadTSV(file) {
 
 async function loadQuestions() {
   try {
-    questions.beginner = await loadTSV("beginner.tsv");
-    questions.intermediate = await loadTSV("intermediate.tsv");
+    questions.beginner = await loadTSV("10sec_beginner.tsv");
+    questions.intermediate = await loadTSV("10sec_intermediate.tsv");
     pools.beginner = shuffle(questions.beginner);
     pools.intermediate = shuffle(questions.intermediate);
     if (questions.beginner.length < 500 || questions.intermediate.length < 500) {
