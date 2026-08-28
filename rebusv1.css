@@ -1,0 +1,652 @@
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        linear-gradient(
+            135deg,
+            #101828,
+            #1d2939
+        );
+
+    color: white;
+
+    min-height: 100vh;
+
+}
+
+
+button {
+
+    font-family: inherit;
+
+    cursor: pointer;
+
+}
+
+
+/* =========================================
+   SCREENS
+========================================= */
+
+.screen {
+
+    min-height: 100vh;
+
+    padding: 25px;
+
+}
+
+
+/* =========================================
+   WELCOME
+========================================= */
+
+#welcomeScreen {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+.welcomeBox {
+
+    width:
+        min(900px, 95%);
+
+    text-align:
+        center;
+
+    background:
+        rgba(255,255,255,0.08);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.15);
+
+    border-radius:
+        30px;
+
+    padding:
+        45px;
+
+    box-shadow:
+        0 20px 60px
+        rgba(0,0,0,0.35);
+
+}
+
+
+.logo {
+
+    font-size:
+        70px;
+
+}
+
+
+.welcomeBox h1 {
+
+    font-size:
+        clamp(42px,7vw,75px);
+
+    margin:
+        0 0 10px;
+
+}
+
+
+.tagline {
+
+    font-size:
+        24px;
+
+    opacity:
+        0.8;
+
+    margin-bottom:
+        30px;
+
+}
+
+
+/* =========================================
+   INSTRUCTIONS
+========================================= */
+
+.instructions {
+
+    background:
+        rgba(255,255,255,0.07);
+
+    border-radius:
+        18px;
+
+    padding:
+        20px;
+
+    margin-bottom:
+        30px;
+
+    line-height:
+        1.6;
+
+}
+
+
+.instructions h2 {
+
+    margin-top:
+        0;
+
+}
+
+
+/* =========================================
+   LEVEL BUTTONS
+========================================= */
+
+.levels {
+
+    display:
+        flex;
+
+    justify-content:
+        center;
+
+    gap:
+        10px;
+
+    flex-wrap:
+        wrap;
+
+}
+
+
+.level {
+
+    border:
+        2px solid
+        #667085;
+
+    background:
+        transparent;
+
+    color:
+        white;
+
+    padding:
+        13px 22px;
+
+    border-radius:
+        13px;
+
+    font-size:
+        17px;
+
+    font-weight:
+        bold;
+
+}
+
+
+.level:hover {
+
+    transform:
+        translateY(-2px);
+
+}
+
+
+.level.selected {
+
+    background:
+        #ffd166;
+
+    color:
+        #101828;
+
+    border-color:
+        #ffd166;
+
+}
+
+
+/* =========================================
+   START BUTTON
+========================================= */
+
+.startButton {
+
+    margin-top:
+        30px;
+
+    border:
+        none;
+
+    padding:
+        17px 45px;
+
+    border-radius:
+        15px;
+
+    background:
+        #22c55e;
+
+    color:
+        white;
+
+    font-size:
+        23px;
+
+    font-weight:
+        bold;
+
+}
+
+
+.startButton:hover {
+
+    transform:
+        translateY(-2px);
+
+}
+
+
+#loadingMessage {
+
+    margin-top:
+        18px;
+
+    color:
+        #98a2b3;
+
+}
+
+
+/* =========================================
+   GAME
+========================================= */
+
+#gameScreen {
+
+    display:
+        none;
+
+}
+
+
+.topBar {
+
+    max-width:
+        1250px;
+
+    margin:
+        auto;
+
+    display:
+        flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap:
+        15px;
+
+    flex-wrap:
+        wrap;
+
+}
+
+
+.gameTitle {
+
+    font-size:
+        clamp(25px,4vw,40px);
+
+    font-weight:
+        bold;
+
+}
+
+
+.stats {
+
+    display:
+        flex;
+
+    gap:
+        10px;
+
+    flex-wrap:
+        wrap;
+
+}
+
+
+.stat {
+
+    background:
+        rgba(255,255,255,0.09);
+
+    padding:
+        10px 15px;
+
+    border-radius:
+        12px;
+
+}
+
+
+.stat b {
+
+    color:
+        #ffd166;
+
+}
+
+
+/* =========================================
+   PUZZLE
+========================================= */
+
+.gameArea {
+
+    max-width:
+        1250px;
+
+    margin:
+        20px auto;
+
+}
+
+
+.puzzleCard {
+
+    background:
+        #f8fafc;
+
+    color:
+        #101828;
+
+    min-height:
+        58vh;
+
+    border-radius:
+        30px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    text-align:
+        center;
+
+    padding:
+        40px;
+
+    box-shadow:
+        0 20px 60px
+        rgba(0,0,0,0.3);
+
+}
+
+
+#puzzle {
+
+    font-size:
+        clamp(
+            45px,
+            8vw,
+            120px
+        );
+
+    font-weight:
+        800;
+
+    line-height:
+        1.2;
+
+    white-space:
+        pre-wrap;
+
+}
+
+
+/* =========================================
+   HINT
+========================================= */
+
+#hintArea {
+
+    min-height:
+        55px;
+
+    text-align:
+        center;
+
+    padding:
+        12px;
+
+    font-size:
+        21px;
+
+    color:
+        #fbbf24;
+
+}
+
+
+/* =========================================
+   ANSWER
+========================================= */
+
+#answerArea {
+
+    min-height:
+        70px;
+
+    text-align:
+        center;
+
+    font-size:
+        clamp(
+            28px,
+            5vw,
+            50px
+        );
+
+    font-weight:
+        bold;
+
+    color:
+        #ffd166;
+
+}
+
+
+/* =========================================
+   CONTROLS
+========================================= */
+
+.controls {
+
+    display:
+        flex;
+
+    justify-content:
+        center;
+
+    gap:
+        10px;
+
+    flex-wrap:
+        wrap;
+
+}
+
+
+.controls button {
+
+    border:
+        none;
+
+    color:
+        white;
+
+    padding:
+        14px 22px;
+
+    border-radius:
+        12px;
+
+    font-size:
+        17px;
+
+    font-weight:
+        bold;
+
+}
+
+
+.hintButton {
+
+    background:
+        #f59e0b;
+
+}
+
+
+.answerButton {
+
+    background:
+        #3b82f6;
+
+}
+
+
+.nextButton {
+
+    background:
+        #9333ea;
+
+}
+
+
+.homeButton {
+
+    background:
+        #475467;
+
+}
+
+
+.controls button:hover {
+
+    transform:
+        translateY(-2px);
+
+}
+
+
+/* =========================================
+   END SCREEN
+========================================= */
+
+#endScreen {
+
+    display:
+        none;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+}
+
+
+.endBox {
+
+    width:
+        min(700px,95%);
+
+    text-align:
+        center;
+
+    background:
+        rgba(255,255,255,0.08);
+
+    padding:
+        45px;
+
+    border-radius:
+        30px;
+
+}
+
+
+.endBox h1 {
+
+    font-size:
+        55px;
+
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media(max-width:650px) {
+
+    .welcomeBox {
+
+        padding:
+            25px 18px;
+
+    }
+
+
+    .puzzleCard {
+
+        min-height:
+            50vh;
+
+    }
+
+
+    .topBar {
+
+        justify-content:
+            center;
+
+        text-align:
+            center;
+
+    }
+
+}
