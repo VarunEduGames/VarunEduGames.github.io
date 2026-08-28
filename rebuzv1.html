@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebus Challenge</title>
+<link rel="stylesheet" href="rebusv1.css">
+</head>
+
+<body>
+
+<!-- WELCOME SCREEN -->
+<section id="welcomeScreen" class="screen">
+
+    <div class="welcomeBox">
+
+        <div class="logo">🧩</div>
+
+        <h1>Rebus Challenge</h1>
+
+        <p class="tagline">
+            Look beyond the obvious!
+        </p>
+
+        <div class="instructions">
+
+            <h2>How to Play</h2>
+
+            <p>
+                Look carefully at the clues and work out
+                the hidden word or phrase.
+            </p>
+
+            <p>
+                Use <b>HINT</b> if you need help.
+                Click <b>SHOW ANSWER</b> when you are ready.
+            </p>
+
+        </div>
+
+        <h3>Choose Difficulty</h3>
+
+        <div class="levels">
+
+            <button class="level selected"
+                    data-level="All">
+                🔵 All Levels
+            </button>
+
+            <button class="level"
+                    data-level="Beginner">
+                🟢 Beginner
+            </button>
+
+            <button class="level"
+                    data-level="Intermediate">
+                🟡 Intermediate
+            </button>
+
+            <button class="level"
+                    data-level="Challenge">
+                🔴 Challenge
+            </button>
+
+        </div>
+
+        <button class="startButton" onclick="startGame()">
+            ▶ START GAME
+        </button>
+
+        <p id="loadingMessage">
+            Loading questions...
+        </p>
+
+    </div>
+
+</section>
+
+
+<!-- GAME SCREEN -->
+<section id="gameScreen" class="screen">
+
+    <div class="topBar">
+
+        <div class="gameTitle">
+            🧩 Rebus Challenge
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                Level:
+                <b id="levelDisplay">All</b>
+            </div>
+
+            <div class="stat">
+                Puzzle:
+                <b id="numberDisplay">1</b>
+            </div>
+
+            <div class="stat">
+                Remaining:
+                <b id="remainingDisplay">0</b>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="gameArea">
+
+        <div class="puzzleCard">
+
+            <div id="puzzle">
+                🧩
+            </div>
+
+        </div>
+
+
+        <div id="hintArea"></div>
+
+        <div id="answerArea"></div>
+
+
+        <div class="controls">
+
+            <button class="hintButton"
+                    onclick="showHint()">
+                💡 HINT
+            </button>
+
+            <button class="answerButton"
+                    onclick="showAnswer()">
+                👁 SHOW ANSWER
+            </button>
+
+            <button class="nextButton"
+                    onclick="nextPuzzle()">
+                ➜ NEXT PUZZLE
+            </button>
+
+            <button class="homeButton"
+                    onclick="goHome()">
+                ⌂ HOME
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- END SCREEN -->
+<section id="endScreen" class="screen">
+
+    <div class="endBox">
+
+        <div class="logo">🎉</div>
+
+        <h1>Well Done!</h1>
+
+        <p>
+            You have completed all the puzzles
+            in this level.
+        </p>
+
+        <button class="startButton"
+                onclick="goHome()">
+            PLAY AGAIN
+        </button>
+
+    </div>
+
+</section>
+
+
+<script>
+
+let questions = [];
+
+let questionPool = [];
+
+let currentQuestion = null;
+
+let currentIndex = 0;
+
+let selectedLevel = "All";
+
+let questionsLoaded = false;
+
+
+/* =========================================
+   LOAD TSV
+========================================= */
+
+async function loadQuestions() {
+
+    try {
+
+        const response =
+            await fetch("rebusv1.tsv");
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Could not load rebusv1.tsv"
+            );
+
+        }
+
+        const text =
+            await response.text();
+
+        parseTSV(text);
+
+        questionsLoaded = true;
+
+        document.getElementById(
+            "loadingMessage"
+        ).textContent =
+            questions.length +
+            " puzzles loaded ✓";
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        document.getElementById(
+            "loadingMessage"
+        ).textContent =
+            "⚠ Unable to load questions. " +
+            "Make sure rebusv1.tsv is in the same folder.";
+
+    }
+
+}
+
+
+/* =========================================
+   PARSE TSV
+========================================= */
+
+function parseTSV(text) {
+
+    const lines =
+        text.trim().split(/\r?\n/);
+
+    if (lines.length < 2) return;
+
+    const headers =
+        lines[0].split("\t");
+
+    questions = [];
+
+    for (let i = 1; i < lines.length; i++) {
+
+        const parts =
+            lines[i].split("\t");
+
+        if (parts.length < 4) continue;
+
+        questions.push({
+
+            id: parts[0],
+
+            level: parts[1],
+
+            puzzle: parts[2]
+                .replace(/\\n/g, "\n"),
+
+            answer: parts[3],
+
+            hint: parts[4] || ""
+
+        });
+
+    }
+
+}
+
+
+/* =========================================
+   LEVEL SELECTION
+========================================= */
+
+document
+.querySelectorAll(".level")
+.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        function() {
+
+            document
+            .querySelectorAll(".level")
+            .forEach(btn => {
+
+                btn.classList.remove(
+                    "selected"
+                );
+
+            });
+
+            this.classList.add(
+                "selected"
+            );
+
+            selectedLevel =
+                this.dataset.level;
+
+        }
+    );
+
+});
+
+
+/* =========================================
+   START GAME
+========================================= */
+
+function startGame() {
+
+    if (!questionsLoaded) {
+
+        alert(
+            "Questions are still loading. " +
+            "Please try again in a moment."
+        );
+
+        return;
+
+    }
+
+
+    if (selectedLevel === "All") {
+
+        questionPool =
+            [...questions];
+
+    } else {
+
+        questionPool =
+            questions.filter(
+                q =>
+                    q.level ===
+                    selectedLevel
+            );
+
+    }
+
+
+    if (questionPool.length === 0) {
+
+        alert(
+            "No questions found for this level."
+        );
+
+        return;
+
+    }
+
+
+    shuffle(questionPool);
+
+    currentIndex = 0;
+
+
+    document
+    .getElementById("welcomeScreen")
+    .style.display = "none";
+
+
+    document
+    .getElementById("endScreen")
+    .style.display = "none";
+
+
+    document
+    .getElementById("gameScreen")
+    .style.display = "block";
+
+
+    document
+    .getElementById("levelDisplay")
+    .textContent =
+        selectedLevel;
+
+
+    showPuzzle();
+
+}
+
+
+/* =========================================
+   SHUFFLE
+========================================= */
+
+function shuffle(array) {
+
+    for (
+        let i = array.length - 1;
+        i > 0;
+        i--
+    ) {
+
+        const j =
+            Math.floor(
+                Math.random() *
+                (i + 1)
+            );
+
+        [
+            array[i],
+            array[j]
+        ] =
+        [
+            array[j],
+            array[i]
+        ];
+
+    }
+
+}
+
+
+/* =========================================
+   SHOW PUZZLE
+========================================= */
+
+function showPuzzle() {
+
+    if (
+        currentIndex >=
+        questionPool.length
+    ) {
+
+        finishGame();
+
+        return;
+
+    }
+
+
+    currentQuestion =
+        questionPool[currentIndex];
+
+
+    document
+    .getElementById("puzzle")
+    .textContent =
+        currentQuestion.puzzle;
+
+
+    document
+    .getElementById("hintArea")
+    .textContent = "";
+
+
+    document
+    .getElementById("answerArea")
+    .textContent = "";
+
+
+    document
+    .getElementById("numberDisplay")
+    .textContent =
+        currentIndex + 1;
+
+
+    document
+    .getElementById("remainingDisplay")
+    .textContent =
+        questionPool.length -
+        currentIndex;
+
+}
+
+
+/* =========================================
+   HINT
+========================================= */
+
+function showHint() {
+
+    if (!currentQuestion) return;
+
+
+    document
+    .getElementById("hintArea")
+    .textContent =
+        "💡 " +
+        currentQuestion.hint;
+
+}
+
+
+/* =========================================
+   SHOW ANSWER
+========================================= */
+
+function showAnswer() {
+
+    if (!currentQuestion) return;
+
+
+    document
+    .getElementById("answerArea")
+    .textContent =
+        "ANSWER: " +
+        currentQuestion.answer;
+
+}
+
+
+/* =========================================
+   NEXT PUZZLE
+========================================= */
+
+function nextPuzzle() {
+
+    currentIndex++;
+
+    showPuzzle();
+
+}
+
+
+/* =========================================
+   FINISH GAME
+========================================= */
+
+function finishGame() {
+
+    document
+    .getElementById("gameScreen")
+    .style.display = "none";
+
+
+    document
+    .getElementById("endScreen")
+    .style.display = "flex";
+
+}
+
+
+/* =========================================
+   HOME
+========================================= */
+
+function goHome() {
+
+    document
+    .getElementById("gameScreen")
+    .style.display = "none";
+
+
+    document
+    .getElementById("endScreen")
+    .style.display = "none";
+
+
+    document
+    .getElementById("welcomeScreen")
+    .style.display = "flex";
+
+}
+
+
+/* =========================================
+   LOAD QUESTIONS WHEN PAGE OPENS
+========================================= */
+
+loadQuestions();
+
+</script>
+
+</body>
+</html>
