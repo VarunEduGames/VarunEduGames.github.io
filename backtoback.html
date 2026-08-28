@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Back Drawing Challenge</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg, #101828, #1d2939);
+        color: white;
+        min-height: 100vh;
+    }
+
+    button {
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    /* =========================
+       WELCOME SCREEN
+    ========================= */
+
+    #welcomeScreen {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 25px;
+    }
+
+    .welcomeBox {
+        width: min(850px, 95%);
+        text-align: center;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 30px;
+        padding: 45px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    .welcomeBox h1 {
+        font-size: clamp(38px, 6vw, 70px);
+        margin: 0 0 10px;
+    }
+
+    .tagline {
+        font-size: 22px;
+        opacity: 0.85;
+        margin-bottom: 35px;
+    }
+
+    .howTo {
+        text-align: left;
+        background: rgba(255,255,255,0.07);
+        padding: 25px;
+        border-radius: 20px;
+        margin: 25px 0;
+        line-height: 1.7;
+    }
+
+    .howTo strong {
+        color: #ffd166;
+    }
+
+    .settingTitle {
+        font-size: 20px;
+        margin-top: 25px;
+        margin-bottom: 12px;
+    }
+
+    .timeButtons {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .timeBtn {
+        border: 2px solid #667085;
+        background: transparent;
+        color: white;
+        padding: 14px 28px;
+        border-radius: 14px;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .timeBtn:hover,
+    .timeBtn.selected {
+        background: #ffd166;
+        color: #101828;
+        border-color: #ffd166;
+    }
+
+    .startBtn {
+        margin-top: 30px;
+        border: none;
+        padding: 18px 50px;
+        font-size: 24px;
+        font-weight: bold;
+        border-radius: 16px;
+        background: #22c55e;
+        color: white;
+        box-shadow: 0 8px 20px rgba(34,197,94,0.25);
+    }
+
+    .startBtn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* =========================
+       GAME SCREEN
+    ========================= */
+
+    #gameScreen {
+        display: none;
+        min-height: 100vh;
+        padding: 15px;
+    }
+
+    .topBar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        padding: 8px 10px 18px;
+    }
+
+    .gameTitle {
+        font-size: clamp(24px, 4vw, 40px);
+        font-weight: bold;
+    }
+
+    .stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .stat {
+        background: rgba(255,255,255,0.09);
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-size: 17px;
+    }
+
+    .stat span {
+        color: #ffd166;
+        font-weight: bold;
+    }
+
+    .mainArea {
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .instruction {
+        text-align: center;
+        font-size: 22px;
+        opacity: 0.85;
+        margin: 5px 0 15px;
+    }
+
+    .symbolCard {
+        background: #f8fafc;
+        color: #101828;
+        border-radius: 30px;
+        min-height: 55vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    #symbol {
+        font-size: clamp(130px, 25vw, 300px);
+        line-height: 1;
+        user-select: none;
+        transition: opacity 0.3s;
+    }
+
+    #symbol.hiddenSymbol {
+        opacity: 0;
+    }
+
+    #countdown {
+        position: absolute;
+        top: 20px;
+        right: 25px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #d92d20;
+    }
+
+    #viewMessage {
+        position: absolute;
+        bottom: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #667085;
+    }
+
+    .answerArea {
+        text-align: center;
+        min-height: 95px;
+        padding: 15px;
+    }
+
+    #answer {
+        display: none;
+        font-size: clamp(28px, 5vw, 50px);
+        font-weight: bold;
+        color: #ffd166;
+    }
+
+    .controls {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 5px;
+    }
+
+    .controlBtn {
+        border: none;
+        border-radius: 13px;
+        padding: 13px 22px;
+        font-size: 18px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .showBtn {
+        background: #3b82f6;
+    }
+
+    .correctBtn {
+        background: #16a34a;
+    }
+
+    .wrongBtn {
+        background: #dc2626;
+    }
+
+    .nextBtn {
+        background: #9333ea;
+    }
+
+    .homeBtn {
+        background: #475467;
+    }
+
+    .controlBtn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* =========================
+       TEAM SCOREBOARD
+    ========================= */
+
+    .scoreboard {
+        max-width: 1200px;
+        margin: 25px auto 0;
+        background: rgba(255,255,255,0.06);
+        border-radius: 18px;
+        padding: 15px;
+    }
+
+    .scoreboard h2 {
+        margin: 0 0 12px;
+        text-align: center;
+    }
+
+    .teams {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .team {
+        min-width: 150px;
+        background: rgba(255,255,255,0.09);
+        padding: 12px 18px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .teamName {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .teamScore {
+        font-size: 30px;
+        color: #ffd166;
+        font-weight: bold;
+    }
+
+    .teamButtons {
+        margin-top: 6px;
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .miniBtn {
+        border: none;
+        border-radius: 8px;
+        padding: 5px 9px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .plus {
+        background: #16a34a;
+    }
+
+    .minus {
+        background: #dc2626;
+    }
+
+    /* =========================
+       FINAL SCREEN
+    ========================= */
+
+    #finalScreen {
+        display: none;
+        min-height: 100vh;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .finalBox {
+        text-align: center;
+        width: min(700px, 95%);
+        background: rgba(255,255,255,0.08);
+        border-radius: 30px;
+        padding: 45px;
+    }
+
+    .finalBox h1 {
+        font-size: 55px;
+        margin-top: 0;
+    }
+
+    #finalScores {
+        font-size: 25px;
+        line-height: 1.8;
+        margin: 25px;
+    }
+
+    @media(max-width:600px) {
+
+        .welcomeBox {
+            padding: 25px 18px;
+        }
+
+        .howTo {
+            font-size: 15px;
+        }
+
+        .symbolCard {
+            min-height: 50vh;
+        }
+
+        .topBar {
+            justify-content: center;
+            text-align: center;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     WELCOME SCREEN
+========================================================= -->
+
+<section id="welcomeScreen">
+
+    <div class="welcomeBox">
+
+        <h1>✏️ Back Drawing Challenge</h1>
+
+        <div class="tagline">
+            See it. Draw it. Pass it. Guess it!
+        </div>
+
+        <div class="howTo">
+
+            <strong>How to play</strong>
+
+            <ol>
+                <li>Students stand in a line, facing away from the screen.</li>
+                <li>The student closest to the screen gets to see the symbol.</li>
+                <li>The symbol remains visible only for the selected time.</li>
+                <li>That student draws the symbol on the back of the next student.</li>
+                <li>The drawing is passed from student to student.</li>
+                <li>The final student says or writes what the symbol represents.</li>
+                <li>The teacher reveals the answer and awards the point.</li>
+            </ol>
+
+        </div>
+
+        <div class="settingTitle">
+            Choose viewing time
+        </div>
+
+        <div class="timeButtons">
+
+            <button class="timeBtn" data-time="3">3 Seconds</button>
+
+            <button class="timeBtn selected" data-time="5">
+                5 Seconds
+            </button>
+
+            <button class="timeBtn" data-time="10">
+                10 Seconds
+            </button>
+
+        </div>
+
+        <button class="startBtn" onclick="startGame()">
+            ▶ START GAME
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     GAME SCREEN
+========================================================= -->
+
+<section id="gameScreen">
+
+    <div class="topBar">
+
+        <div class="gameTitle">
+            ✏️ Back Drawing Challenge
+        </div>
+
+        <div class="stats">
+
+            <div class="stat">
+                Time:
+                <span id="timeDisplay">5</span>s
+            </div>
+
+            <div class="stat">
+                Round:
+                <span id="roundDisplay">1</span>
+            </div>
+
+            <div class="stat">
+                Symbols:
+                <span id="symbolCount">0</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="mainArea">
+
+        <div class="instruction" id="instruction">
+            The student closest to the screen — LOOK!
+        </div>
+
+        <div class="symbolCard">
+
+            <div id="countdown"></div>
+
+            <div id="symbol">
+                ★
+            </div>
+
+            <div id="viewMessage">
+                Remember the symbol!
+            </div>
+
+        </div>
+
+
+        <div class="answerArea">
+
+            <div id="answer">
+                SUN
+            </div>
+
+        </div>
+
+
+        <div class="controls">
+
+            <button
+                class="controlBtn showBtn"
+                onclick="showAnswer()">
+                👁 SHOW ANSWER
+            </button>
+
+            <button
+                class="controlBtn correctBtn"
+                onclick="correctAnswer()">
+                ✓ CORRECT
+            </button>
+
+            <button
+                class="controlBtn wrongBtn"
+                onclick="wrongAnswer()">
+                ✗ INCORRECT
+            </button>
+
+            <button
+                class="controlBtn nextBtn"
+                onclick="nextSymbol()">
+                ➜ NEXT SYMBOL
+            </button>
+
+            <button
+                class="controlBtn homeBtn"
+                onclick="goHome()">
+                ⌂ HOME
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="scoreboard">
+
+        <h2>🏆 Team Scores</h2>
+
+        <div class="teams">
+
+            <div class="team">
+
+                <div class="teamName">
+                    TEAM 1
+                </div>
+
+                <div class="teamScore" id="score1">
+                    0
+                </div>
+
+                <div class="teamButtons">
+
+                    <button
+                        class="miniBtn plus"
+                        onclick="changeScore(1,1)">
+                        +1
+                    </button>
+
+                    <button
+                        class="miniBtn minus"
+                        onclick="changeScore(1,-1)">
+                        -1
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="team">
+
+                <div class="teamName">
+                    TEAM 2
+                </div>
+
+                <div class="teamScore" id="score2">
+                    0
+                </div>
+
+                <div class="teamButtons">
+
+                    <button
+                        class="miniBtn plus"
+                        onclick="changeScore(2,1)">
+                        +1
+                    </button>
+
+                    <button
+                        class="miniBtn minus"
+                        onclick="changeScore(2,-1)">
+                        -1
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="team">
+
+                <div class="teamName">
+                    TEAM 3
+                </div>
+
+                <div class="teamScore" id="score3">
+                    0
+                </div>
+
+                <div class="teamButtons">
+
+                    <button
+                        class="miniBtn plus"
+                        onclick="changeScore(3,1)">
+                        +1
+                    </button>
+
+                    <button
+                        class="miniBtn minus"
+                        onclick="changeScore(3,-1)">
+                        -1
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="team">
+
+                <div class="teamName">
+                    TEAM 4
+                </div>
+
+                <div class="teamScore" id="score4">
+                    0
+                </div>
+
+                <div class="teamButtons">
+
+                    <button
+                        class="miniBtn plus"
+                        onclick="changeScore(4,1)">
+                        +1
+                    </button>
+
+                    <button
+                        class="miniBtn minus"
+                        onclick="changeScore(4,-1)">
+                        -1
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     FINAL SCREEN
+========================================================= -->
+
+<section id="finalScreen">
+
+    <div class="finalBox">
+
+        <h1>🏆 Game Over!</h1>
+
+        <div id="finalScores"></div>
+
+        <button
+            class="startBtn"
+            onclick="goHome()">
+            PLAY AGAIN
+        </button>
+
+    </div>
+
+</section>
+
+
+<script>
+
+/* =========================================================
+   GAME SETTINGS
+========================================================= */
+
+let viewingTime = 5;
+
+let round = 0;
+
+let usedSymbols = [];
+
+let currentSymbol = null;
+
+let timer = null;
+
+
+/* =========================================================
+   SYMBOL BANK
+   More than 500 classroom-friendly challenges
+========================================================= */
+
+const symbols = [
+
+/* BASIC SHAPES */
+
+["○","CIRCLE"],
+["●","FILLED CIRCLE"],
+["△","TRIANGLE"],
+["▲","FILLED TRIANGLE"],
+["□","SQUARE"],
+["■","FILLED SQUARE"],
+["◇","DIAMOND"],
+["◆","FILLED DIAMOND"],
+["☆","STAR"],
+["★","FILLED STAR"],
+["♢","DIAMOND"],
+["♡","HEART"],
+["♥","HEART"],
+["☀","SUN"],
+["☼","SUN"],
+["☾","MOON"],
+["☽","MOON"],
+["✦","STAR"],
+["✧","STAR"],
+["✩","STAR"],
+["✪","STAR"],
+["✫","STAR"],
+["✬","STAR"],
+["✭","STAR"],
+["✮","STAR"],
+["✯","STAR"],
+["✰","STAR"],
+
+/* ARROWS */
+
+["↑","UP ARROW"],
+["↓","DOWN ARROW"],
+["←","LEFT ARROW"],
+["→","RIGHT ARROW"],
+["↗","UP RIGHT ARROW"],
+["↘","DOWN RIGHT ARROW"],
+["↙","DOWN LEFT ARROW"],
+["↖","UP LEFT ARROW"],
+["↔","LEFT RIGHT ARROW"],
+["↕","UP DOWN ARROW"],
+["⇢","RIGHT ARROW"],
+["⇠","LEFT ARROW"],
+["➜","RIGHT ARROW"],
+["➤","RIGHT ARROW"],
+["➢","ARROW"],
+["➣","ARROW"],
+["➥","ARROW"],
+["➦","ARROW"],
+["➧","ARROW"],
+["➨","ARROW"],
+["➩","ARROW"],
+["➪","ARROW"],
+["➫","ARROW"],
+["➬","ARROW"],
+["➭","ARROW"],
+["➮","ARROW"],
+["➯","ARROW"],
+
+/* WEATHER */
+
+["☀","SUN"],
+["☁","CLOUD"],
+["☂","UMBRELLA"],
+["☔","RAIN"],
+["❄","SNOWFLAKE"],
+["☃","SNOWMAN"],
+["⚡","LIGHTNING"],
+["☄","COMET"],
+["🌈","RAINBOW"],
+["🌤","SUN BEHIND CLOUD"],
+["🌙","MOON"],
+["⭐","STAR"],
+["🌟","GLOWING STAR"],
+["🔥","FIRE"],
+["💧","WATER DROP"],
+["🌊","WAVE"],
+["🌪","TORNADO"],
+["🌫","FOG"],
+["🌞","SUN"],
+["🌛","MOON"],
+["🌜","MOON"],
+
+/* FACES */
+
+["😀","HAPPY FACE"],
+["😃","SMILING FACE"],
+["😄","BIG SMILE"],
+["😁","GRINNING FACE"],
+["😆","LAUGHING FACE"],
+["😅","SMILING FACE"],
+["😂","LAUGHING FACE"],
+["🤣","LAUGHING FACE"],
+["🙂","SMILE"],
+["🙃","UPSIDE DOWN FACE"],
+["😉","WINK"],
+["😊","SMILING FACE"],
+["😇","ANGEL"],
+["🥰","LOVE FACE"],
+["😍","HEART EYES"],
+["😘","KISS"],
+["😎","COOL FACE"],
+["🤓","NERDY FACE"],
+["🤔","THINKING FACE"],
+["😐","NEUTRAL FACE"],
+["😑","UNIMPRESSED FACE"],
+["😶","QUIET FACE"],
+["🙄","EYE ROLL"],
+["😏","SMIRK"],
+["😣","WORRIED FACE"],
+["😥","SAD FACE"],
+["😮","SURPRISED FACE"],
+["😲","SHOCKED FACE"],
+["😴","SLEEPING FACE"],
+["🤗","HUGGING FACE"],
+["🤩","EXCITED FACE"],
+["🥳","PARTY FACE"],
+["😡","ANGRY FACE"],
+["🤬","ANGRY FACE"],
+["😱","SCREAMING FACE"],
+["😢","CRYING FACE"],
+["😭","CRYING FACE"],
+["😤","ANGRY FACE"],
+["🤫","QUIET FACE"],
+["🤭","GIGGLING FACE"],
+["🤥","LYING FACE"],
+["😇","ANGEL FACE"],
+
+/* HANDS / GESTURES */
+
+["👍","THUMBS UP"],
+["👎","THUMBS DOWN"],
+["☝","POINTING UP"],
+["✌","TWO FINGERS"],
+["🤞","CROSSED FINGERS"],
+["👌","OK SIGN"],
+["✋","STOP HAND"],
+["🤚","RAISED HAND"],
+["🖐","OPEN HAND"],
+["👏","CLAPPING"],
+["🙌","RAISED HANDS"],
+["🙏","PRAYING HANDS"],
+["👋","WAVING HAND"],
+["💪","STRONG ARM"],
+["👉","POINTING RIGHT"],
+["👈","POINTING LEFT"],
+["👆","POINTING UP"],
+["👇","POINTING DOWN"],
+
+/* ANIMALS */
+
+["🐶","DOG"],
+["🐱","CAT"],
+["🐭","MOUSE"],
+["🐹","HAMSTER"],
+["🐰","RABBIT"],
+["🦊","FOX"],
+["🐻","BEAR"],
+["🐼","PANDA"],
+["🐨","KOALA"],
+["🐯","TIGER"],
+["🦁","LION"],
+["🐮","COW"],
+["🐷","PIG"],
+["🐸","FROG"],
+["🐵","MONKEY"],
+["🐔","CHICKEN"],
+["🐧","PENGUIN"],
+["🐦","BIRD"],
+["🦆","DUCK"],
+["🦅","EAGLE"],
+["🦉","OWL"],
+["🐺","WOLF"],
+["🐗","BOAR"],
+["🐴","HORSE"],
+["🦄","UNICORN"],
+["🐝","BEE"],
+["🐛","CATERPILLAR"],
+["🦋","BUTTERFLY"],
+["🐌","SNAIL"],
+["🐞","LADYBUG"],
+["🐜","ANT"],
+["🪲","BEETLE"],
+["🕷","SPIDER"],
+["🐢","TURTLE"],
+["🐍","SNAKE"],
+["🦎","LIZARD"],
+["🐙","OCTOPUS"],
+["🦀","CRAB"],
+["🐠","TROPICAL FISH"],
+["🐟","FISH"],
+["🐬","DOLPHIN"],
+["🐳","WHALE"],
+["🦈","SHARK"],
+["🐊","CROCODILE"],
+["🐘","ELEPHANT"],
+["🦏","RHINOCEROS"],
+["🦒","GIRAFFE"],
+["🦓","ZEBRA"],
+["🦘","KANGAROO"],
+["🐪","CAMEL"],
+["🐫","CAMEL"],
+["🦙","LLAMA"],
+["🐐","GOAT"],
+["🐑","SHEEP"],
+["🐕","DOG"],
+["🐈","CAT"],
+["🐓","ROOSTER"],
+["🦜","PARROT"],
+
+/* NATURE */
+
+["🌳","TREE"],
+["🌲","EVERGREEN TREE"],
+["🌴","PALM TREE"],
+["🌵","CACTUS"],
+["🌱","SEEDLING"],
+["🌿","LEAF"],
+["☘","CLOVER"],
+["🍀","FOUR LEAF CLOVER"],
+["🌷","TULIP"],
+["🌹","ROSE"],
+["🌺","FLOWER"],
+["🌻","SUNFLOWER"],
+["🌼","FLOWER"],
+["🌸","BLOSSOM"],
+["🍁","MAPLE LEAF"],
+["🍂","AUTUMN LEAF"],
+["🍃","LEAF"],
+["🌾","CROP"],
+["🌳","TREE"],
+["🌎","EARTH"],
+["🌍","EARTH"],
+["🌏","EARTH"],
+["🌕","FULL MOON"],
+["🌑","NEW MOON"],
+["🌒","MOON"],
+["🌓","HALF MOON"],
+["🌔","MOON"],
+
+/* FOOD */
+
+["🍎","APPLE"],
+["🍏","GREEN APPLE"],
+["🍐","PEAR"],
+["🍊","ORANGE"],
+["🍋","LEMON"],
+["🍌","BANANA"],
+["🍉","WATERMELON"],
+["🍇","GRAPES"],
+["🍓","STRAWBERRY"],
+["🫐","BLUEBERRY"],
+["🍒","CHERRIES"],
+["🍑","PEACH"],
+["🍍","PINEAPPLE"],
+["🥭","MANGO"],
+["🥝","KIWI"],
+["🍅","TOMATO"],
+["🥕","CARROT"],
+["🌽","CORN"],
+["🥔","POTATO"],
+["🍞","BREAD"],
+["🥐","CROISSANT"],
+["🥨","PRETZEL"],
+["🧀","CHEESE"],
+["🍔","BURGER"],
+["🍕","PIZZA"],
+["🌭","HOT DOG"],
+["🍟","FRENCH FRIES"],
+["🌮","TACO"],
+["🍿","POPCORN"],
+["🍩","DONUT"],
+["🍪","COOKIE"],
+["🎂","BIRTHDAY CAKE"],
+["🍰","CAKE"],
+["🍦","ICE CREAM"],
+["🍭","LOLLIPOP"],
+["🍫","CHOCOLATE"],
+["🍬","CANDY"],
+["🍯","HONEY"],
+["🥚","EGG"],
+["🍳","FRIED EGG"],
+["🥛","MILK"],
+["☕","CUP"],
+["🧃","JUICE BOX"],
+
+/* SPORTS */
+
+["⚽","FOOTBALL"],
+["🏀","BASKETBALL"],
+["🏈","AMERICAN FOOTBALL"],
+["⚾","BASEBALL"],
+["🎾","TENNIS"],
+["🏐","VOLLEYBALL"],
+["🏉","RUGBY"],
+["🥏","FRISBEE"],
+["🎱","BILLIARDS"],
+["🏓","TABLE TENNIS"],
+["🏸","BADMINTON"],
+["🥊","BOXING"],
+["🥋","MARTIAL ARTS"],
+["⛳","GOLF"],
+["🏹","ARCHERY"],
+["🏆","TROPHY"],
+["🥇","GOLD MEDAL"],
+["🥈","SILVER MEDAL"],
+["🥉","BRONZE MEDAL"],
+["🏅","MEDAL"],
+["🎯","TARGET"],
+["🚴","CYCLING"],
+["🏊","SWIMMING"],
+["🏃","RUNNING"],
+["🤸","GYMNASTICS"],
+
+/* VEHICLES */
+
+["🚗","CAR"],
+["🚕","TAXI"],
+["🚙","SUV"],
+["🚌","BUS"],
+["🚎","TROLLEY BUS"],
+["🏎","RACE CAR"],
+["🚓","POLICE CAR"],
+["🚑","AMBULANCE"],
+["🚒","FIRE ENGINE"],
+["🚐","VAN"],
+["🚚","TRUCK"],
+["🚛","LORRY"],
+["🚜","TRACTOR"],
+["🏍","MOTORCYCLE"],
+["🛵","SCOOTER"],
+["🚲","BICYCLE"],
+["🛴","SCOOTER"],
+["✈","AIRPLANE"],
+["🛩","SMALL AIRPLANE"],
+["🚁","HELICOPTER"],
+["🚀","ROCKET"],
+["🚢","SHIP"],
+["⛵","SAILBOAT"],
+["🚤","SPEEDBOAT"],
+["🚂","TRAIN"],
+["🚆","TRAIN"],
+["🚇","METRO"],
+["🚉","TRAIN STATION"],
+["🚋","TRAM"],
+["🚡","CABLE CAR"],
+["🚠","MOUNTAIN CABLE CAR"],
+
+/* EVERYDAY OBJECTS */
+
+["🏠","HOUSE"],
+["🏡","HOUSE WITH GARDEN"],
+["🏢","BUILDING"],
+["🏫","SCHOOL"],
+["🏥","HOSPITAL"],
+["🏦","BANK"],
+["🏪","SHOP"],
+["🏨","HOTEL"],
+["⛪","CHURCH"],
+["🕌","MOSQUE"],
+["🛕","TEMPLE"],
+["🏰","CASTLE"],
+["🏯","CASTLE"],
+["🗼","TOWER"],
+["🌉","BRIDGE"],
+["🚪","DOOR"],
+["🪟","WINDOW"],
+["🛏","BED"],
+["🪑","CHAIR"],
+["🛋","SOFA"],
+["🚽","TOILET"],
+["🚿","SHOWER"],
+["🛁","BATHTUB"],
+["🧹","BROOM"],
+["🧺","BASKET"],
+["🪣","BUCKET"],
+["🔑","KEY"],
+["🔒","LOCK"],
+["🔓","UNLOCKED LOCK"],
+["🔔","BELL"],
+["⏰","ALARM CLOCK"],
+["⌚","WATCH"],
+["📱","MOBILE PHONE"],
+["☎","TELEPHONE"],
+["💻","LAPTOP"],
+["⌨","KEYBOARD"],
+["🖱","MOUSE"],
+["📺","TELEVISION"],
+["📷","CAMERA"],
+["🔦","TORCH"],
+["💡","LIGHT BULB"],
+["🔋","BATTERY"],
+["🔌","PLUG"],
+["✏","PENCIL"],
+["🖊","PEN"],
+["📝","NOTE"],
+["📖","BOOK"],
+["📚","BOOKS"],
+["📓","NOTEBOOK"],
+["✂","SCISSORS"],
+["📌","PIN"],
+["📎","PAPER CLIP"],
+["📏","RULER"],
+["🔍","MAGNIFYING GLASS"],
+["🎒","SCHOOL BAG"],
+["🎒","BACKPACK"],
+["☂","UMBRELLA"],
+
+/* MUSIC */
+
+["🎵","MUSIC NOTE"],
+["🎶","MUSIC NOTES"],
+["🎼","MUSIC SCORE"],
+["🎸","GUITAR"],
+["🎹","PIANO"],
+["🥁","DRUM"],
+["🎺","TRUMPET"],
+["🎻","VIOLIN"],
+["🎷","SAXOPHONE"],
+["🪕","BANJO"],
+["🎤","MICROPHONE"],
+["🎧","HEADPHONES"],
+["📻","RADIO"],
+
+/* SIGNS AND SYMBOLS */
+
+["✓","CHECK MARK"],
+["✔","CHECK MARK"],
+["✕","CROSS"],
+["✖","CROSS"],
+["✗","CROSS"],
+["✘","CROSS"],
+["!","EXCLAMATION MARK"],
+["?","QUESTION MARK"],
+["‼","DOUBLE EXCLAMATION"],
+["⁉","QUESTION EXCLAMATION"],
+["+","PLUS"],
+["−","MINUS"],
+["×","MULTIPLY"],
+["÷","DIVIDE"],
+["=","EQUAL"],
+["≠","NOT EQUAL"],
+["<","LESS THAN"],
+[">","GREATER THAN"],
+["%","PERCENT"],
+["$","DOLLAR"],
+["₹","RUPEE"],
+["€","EURO"],
+["£","POUND"],
+["©","COPYRIGHT"],
+["®","REGISTERED"],
+["™","TRADEMARK"],
+["#","HASH"],
+["@","AT SIGN"],
+["&","AND"],
+["∞","INFINITY"],
+["π","PI"],
+["√","SQUARE ROOT"],
+["°","DEGREE"],
+["§","SECTION"],
+
+/* NUMBERS */
+
+["0","ZERO"],
+["1","ONE"],
+["2","TWO"],
+["3","THREE"],
+["4","FOUR"],
+["5","FIVE"],
+["6","SIX"],
+["7","SEVEN"],
+["8","EIGHT"],
+["9","NINE"],
+
+["10","TEN"],
+["20","TWENTY"],
+["50","FIFTY"],
+["100","ONE HUNDRED"],
+["123","ONE TWO THREE"],
+["321","THREE TWO ONE"],
+["2026","TWO ZERO TWO SIX"],
+
+/* LETTERS */
+
+["A","LETTER A"],
+["B","LETTER B"],
+["C","LETTER C"],
+["D","LETTER D"],
+["E","LETTER E"],
+["F","LETTER F"],
+["G","LETTER G"],
+["H","LETTER H"],
+["I","LETTER I"],
+["J","LETTER J"],
+["K","LETTER K"],
+["L","LETTER L"],
+["M","LETTER M"],
+["N","LETTER N"],
+["O","LETTER O"],
+["P","LETTER P"],
+["Q","LETTER Q"],
+["R","LETTER R"],
+["S","LETTER S"],
+["T","LETTER T"],
+["U","LETTER U"],
+["V","LETTER V"],
+["W","LETTER W"],
+["X","LETTER X"],
+["Y","LETTER Y"],
+["Z","LETTER Z"],
+
+/* SPECIAL SIMPLE SYMBOLS */
+
+["♠","SPADE"],
+["♥","HEART"],
+["♦","DIAMOND"],
+["♣","CLUB"],
+["☮","PEACE"],
+["☯","YIN YANG"],
+["☢","RADIATION"],
+["☣","BIOHAZARD"],
+["⚠","WARNING"],
+["⛔","NO ENTRY"],
+["🚫","NO"],
+["⭕","NO / CIRCLE"],
+["❌","CROSS"],
+["❗","EXCLAMATION"],
+["❓","QUESTION"],
+["💯","ONE HUNDRED"],
+["🔴","RED CIRCLE"],
+["🟠","ORANGE CIRCLE"],
+["🟡","YELLOW CIRCLE"],
+["🟢","GREEN CIRCLE"],
+["🔵","BLUE CIRCLE"],
+["🟣","PURPLE CIRCLE"],
+["⚫","BLACK CIRCLE"],
+["⚪","WHITE CIRCLE"],
+["🟥","RED SQUARE"],
+["🟧","ORANGE SQUARE"],
+["🟨","YELLOW SQUARE"],
+["🟩","GREEN SQUARE"],
+["🟦","BLUE SQUARE"],
+["🟪","PURPLE SQUARE"],
+["⬛","BLACK SQUARE"],
+["⬜","WHITE SQUARE"],
+
+/* CLOTHING */
+
+["👕","T-SHIRT"],
+["👖","TROUSERS"],
+["👗","DRESS"],
+["👔","TIE"],
+["👟","SHOE"],
+["👞","SHOE"],
+["👠","HIGH HEEL"],
+["🧢","CAP"],
+["🎩","HAT"],
+["👒","HAT"],
+["🧤","GLOVE"],
+["🧣","SCARF"],
+["🧥","COAT"],
+["🧦","SOCK"],
+["🩴","SLIPPER"],
+["👓","GLASSES"],
+["🕶","SUNGLASSES"],
+
+/* SCHOOL / LEARNING */
+
+["📕","RED BOOK"],
+["📗","GREEN BOOK"],
+["📘","BLUE BOOK"],
+["📙","ORANGE BOOK"],
+["📒","NOTEBOOK"],
+["📔","NOTEBOOK"],
+["📐","TRIANGLE RULER"],
+["📊","BAR CHART"],
+["📈","UP GRAPH"],
+["📉","DOWN GRAPH"],
+["🧮","ABACUS"],
+["🔬","MICROSCOPE"],
+["🔭","TELESCOPE"],
+["🧪","TEST TUBE"],
+["🧬","DNA"],
+["🌡","THERMOMETER"],
+["🗺","MAP"],
+["🧭","COMPASS"],
+["📍","LOCATION PIN"],
+["🎓","GRADUATION CAP"],
+
+/* SPACE */
+
+["🌍","EARTH"],
+["🌙","MOON"],
+["☀","SUN"],
+["⭐","STAR"],
+["🌟","STAR"],
+["🪐","PLANET"],
+["🌌","MILKY WAY"],
+["🚀","ROCKET"],
+["👽","ALIEN"],
+["🛰","SATELLITE"],
+["🌑","NEW MOON"],
+["🌕","FULL MOON"],
+
+/* TOOLS */
+
+["🔨","HAMMER"],
+["🪛","SCREWDRIVER"],
+["🔧","WRENCH"],
+["🔩","BOLT"],
+["⚙","GEAR"],
+["🪚","SAW"],
+["⛏","PICKAXE"],
+["🪓","AXE"],
+["🧰","TOOLBOX"],
+["🪜","LADDER"],
+["🔗","CHAIN"],
+["🧲","MAGNET"],
+
+/* TRAVEL */
+
+["🧳","SUITCASE"],
+["🎫","TICKET"],
+["🚏","BUS STOP"],
+["🗺","MAP"],
+["🧭","COMPASS"],
+["⛺","TENT"],
+["🏕","CAMPING"],
+["🏖","BEACH"],
+["🏝","ISLAND"],
+["⛰","MOUNTAIN"],
+["🏔","SNOWY MOUNTAIN"],
+["🌋","VOLCANO"],
+["🏜","DESERT"],
+["🌲","FOREST"],
+
+/* CELEBRATION */
+
+["🎉","PARTY"],
+["🎊","CONFETTI"],
+["🎈","BALLOON"],
+["🎁","PRESENT"],
+["🎂","BIRTHDAY CAKE"],
+["🕯","CANDLE"],
+["🎆","FIREWORK"],
+["🎇","FIREWORK"],
+["🥳","PARTY FACE"],
+["🏆","TROPHY"],
+
+/* SPORTS OBJECTS */
+
+["🏀","BASKETBALL"],
+["⚽","FOOTBALL"],
+["🏐","VOLLEYBALL"],
+["🎾","TENNIS BALL"],
+["🏓","TABLE TENNIS"],
+["🏸","BADMINTON"],
+["🥎","SOFTBALL"],
+["🏒","HOCKEY"],
+["🏑","FIELD HOCKEY"],
+["🏏","CRICKET"],
+["🎳","BOWLING"],
+["⛳","GOLF"],
+["🥅","GOAL"],
+["🏹","BOW AND ARROW"],
+["🎣","FISHING"],
+
+/* MORE SIMPLE DRAWABLE OBJECTS */
+
+["☕","CUP"],
+["🍵","TEA CUP"],
+["🥤","DRINK"],
+["🍽","PLATE"],
+["🍴","FORK AND KNIFE"],
+["🥄","SPOON"],
+["🔪","KNIFE"],
+["🧂","SALT"],
+["🧊","ICE"],
+["🕯","CANDLE"],
+["🧸","TEDDY BEAR"],
+["⚽","BALL"],
+["🎲","DICE"],
+["🧩","PUZZLE"],
+["🎯","TARGET"],
+["🎁","GIFT"],
+["🎒","BAG"],
+["🛒","SHOPPING CART"],
+["💰","MONEY BAG"],
+["💎","DIAMOND"],
+["👑","CROWN"],
+["💍","RING"],
+["🔑","KEY"],
+["🔐","LOCK"],
+["📢","LOUDSPEAKER"],
+["📣","MEGAPHONE"],
+["📞","TELEPHONE"],
+["📺","TV"],
+["📻","RADIO"],
+["💡","LIGHT BULB"],
+["🔦","TORCH"],
+["🕰","CLOCK"],
+["⌛","HOURGLASS"],
+["⏳","SAND TIMER"],
+["⏰","ALARM CLOCK"],
+["🗝","OLD KEY"],
+["🔮","CRYSTAL BALL"],
+["🎩","TOP HAT"],
+["🎭","THEATRE MASKS"],
+["🎨","PAINT PALETTE"],
+["🖌","PAINTBRUSH"],
+["🖍","CRAYON"],
+["🧵","THREAD"],
+["🪡","NEEDLE"],
+["✉","ENVELOPE"],
+["📮","MAILBOX"],
+["📦","PACKAGE"],
+["✂","SCISSORS"],
+["🧷","SAFETY PIN"],
+["🔍","MAGNIFYING GLASS"],
+["🔎","MAGNIFYING GLASS"],
+
+/* EXTRA DRAWABLE SHAPES */
+
+["◀","LEFT TRIANGLE"],
+["▶","RIGHT TRIANGLE"],
+["▲","UP TRIANGLE"],
+["▼","DOWN TRIANGLE"],
+["◼","BLACK SQUARE"],
+["◻","WHITE SQUARE"],
+["◆","BLACK DIAMOND"],
+["◇","WHITE DIAMOND"],
+["●","BLACK CIRCLE"],
+["○","WHITE CIRCLE"],
+["⬆","UP ARROW"],
+["⬇","DOWN ARROW"],
+["⬅","LEFT ARROW"],
+["➡","RIGHT ARROW"],
+["↩","RETURN ARROW"],
+["↪","RETURN ARROW"],
+["↻","CLOCKWISE ARROW"],
+["↺","ANTI-CLOCKWISE ARROW"],
+
+/* EXTRA OBJECTS */
+
+["🪁","KITE"],
+["🎈","BALLOON"],
+["🪀","YO-YO"],
+["🧸","TEDDY BEAR"],
+["🪆","DOLL"],
+["🕶","SUNGLASSES"],
+["🎒","BACKPACK"],
+["🧢","CAP"],
+["👟","SHOE"],
+["👞","SHOE"],
+["👢","BOOT"],
+["🪭","FAN"],
+["☂","UMBRELLA"],
+["🕳","HOLE"],
+["🪞","MIRROR"],
+["🪟","WINDOW"],
+["🚪","DOOR"],
+["🛎","BELL"],
+["🪑","CHAIR"],
+["🛏","BED"],
+["🛋","SOFA"],
+["🪴","POTTED PLANT"],
+["🗑","BIN"],
+["🧯","FIRE EXTINGUISHER"],
+["🚦","TRAFFIC LIGHT"],
+["🚥","TRAFFIC LIGHT"],
+["🛑","STOP SIGN"],
+["🚸","CHILDREN CROSSING"],
+["🚧","ROAD WORK"],
+["⛽","PETROL STATION"],
+["🛞","WHEEL"],
+["🛟","LIFE RING"],
+["⚓","ANCHOR"],
+["🪝","HOOK"],
+["🧱","BRICK"],
+["🪵","LOG"],
+["🪨","ROCK"],
+["🪶","FEATHER"],
+["🪹","NEST"],
+["🪺","NEST"],
+["🕸","SPIDER WEB"],
+["🪹","BIRD NEST"],
+
+/* FINAL EXTRA SYMBOLS */
+
+["☑","CHECKED BOX"],
+["☒","CROSSED BOX"],
+["☐","EMPTY BOX"],
+["⬜","WHITE SQUARE"],
+["⬛","BLACK SQUARE"],
+["◯","CIRCLE"],
+["◉","TARGET CIRCLE"],
+["◎","DOUBLE CIRCLE"],
+["◌","DOTTED CIRCLE"],
+["◍","CIRCLE"],
+["◐","HALF CIRCLE"],
+["◑","HALF CIRCLE"],
+["◒","HALF CIRCLE"],
+["◓","HALF CIRCLE"],
+["△","TRIANGLE"],
+["▽","DOWN TRIANGLE"],
+["◁","LEFT TRIANGLE"],
+["▷","RIGHT TRIANGLE"],
+["◇","DIAMOND"],
+["◈","DIAMOND"],
+["✦","FOUR POINT STAR"],
+["✧","FOUR POINT STAR"],
+["✶","SIX POINT STAR"],
+["✷","STAR"],
+["✸","STAR"],
+["✹","STAR"],
+["✺","STAR"],
+["✻","STAR"],
+["✼","STAR"],
+["✽","STAR"],
+["✾","FLOWER STAR"],
+["✿","FLOWER"],
+["❀","FLOWER"],
+["❁","FLOWER"],
+["❂","SUN"],
+["❃","FLOWER"],
+["❄","SNOWFLAKE"],
+["❅","SNOWFLAKE"],
+["❆","SNOWFLAKE"],
+["❇","SPARKLE"],
+["❈","SPARKLE"],
+["❉","SPARKLE"],
+["❊","SPARKLE"],
+["❋","SPARKLE"]
+
+];
+
+
+/* =========================================================
+   TIME BUTTONS
+========================================================= */
+
+document.querySelectorAll(".timeBtn").forEach(button => {
+
+    button.addEventListener("click", function() {
+
+        document
+            .querySelectorAll(".timeBtn")
+            .forEach(b => b.classList.remove("selected"));
+
+        this.classList.add("selected");
+
+        viewingTime = Number(this.dataset.time);
+
+    });
+
+});
+
+
+/* =========================================================
+   SCORE
+========================================================= */
+
+let scores = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0
+};
+
+
+function changeScore(team, amount) {
+
+    scores[team] += amount;
+
+    if (scores[team] < 0) {
+        scores[team] = 0;
+    }
+
+    document.getElementById("score" + team).textContent =
+        scores[team];
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
+
+function startGame() {
+
+    document.getElementById("welcomeScreen").style.display = "none";
+
+    document.getElementById("finalScreen").style.display = "none";
+
+    document.getElementById("gameScreen").style.display = "block";
+
+    round = 0;
+
+    usedSymbols = [];
+
+    scores = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0
+    };
+
+    for (let i = 1; i <= 4; i++) {
+        document.getElementById("score" + i).textContent = "0";
+    }
+
+    document.getElementById("timeDisplay").textContent =
+        viewingTime;
+
+    document.getElementById("symbolCount").textContent =
+        symbols.length;
+
+    nextSymbol();
+}
+
+
+/* =========================================================
+   RANDOM SYMBOL
+========================================================= */
+
+function getRandomSymbol() {
+
+    if (usedSymbols.length >= symbols.length) {
+
+        usedSymbols = [];
+
+    }
+
+    let available = [];
+
+    for (let i = 0; i < symbols.length; i++) {
+
+        if (!usedSymbols.includes(i)) {
+
+            available.push(i);
+
+        }
+
+    }
+
+    const randomIndex =
+        available[Math.floor(Math.random() * available.length)];
+
+    usedSymbols.push(randomIndex);
+
+    return symbols[randomIndex];
+
+}
+
+
+/* =========================================================
+   NEXT SYMBOL
+========================================================= */
+
+function nextSymbol() {
+
+    clearInterval(timer);
+
+    round++;
+
+    document.getElementById("roundDisplay").textContent =
+        round;
+
+    document.getElementById("answer").style.display =
+        "none";
+
+    document.getElementById("instruction").textContent =
+        "The student closest to the screen — LOOK!";
+
+    document.getElementById("viewMessage").textContent =
+        "Remember the symbol!";
+
+    const data = getRandomSymbol();
+
+    currentSymbol = data;
+
+    document.getElementById("symbol").textContent =
+        data[0];
+
+    document.getElementById("symbol").classList.remove(
+        "hiddenSymbol"
+    );
+
+    let remaining = viewingTime;
+
+    document.getElementById("countdown").textContent =
+        remaining + "s";
+
+    timer = setInterval(function() {
+
+        remaining--;
+
+        document.getElementById("countdown").textContent =
+            remaining > 0 ? remaining + "s" : "";
+
+        if (remaining <= 0) {
+
+            clearInterval(timer);
+
+            hideSymbol();
+
+        }
+
+    }, 1000);
+
+}
+
+
+/* =========================================================
+   HIDE SYMBOL
+========================================================= */
+
+function hideSymbol() {
+
+    document
+        .getElementById("symbol")
+        .classList.add("hiddenSymbol");
+
+    document.getElementById("instruction").textContent =
+        "Pass the drawing down the line!";
+
+    document.getElementById("viewMessage").textContent =
+        "The symbol has disappeared.";
+
+}
+
+
+/* =========================================================
+   SHOW ANSWER
+========================================================= */
+
+function showAnswer() {
+
+    document.getElementById("answer").textContent =
+        currentSymbol[1];
+
+    document.getElementById("answer").style.display =
+        "block";
+
+}
+
+
+/* =========================================================
+   CORRECT
+========================================================= */
+
+function correctAnswer() {
+
+    showAnswer();
+
+    document.getElementById("instruction").textContent =
+        "✓ Correct! Award the team a point.";
+
+}
+
+
+/* =========================================================
+   INCORRECT
+========================================================= */
+
+function wrongAnswer() {
+
+    showAnswer();
+
+    document.getElementById("instruction").textContent =
+        "✗ Incorrect — try the next symbol!";
+
+}
+
+
+/* =========================================================
+   HOME
+========================================================= */
+
+function goHome() {
+
+    clearInterval(timer);
+
+    document.getElementById("gameScreen").style.display =
+        "none";
+
+    document.getElementById("finalScreen").style.display =
+        "none";
+
+    document.getElementById("welcomeScreen").style.display =
+        "flex";
+
+}
+
+</script>
+
+</body>
+</html>
